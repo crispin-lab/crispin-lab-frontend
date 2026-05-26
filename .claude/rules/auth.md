@@ -1,0 +1,196 @@
+# 인증 / 세션
+
+> **이 문서의 범위**: 백엔드 세션 토큰의 프론트 처리, BFF 어댑터, 인증 실패 흐름.
+>
+> **API 호출 일반 규칙**: `api-client.md`
+
+## 백엔드 인증 모델 (요약)
+
+- 세션 토큰: `Authorization: Bearer sess_<43-base64>`
+- 발급/조회: Redis 세션 store, sliding expiry (요청마다 TTL 갱신)
+- 옵셔널 인증 endpoint: 토큰이 없으면 anonymous, 있는데 invalid 면 401
+- 모든 인증 실패가 단일 `INVALID_SESSION` 코드로 떨어짐 (헤더 누락/형식 오류/세션 미존재 차이 비공개 — IDOR / enumeration 방어)
+
+자세한 백엔드 흐름은 `crispin-lab-backend/.claude/rules/controller.md` 의 "Auth 인증 컨텍스트 추출" 절 참조.
+
+## 프론트 토큰 보관 — httpOnly cookie + BFF 어댑터
+
+### 채택 결정 정리
+
+| 옵션 | XSS | CSRF | 새로고침 | 백엔드 호환 |
+|------|-----|------|----------|-------------|
+| `localStorage` + Authorization 헤더 | 취약 (JS 가 읽음) | 안전 | 그대로 유지 | 무수정 |
+| 메모리 + Authorization 헤더 | 안전 | 안전 | 잃음, refresh flow 필요 | 무수정 |
+| **httpOnly cookie + BFF 어댑터** | 안전 (JS 가 못 읽음) | SameSite=Lax 로 차단 | 그대로 유지 | 무수정 (BFF 가 변환) |
+
+→ **httpOnly cookie + BFF 어댑터 채택**. XSS 와 새로고침 양쪽 모두 안전하고, 백엔드 세션 모델 (sliding expiry) 과 자연 정합.
+
+### BFF (Backend-for-Frontend) 어댑터 패턴
+
+Next.js Route Handler (`src/app/api/.../route.ts`) 가 프론트 ↔ 백엔드 어댑터 역할:
+
+```
+[브라우저]              [Next.js BFF]              [백엔드]
+  cookie: session=sess_xxx
+      ──── 요청 ────►   cookies().get('session')
+                       ──── Authorization: Bearer sess_xxx ────►
+                       ◄──────── 200 / 401 ────────────────────
+      ◄─── 응답 ────   (필요 시 Set-Cookie 갱신)
+```
+
+핵심 책임:
+1. cookie ↔ `Authorization: Bearer` 헤더 변환
+2. 로그인/로그아웃 시 `Set-Cookie` 발급/삭제
+3. 401 응답 정규화 (UNAUTHENTICATED 코드로 통일, 클라이언트가 일관되게 처리)
+
+### Cookie 속성
+
+```ts
+const sessionCookie = {
+  name: 'session',
+  httpOnly: true,
+  secure: true,                       // production 환경에서만 true 강제 (로컬은 별도 분기)
+  sameSite: 'lax' as const,           // GET 외 cross-site 요청에 cookie 미전송
+  path: '/',
+  // maxAge 는 백엔드 sliding expiry 와 맞추지 않는다 — session cookie (브라우저 닫으면 삭제) 로 두고
+  // 서버 측 sliding 만 신뢰. 명시 만료가 필요하면 백엔드 응답에 expires-at 을 받아 그때만 갱신.
+}
+```
+
+- `SameSite=Lax`: 일반 GET navigation 에는 cookie 가 동봉되지만, cross-site `fetch` / form POST 에는 미전송 → CSRF 1 차 방어.
+- `Secure`: HTTPS 전용. 로컬 개발 (HTTP) 에서는 환경 변수 분기로 false.
+- CSRF 추가 방어: state-changing 요청 (POST/PUT/DELETE) 은 `X-Requested-With: fetch` 같은 커스텀 헤더 또는 double-submit token 으로 한 겹 더. SameSite=Lax 만으로도 대부분 케이스에서 충분하지만 본 결정은 도입 시점에 별도 검토.
+
+## 로그인 / 로그아웃 흐름
+
+### 로그인 (`POST /api/auth/login` BFF Route Handler)
+
+```ts
+// src/app/api/auth/login/route.ts (개요)
+export async function POST(request: Request) {
+  const body = await request.json()
+  const upstream = await fetch(`${BACKEND_URL}/v1/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  if (!upstream.ok) {
+    return Response.json(await upstream.json(), { status: upstream.status })
+  }
+
+  const { sessionToken } = await upstream.json()
+  const response = Response.json({ ok: true })
+  response.headers.set(
+    'Set-Cookie',
+    `session=${sessionToken}; HttpOnly; Secure; SameSite=Lax; Path=/`,
+  )
+  return response
+}
+```
+
+- 클라이언트는 토큰 자체를 보지 못한다 — `ok: true` 만 받는다.
+- 백엔드 에러 (`INVALID_CREDENTIALS` 등) 는 그대로 status / body 패스스루.
+
+### 로그아웃
+
+```ts
+// src/app/api/auth/logout/route.ts
+export async function POST() {
+  // 백엔드 세션 destroy 호출 (best-effort)
+  await fetch(`${BACKEND_URL}/v1/sessions/me`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${getSessionToken()}` },
+  }).catch(() => { /* 네트워크 실패 시도 cookie 는 지운다 */ })
+
+  const response = Response.json({ ok: true })
+  response.headers.set('Set-Cookie', 'session=; Max-Age=0; Path=/')
+  return response
+}
+```
+
+### 일반 API 호출 (`/api/[...path]`)
+
+여러 endpoint 마다 Route Handler 를 따로 만들지 않고, catch-all 한 개로 패스스루한다.
+
+```ts
+// src/app/api/[...path]/route.ts (개요)
+async function proxy(request: Request, ctx: { params: { path: string[] } }) {
+  const sessionToken = cookies().get('session')?.value
+  const upstreamUrl = `${BACKEND_URL}/${ctx.params.path.join('/')}`
+
+  const headers = new Headers(request.headers)
+  headers.delete('cookie')
+  if (sessionToken) headers.set('Authorization', `Bearer ${sessionToken}`)
+
+  const upstream = await fetch(upstreamUrl, {
+    method: request.method,
+    headers,
+    body: request.body,
+  })
+
+  // 401 일 때는 클라이언트가 일관되게 처리하도록 정규화
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: upstream.headers,
+  })
+}
+
+export { proxy as GET, proxy as POST, proxy as PUT, proxy as DELETE }
+```
+
+호출부는 `apiFetch('/api/pages/123')` 처럼 같은 origin 만 알면 된다. 백엔드 base URL 도 클라이언트에 노출 안 됨.
+
+## 인증 실패 처리
+
+### 401 응답을 받으면 어떻게 할까
+
+- 글로벌 fetch 래퍼 (`apiFetch`) 에서 401 을 받으면 클라이언트 측에서 한 곳에 모아 처리:
+  - TanStack Query 의 `QueryCache` 의 `onError` 에서 `if (error instanceof ApiError && error.status === 401)` 분기.
+  - `router.push('/login?redirect=' + currentPath)` + toast.
+- **silently null 로 떨어뜨리지 않는다** — 사용자가 만료 상태에서 빈 화면을 보면 재로그인 트리거가 안 걸린다.
+- 동시 다발 401 이 떠도 redirect 는 한 번만 (debounce 또는 redirect flag).
+
+### 옵셔널 인증 endpoint
+
+비로그인도 볼 수 있는 GET endpoint (예: PUBLIC 페이지 조회):
+- BFF 가 cookie 가 없으면 `Authorization` 헤더를 안 붙이고 호출 → 백엔드가 anonymous 흐름.
+- cookie 가 있는데 백엔드가 401 (만료/위변조) → 401 그대로 패스스루, 클라이언트는 재로그인 흐름.
+
+## Server Component 에서 인증
+
+```tsx
+// app/(dashboard)/pages/[pageId]/page.tsx
+import { cookies } from 'next/headers'
+
+export default async function PageDetail({ params }: { params: { pageId: string } }) {
+  const session = cookies().get('session')?.value
+  if (!session) redirect('/login')
+
+  const page = await apiFetchServer<Page>(`/v1/pages/${params.pageId}`, {
+    headers: { Authorization: `Bearer ${session}` },
+  })
+  return <PageEditor initialPage={page} />
+}
+```
+
+- Server Component 에서 백엔드를 직접 호출할 때는 `cookies()` 로 session 을 읽어 Bearer 변환.
+- 또는 같은 BFF 를 호출 (`fetch('/api/pages/123')`) — 단일 인증 흐름이 더 단순하지만 한 hop 추가.
+- 단순성 우선: 초반에는 모든 경로를 BFF 패스스루로. 성능 이슈가 생기면 Server Component 직접 호출 도입.
+
+## 환경 변수
+
+| 이름 | 위치 | 비고 |
+|------|------|------|
+| `BACKEND_URL` | 서버 전용 | BFF 가 백엔드를 호출할 base URL. `NEXT_PUBLIC_` 안 붙임. |
+| `NEXT_PUBLIC_APP_URL` | 클라이언트 노출 | redirect 등에 쓰는 자기 자신 URL. |
+
+`.env.example` 에 위 두 개 + 빈 placeholder 만 추가.
+
+## 자주 빠뜨리는 것
+
+- **클라이언트 측에서 cookie 읽기 시도** — httpOnly 라 `document.cookie` 로 안 보인다. 인증 여부 판별은 백엔드 응답 (401) 또는 별도 `/api/auth/me` endpoint 로.
+- **`localStorage` 로 회귀** — "간단하니까" 라며 토큰을 localStorage 로 옮기지 않는다. XSS 한 방에 탈취.
+- **BFF Route Handler 가 백엔드 응답을 가공** — 단순 패스스루 + 헤더 변환만. body 변형은 클라이언트가 일관되게 처리하는 데 방해.
+- **`SameSite=None`** — cross-site 가 필요한 시나리오가 없는 이상 절대 None 으로 풀지 않는다. CSRF 1 차 방어가 사라진다.
+- **로컬에서 `Secure` 강제 → cookie 미설정** — 로컬 (HTTP) 은 Secure false 로 분기. production 만 true.
