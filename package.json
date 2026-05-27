@@ -13,7 +13,17 @@
     "api:gen": "openapi-typescript ../crispin-lab-backend/lab-user/app/build/api-spec/openapi3.json -o src/lib/api/schema.user.d.ts && openapi-typescript ../crispin-lab-backend/lab-space/app/build/api-spec/openapi3.json -o src/lib/api/schema.space.d.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ci": "vitest run --reporter=verbose"
+    "test:ci": "vitest run --reporter=verbose",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs,mts,cts}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -46,7 +56,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.5",
     "msw": "^2.14.6",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.3",
