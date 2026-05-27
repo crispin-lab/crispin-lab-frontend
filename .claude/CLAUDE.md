@@ -6,6 +6,7 @@
 @rules/docs-style.md
 @rules/architecture.md
 @rules/conventions.md
+@rules/design.md
 @rules/ui.md
 @rules/state.md
 @rules/comments.md
