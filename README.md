@@ -22,10 +22,10 @@ pnpm dev
 
 ## 환경 변수
 
-| 이름 | 위치 | 설명 |
-|------|------|------|
-| `BACKEND_URL` | 서버 전용 | BFF Route Handler 가 백엔드를 호출할 base URL |
-| `NEXT_PUBLIC_APP_URL` | 클라이언트 노출 | 자기 자신의 public URL (redirect, OG meta) |
+| 이름                  | 위치            | 설명                                          |
+| --------------------- | --------------- | --------------------------------------------- |
+| `BACKEND_URL`         | 서버 전용       | BFF Route Handler 가 백엔드를 호출할 base URL |
+| `NEXT_PUBLIC_APP_URL` | 클라이언트 노출 | 자기 자신의 public URL (redirect, OG meta)    |
 
 `.env*` 는 `.gitignore` 됨. 값은 `.env.local` 에. 단 `.env.example` 은 커밋된다.
 
