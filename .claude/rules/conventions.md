@@ -412,6 +412,9 @@ function PageListHeader() {
 
 API 호출은 MSW 로 HTTP 레벨에서 mock. 컴포넌트 내부의 `fetch` 를 직접 mock 하지 않는다.
 
+- **위치**: handler 는 `src/mocks/handlers.ts` 에, `setupServer` 는 `src/mocks/server.ts` 에 둔다. 도메인별로 흩어지지 않게 한 곳에서 export.
+- **strict 모드**: `server.listen({ onUnhandledRequest: 'error' })` — 핸들러가 없는 요청이 들어오면 명시적으로 실패시킨다. silent passthrough 는 fixture 누락을 숨겨 회귀를 못 잡는다.
+
 ### 컨텍스트 중복 금지
 
 `describe` 가 도메인을 설명하면, 하위 `it` 에서 같은 접두어를 반복하지 않는다.
