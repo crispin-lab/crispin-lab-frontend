@@ -15,7 +15,7 @@
 - 자기-완결적 프롬프트:
   - 무엇을 리뷰할지 (파일/범위/"working tree")
   - 사용자가 함께 준 컨텍스트 (예: "X 를 리팩터링 중 — Y 불변식이 깨지지 않았는지에 집중")
-  - 프로젝트 룰 문서는 `.claude/rules/` 에 정리되어 있다 (`architecture.md`, `conventions.md`, `comments.md`, `api-client.md`, `auth.md`, `editor.md`). 리뷰 시 반드시 참고하도록 명시.
+  - 프로젝트 룰 문서는 `.claude/rules/` 에 정리되어 있다 (`architecture.md`, `conventions.md`, `ui.md`, `state.md`, `comments.md`, `api-client.md`, `auth.md`, `editor.md`, `commit.md`, `docs-style.md`). 리뷰 시 반드시 참고하도록 명시. 새 룰 추가 시 본 목록도 `.claude/CLAUDE.md` 인덱스와 함께 갱신.
 
 에이전트는 foreground 로 실행하고, 그 결과가 응답을 결정한다.
 

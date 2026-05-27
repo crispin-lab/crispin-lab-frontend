@@ -46,10 +46,12 @@ Next.js Route Handler (`src/app/api/.../route.ts`) 가 프론트 ↔ 백엔드 �
 ### Cookie 속성
 
 ```ts
+const isProd = process.env.NODE_ENV === 'production'
+
 const sessionCookie = {
   name: 'session',
   httpOnly: true,
-  secure: true,                       // production 환경에서만 true 강제 (로컬은 별도 분기)
+  secure: isProd,                     // 로컬 (HTTP) 은 false, production (HTTPS) 만 true
   sameSite: 'lax' as const,           // GET 외 cross-site 요청에 cookie 미전송
   path: '/',
   // maxAge 는 백엔드 sliding expiry 와 맞추지 않는다 — session cookie (브라우저 닫으면 삭제) 로 두고
@@ -80,10 +82,11 @@ export async function POST(request: Request) {
   }
 
   const { sessionToken } = await upstream.json()
+  const isProd = process.env.NODE_ENV === 'production'
   const response = Response.json({ ok: true })
   response.headers.set(
     'Set-Cookie',
-    `session=${sessionToken}; HttpOnly; Secure; SameSite=Lax; Path=/`,
+    `session=${sessionToken}; HttpOnly; ${isProd ? 'Secure; ' : ''}SameSite=Lax; Path=/`,
   )
   return response
 }

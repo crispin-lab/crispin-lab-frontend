@@ -121,7 +121,7 @@ description: PR 전 컨벤션 체크. `.claude/rules/` 의 프론트 룰 기준�
 
 ### 5단계: 보고 형식
 
-```
+```text
 ⚠️⚠️ 필수 수정
 - [src/path/to/File.tsx:42] 어떤 위반인지 — (해당 룰 섹션명)
   근거: 짧은 인용 또는 설명

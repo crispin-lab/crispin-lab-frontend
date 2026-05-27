@@ -72,7 +72,9 @@ type ApiOptions = {
 }
 
 export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  // path 는 '/api/' 로 시작해야 한다 — 호출부에서 절대 URL 을 넘기지 않는다
+  if (!path.startsWith('/api/')) {
+    throw new Error(`apiFetch path must start with '/api/' (got: ${path})`)
+  }
   const response = await fetch(path, {
     method: options.method ?? 'GET',
     headers: { 'Content-Type': 'application/json' },
