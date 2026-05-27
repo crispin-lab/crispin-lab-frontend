@@ -4,6 +4,8 @@
 >
 > **인증 토큰 흐름·BFF 어댑터**: `auth.md`
 > **Server / Client 분리**: `architecture.md`
+> **UI 패턴·loading/empty/error**: `ui.md`
+> **상태 분류 (서버 / 폼 / URL / local)**: `state.md`
 
 ## OpenAPI 타입 자동 생성
 
@@ -50,9 +52,16 @@ export const asUserId = (raw: string): UserId => raw as UserId
 - URL search params, dynamic route param, form 입력으로 받은 string 도 같은 헬퍼로 lift.
 - 도메인 함수 시그니처는 항상 브랜드 타입을 받는다 — plain string 을 받으면 호출부에서 미검증 입력이 흘러든다.
 
-## fetch 래퍼
+## fetch 래퍼 — 브라우저용과 서버용 분리
 
-`src/lib/api/client.ts` 에 단일 fetch 래퍼를 둔다. 호출부는 raw `fetch` 를 직접 쓰지 않는다.
+`src/lib/api/client.ts` 에 두 래퍼를 둔다. 호출부는 raw `fetch` 를 직접 쓰지 않는다.
+
+| 래퍼 | 사용 위치 | base URL |
+|------|----------|---------|
+| `apiFetch` | Client Component, browser hook | **항상 same-origin `/api/...`** — BFF (`auth.md`) 가 받는다. 백엔드 호스트는 브라우저에 노출되지 않는다 |
+| `apiFetchServer` | Server Component, Route Handler | `process.env.BACKEND_URL` 직접 호출 |
+
+### 브라우저용 — `apiFetch`
 
 ```ts
 // src/lib/api/client.ts (개요)
@@ -63,11 +72,12 @@ type ApiOptions = {
 }
 
 export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  // path 는 '/api/' 로 시작해야 한다 — 호출부에서 절대 URL 을 넘기지 않는다
+  const response = await fetch(path, {
     method: options.method ?? 'GET',
     headers: { 'Content-Type': 'application/json' },
     body: options.body ? JSON.stringify(options.body) : undefined,
-    credentials: 'include',     // BFF 의 session cookie 동봉 (auth.md)
+    credentials: 'include',     // httpOnly session cookie 동봉 (auth.md)
     signal: options.signal,
   })
 
@@ -78,10 +88,45 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
 }
 ```
 
-- **base URL** 은 환경 변수로. 프론트가 직접 백엔드를 호출하는 경로는 없고, 같은 origin 의 BFF (`/api/...`) 를 거친다 (`auth.md`).
+- 브라우저는 항상 same-origin `/api/...` 로 호출. `BACKEND_URL` 은 클라이언트 번들에 절대 들어가지 않는다 (`NEXT_PUBLIC_` 미부착).
 - **credentials: 'include'** — httpOnly session cookie 가 자동으로 동봉되게.
 - **타임아웃 / 재시도** — fetch 단에서는 두지 않는다. TanStack Query 의 `retry`, `staleTime` 으로 제어.
 - **AbortController** — TanStack Query 가 자동으로 `signal` 을 넘긴다. 래퍼는 그대로 전달.
+
+### 서버용 — `apiFetchServer`
+
+```ts
+// src/lib/api/server.ts (개요)
+import { cookies } from 'next/headers'
+
+export async function apiFetchServer<T>(
+  path: string,
+  options: ApiOptions = {},
+): Promise<T> {
+  const cookieStore = await cookies()
+  const sessionToken = cookieStore.get('session')?.value
+
+  const response = await fetch(`${process.env.BACKEND_URL}${path}`, {
+    method: options.method ?? 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+    signal: options.signal,
+  })
+
+  if (!response.ok) {
+    throw await ApiError.fromResponse(response)
+  }
+  return response.json() as Promise<T>
+}
+```
+
+- Server Component / Route Handler 에서만 사용. 브라우저에 노출되지 않게 `server-only` 패키지로 가드해 두는 것도 고려.
+- `BACKEND_URL` 은 서버 전용 환경 변수 (`NEXT_PUBLIC_` 없음 — `.env.example` 참조).
+- 호출부에서 `headers: { Authorization: ... }` 를 직접 명시하지 않는다 — 래퍼가 이미 cookie 에서 Bearer 를 붙인다.
+- **BFF catch-all (`src/app/api/[...path]/route.ts`) 안에서는 `apiFetchServer` 를 호출하지 않는다** — catch-all 이 이미 cookie↔Bearer 변환을 책임지므로 `apiFetchServer` 를 또 부르면 같은 cookie 를 두 번 읽고 같은 변환을 두 번 한다. catch-all 은 raw `fetch` 로 `BACKEND_URL` 을 직접 호출 (`auth.md` 의 catch-all 예시 참조).
 
 ## ApiError 모델
 
@@ -188,14 +233,20 @@ export function usePagePublish() {
 
 ```tsx
 // app/pages/[pageId]/page.tsx
-export default async function PageDetail({ params }: { params: { pageId: string } }) {
-  const pageId = asPageId(params.pageId)
+export default async function PageDetail({
+  params,
+}: {
+  params: Promise<{ pageId: string }>
+}) {
+  const { pageId: rawId } = await params
+  const pageId = asPageId(rawId)
   const page = await apiFetchServer<Page>(`/v1/pages/${pageId}`)
   return <PageEditor initialPage={page} />
 }
 ```
 
-- `apiFetchServer` 는 `apiFetch` 와 별개로 — `cookies()` 에서 session 을 읽어 Bearer 로 변환해 백엔드 직접 호출 (`auth.md` 참조).
+- Next 16 의 dynamic route `params` 는 Promise — 위 시그니처와 `await params` 가 표준.
+- `apiFetchServer` 는 `apiFetch` 와 별개로 — 위 절의 정의 그대로 `cookies()` 에서 session 을 읽어 Bearer 로 변환해 백엔드 직접 호출 (`auth.md` 참조).
 - 또는 같은 BFF (`/api/...`) 를 호출해도 됨. 호출 비용이 한 hop 늘지만 인증 흐름이 단일.
 
 ## 자주 빠뜨리는 것
@@ -205,3 +256,5 @@ export default async function PageDetail({ params }: { params: { pageId: string 
 - **`enabled` 옵션 없이 nullable param 으로 useQuery** — 라우트가 마운트되기 전에 `null` 로 호출되면 에러. `useQuery({ ..., enabled: pageId != null })`.
 - **에러를 `try/catch` 로 삼킴** — TanStack Query 의 `error` 상태로 표현. 글로벌 에러 boundary 가 마지막 안전망.
 - **`as` 캐스팅으로 OpenAPI 타입을 우회** — `as Page` 가 보이면 타입 산출이 비어 있거나 잘못된 응답 매핑이 있다는 신호.
+- **브라우저 `apiFetch` 가 절대 URL 또는 `BACKEND_URL` 을 받음** — 브라우저는 always same-origin `/api/...`. 절대 URL 이 호출부에 보이면 BFF 우회 시도다.
+- **Server Component 에서 `apiFetch` 를 호출** — 쿠키가 자동 동봉되지 않아 인증이 깨진다. 서버에서는 `apiFetchServer` (혹은 BFF 를 `fetch('/api/...')` 로 호출).

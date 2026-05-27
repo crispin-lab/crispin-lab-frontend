@@ -41,7 +41,7 @@ Next.js Route Handler (`src/app/api/.../route.ts`) 가 프론트 ↔ 백엔드 �
 핵심 책임:
 1. cookie ↔ `Authorization: Bearer` 헤더 변환
 2. 로그인/로그아웃 시 `Set-Cookie` 발급/삭제
-3. 401 응답 정규화 (UNAUTHENTICATED 코드로 통일, 클라이언트가 일관되게 처리)
+3. 백엔드 응답 (status + body) 그대로 전달 — 가공하지 않음. 클라이언트는 `ApiError.status === 401` + `code === 'INVALID_SESSION'` 으로 분기 (아래 "인증 실패 처리" 참조)
 
 ### Cookie 속성
 
@@ -69,7 +69,7 @@ const sessionCookie = {
 // src/app/api/auth/login/route.ts (개요)
 export async function POST(request: Request) {
   const body = await request.json()
-  const upstream = await fetch(`${BACKEND_URL}/v1/sessions`, {
+  const upstream = await fetch(`${process.env.BACKEND_URL}/v1/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -96,12 +96,19 @@ export async function POST(request: Request) {
 
 ```ts
 // src/app/api/auth/logout/route.ts
+import { cookies } from 'next/headers'
+
 export async function POST() {
+  const cookieStore = await cookies()
+  const sessionToken = cookieStore.get('session')?.value
+
   // 백엔드 세션 destroy 호출 (best-effort)
-  await fetch(`${BACKEND_URL}/v1/sessions/me`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${getSessionToken()}` },
-  }).catch(() => { /* 네트워크 실패 시도 cookie 는 지운다 */ })
+  if (sessionToken) {
+    await fetch(`${process.env.BACKEND_URL}/v1/sessions/me`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    }).catch(() => { /* 네트워크 실패해도 cookie 는 지운다 */ })
+  }
 
   const response = Response.json({ ok: true })
   response.headers.set('Set-Cookie', 'session=; Max-Age=0; Path=/')
@@ -109,15 +116,22 @@ export async function POST() {
 }
 ```
 
-### 일반 API 호출 (`/api/[...path]`)
+### catch-all BFF (`/api/[...path]`)
 
-여러 endpoint 마다 Route Handler 를 따로 만들지 않고, catch-all 한 개로 패스스루한다.
+여러 endpoint 마다 Route Handler 를 따로 만들지 않고, catch-all 한 개로 패스스루한다. cookie↔Bearer 변환 책임이 있는 본 catch-all 외에 **endpoint 별 단순 프록시 route handler 는 만들지 않는다** (`architecture.md` 의 "route handler 정책" 절 참조).
 
 ```ts
 // src/app/api/[...path]/route.ts (개요)
-async function proxy(request: Request, ctx: { params: { path: string[] } }) {
-  const sessionToken = cookies().get('session')?.value
-  const upstreamUrl = `${BACKEND_URL}/${ctx.params.path.join('/')}`
+import { cookies } from 'next/headers'
+
+async function proxy(
+  request: Request,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
+  const { path } = await ctx.params
+  const cookieStore = await cookies()
+  const sessionToken = cookieStore.get('session')?.value
+  const upstreamUrl = `${process.env.BACKEND_URL}/${path.join('/')}`
 
   const headers = new Headers(request.headers)
   headers.delete('cookie')
@@ -141,6 +155,9 @@ export { proxy as GET, proxy as POST, proxy as PUT, proxy as DELETE }
 
 호출부는 `apiFetch('/api/pages/123')` 처럼 같은 origin 만 알면 된다. 백엔드 base URL 도 클라이언트에 노출 안 됨.
 
+- Next 16 의 `cookies()` 와 `params` 는 모두 async. `await` 누락 시 타입 에러.
+- 본 catch-all 은 cookie↔Bearer 변환·헤더 정리·응답 정규화 외 **body 변형을 하지 않는다**. body 가공이 필요해지면 그 시점에 그 endpoint 만 별도 route handler 로 분리하고, 분리 사유 (응답 정규화, 권한 추가 검증 등) 를 주석 한 줄로 남긴다.
+
 ## 인증 실패 처리
 
 ### 401 응답을 받으면 어떻게 할까
@@ -162,19 +179,25 @@ export { proxy as GET, proxy as POST, proxy as PUT, proxy as DELETE }
 ```tsx
 // app/(dashboard)/pages/[pageId]/page.tsx
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-export default async function PageDetail({ params }: { params: { pageId: string } }) {
-  const session = cookies().get('session')?.value
-  if (!session) redirect('/login')
+export default async function PageDetail({
+  params,
+}: {
+  params: Promise<{ pageId: string }>
+}) {
+  const { pageId } = await params
+  const cookieStore = await cookies()
+  if (!cookieStore.get('session')) redirect('/login')
 
-  const page = await apiFetchServer<Page>(`/v1/pages/${params.pageId}`, {
-    headers: { Authorization: `Bearer ${session}` },
-  })
+  // apiFetchServer 가 내부적으로 cookie 를 읽어 Bearer 변환한다 (api-client.md)
+  const page = await apiFetchServer<Page>(`/v1/pages/${pageId}`)
   return <PageEditor initialPage={page} />
 }
 ```
 
-- Server Component 에서 백엔드를 직접 호출할 때는 `cookies()` 로 session 을 읽어 Bearer 변환.
+- Next 16 에서 `cookies()` 와 dynamic route 의 `params` 는 모두 async — `await` 누락 시 타입 에러.
+- Server Component 에서 `apiFetchServer` 를 호출하면 cookie → Bearer 변환은 래퍼가 처리. 호출부에서 `headers: { Authorization: ... }` 를 직접 붙이면 이중 헤더가 된다.
 - 또는 같은 BFF 를 호출 (`fetch('/api/pages/123')`) — 단일 인증 흐름이 더 단순하지만 한 hop 추가.
 - 단순성 우선: 초반에는 모든 경로를 BFF 패스스루로. 성능 이슈가 생기면 Server Component 직접 호출 도입.
 
@@ -191,6 +214,8 @@ export default async function PageDetail({ params }: { params: { pageId: string 
 
 - **클라이언트 측에서 cookie 읽기 시도** — httpOnly 라 `document.cookie` 로 안 보인다. 인증 여부 판별은 백엔드 응답 (401) 또는 별도 `/api/auth/me` endpoint 로.
 - **`localStorage` 로 회귀** — "간단하니까" 라며 토큰을 localStorage 로 옮기지 않는다. XSS 한 방에 탈취.
+- **`cookies()` / `params` 의 `await` 누락** — Next 16 에서는 둘 다 async. 동기 호출 코드를 복사해 오면 즉시 깨진다.
 - **BFF Route Handler 가 백엔드 응답을 가공** — 단순 패스스루 + 헤더 변환만. body 변형은 클라이언트가 일관되게 처리하는 데 방해.
+- **endpoint 별 단순 프록시 route handler 추가** — catch-all (`[...path]/route.ts`) 이 같은 일을 한다. 별도 분리는 변환 책임이 추가될 때만 (`architecture.md` 의 "route handler 정책").
 - **`SameSite=None`** — cross-site 가 필요한 시나리오가 없는 이상 절대 None 으로 풀지 않는다. CSRF 1 차 방어가 사라진다.
 - **로컬에서 `Secure` 강제 → cookie 미설정** — 로컬 (HTTP) 은 Secure false 로 분기. production 만 true.
