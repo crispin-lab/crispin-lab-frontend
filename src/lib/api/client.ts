@@ -53,5 +53,8 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  // 200 범위라도 body 가 비어 있을 수 있어 text() 로 받아 가드 — response.json() 이 SyntaxError 로 던지지 않게.
+  const text = await response.text();
+  if (text === "") return undefined as T;
+  return JSON.parse(text) as T;
 }

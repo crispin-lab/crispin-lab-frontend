@@ -28,6 +28,14 @@ describe("apiFetch", () => {
     expect(result).toBeUndefined();
   });
 
+  it("200 + 빈 body 도 SyntaxError 없이 undefined 를 반환한다", async () => {
+    server.use(http.post("*/api/pages/p_1/publish", () => new HttpResponse("", { status: 200 })));
+
+    const result = await apiFetch<void>("/api/pages/p_1/publish", { method: "POST" });
+
+    expect(result).toBeUndefined();
+  });
+
   it("POST body 를 JSON 으로 직렬화한다", async () => {
     let received: unknown;
     server.use(
