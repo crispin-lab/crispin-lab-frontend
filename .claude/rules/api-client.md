@@ -241,6 +241,15 @@ export function usePagePublish() {
 
 기본값은 0 인데, 그러면 같은 페이지를 두 번 가져오는 경우가 잦아 명시값을 두는 게 낫다.
 
+## retry / refetchOnWindowFocus 기본값
+
+Provider 의 `defaultOptions.queries` 가 다음을 박는다 (`src/app/providers.tsx`):
+
+- `refetchOnWindowFocus: false` — 위키 reading 환경에서 잦은 refetch 는 시각 노이즈.
+- `retry`: `ApiError` (4xx) 면 즉시 실패, 그 외는 1 회 재시도. 4xx 는 의미 없는 재시도이고 401 분기를 흐린다. 네트워크 실패 (`TypeError` 등 비-`ApiError`) 는 일시 장애로 보고 한 번만.
+
+도메인별로 다른 정책이 필요하면 hook 의 `queryOptions` 에서 개별 override.
+
 ## Server Component 에서 데이터 패칭
 
 ```tsx
