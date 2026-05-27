@@ -5,6 +5,8 @@
 > **API 호출과 데이터 패칭 패턴**: `api-client.md`
 > **인증·세션**: `auth.md`
 > **에디터 (TipTap)**: `editor.md`
+> **UI 패턴 (shadcn / cn / variant / 접근성)**: `ui.md`
+> **상태 관리 (서버 / 폼 / URL / local)**: `state.md`
 
 ## 디렉토리 구조
 
@@ -90,7 +92,8 @@ Server Component 에서 받은 초기 데이터를 Client Component 에 `initial
 - **Page 안에 form 상태를 그대로** — 폼이 한 화면이라도 useForm hook 으로 분리하면 페이지가 라우팅 책임만 남는다.
 - **Server Component 에서 TanStack Query 사용 시도** — `useQuery` 는 hook 이라 RSC 에서 못 쓴다. 서버에서는 API client 직접 호출 → Client 에 hydrate.
 - **`'use client'` 를 layout / page 최상단에 일괄 부착** — Client 경계가 트리 전체로 퍼지면 성능·번들 사이즈 손해. 상호작용이 필요한 잎만 Client.
-- **route handler 를 백엔드 프록시로 남용** — 단순 패스스루 프록시는 만들지 않는다. BFF 어댑터로서 명확한 변환 책임 (cookie ↔ Bearer 등) 이 있을 때만 (`auth.md` 참조).
+- **`params` / `searchParams` / `cookies()` 의 `await` 누락** — Next 16 에서 모두 async. 시그니처는 `{ params: Promise<{ pageId: string }> }` 형태, 본문에서 `const { pageId } = await params`.
+- **route handler 정책** — `auth.md` 의 catch-all BFF (`src/app/api/[...path]/route.ts`) 가 cookie↔Bearer 변환을 책임진다. 그 외 **endpoint 별 단순 프록시 route handler 는 만들지 않는다** (`src/app/api/pages/route.ts` 같은 것). 별도 분리는 변환 책임이 추가될 때만 (예: 응답 정규화, 추가 권한 검증) — 분리 사유를 파일 상단 주석 한 줄로.
 
 ## 환경 변수와 빌드 모드
 

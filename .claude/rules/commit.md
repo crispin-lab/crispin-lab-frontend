@@ -5,7 +5,7 @@
 - Subject 형식: `[LAB-N]: 한국어 제목` (LAB-N 은 Jira 티켓 번호). 70 자 이내.
   - 예외: 티켓이 어색한 메타·툴링 변경(예: PR 템플릿 추가, `.gitignore` 정리)은 `[chore]: 한국어 제목` 사용 가능. 자주 쓰지 말고, 의미 있는 작업은 티켓을 먼저 만든다.
 - 본문은 한국어 불릿 리스트 형식. 각 항목은 *왜* 그 변경이 필요한지를 설명하고, 단순한 *무엇* 나열은 피한다.
-- 여러 줄 메시지를 `git commit -m` 에 넘길 때는 HEREDOC 을 사용해 포맷을 보존한다.
+- 여러 줄 메시지는 HEREDOC 또는 임시 파일 (`git commit -F <path>`) 로 작성해 포맷을 보존한다. `git commit -m "..."` 한 줄에 줄바꿈을 escape 로 넣지 않는다.
 - 파일은 이름으로 명시 스테이징한다. `git add -A` / `git add .` 는 시크릿, 빌드 산출물, 무관한 파일이 끼어들 위험이 있어 피한다.
 - pre-commit / pre-push hook 실패 시 원인을 고친 뒤 **새 커밋**을 만든다. 실패한 커밋을 `--amend` 하거나 `--no-verify` 로 우회하지 않는다.
 - 사용자가 명시적으로 요청하지 않는 한 push 하지 않는다.
@@ -14,7 +14,11 @@
 
 본 레포는 프론트 전용이다. 같은 [LAB-N] 티켓 흐름을 백엔드 레포 (`crispin-lab-backend`) 와 공유하되, Jira 티켓에 `FE` 라벨을 붙여 백/프론트 작업을 구분한다. 새 티켓을 만들 때 라벨 부착을 잊지 않는다.
 
-## HEREDOC 예시
+## 작성 예시
+
+HEREDOC 가 표준이지만 메시지가 길거나 IDE 의 commit 에디터를 쓰고 싶다면 임시 파일도 동등하게 허용한다 — `git commit -F .git/COMMIT_EDITMSG.draft` 같은 식.
+
+### HEREDOC
 
 ```bash
 git commit -m "$(cat <<'EOF'

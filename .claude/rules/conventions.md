@@ -4,6 +4,8 @@
 >
 > **디렉토리·컴포넌트 책임**: `architecture.md`
 > **API 호출 / TanStack Query 패턴**: `api-client.md`
+> **UI 패턴 (shadcn / cn / variant / 접근성)**: `ui.md`
+> **상태 분류 (서버 / 폼 / URL / local)**: `state.md`
 
 ## 기본 원칙
 
@@ -201,18 +203,20 @@ async function fetchPage(id: PageId) { ... }    // 반환 타입 불명
 
 ### 경계에서 한 번, 내부는 타입으로
 
-| 위치 | 도구 | 예 |
-|------|------|-----|
-| API 응답 디코딩 | zod 또는 OpenAPI 산출 타입 + narrowing | `pageSchema.parse(json)` |
-| Form 입력 | react-hook-form + zod resolver | `useForm({ resolver: zodResolver(schema) })` |
-| URL search params / route params | zod | `searchParamsSchema.parse(params)` |
-| 내부 비즈니스 불변식 | TS 타입 (discriminated union, sealed pattern) | `type Page = Draft \| Published` |
+| 위치 | 현재 표준 | 도입 시 표준 (zod / react-hook-form 도입 후) |
+|------|----------|-----|
+| API 응답 디코딩 | OpenAPI 산출 타입 + 필요 시 type guard | `pageSchema.parse(json)` (zod) |
+| Form 입력 | controlled `useState` (단순 폼 한정) | `useForm({ resolver: zodResolver(schema) })` |
+| URL search params / route params | 명시 narrowing (`asPageId(raw)`) + 빈/형식 검사 | `searchParamsSchema.parse(params)` (zod) |
+| 내부 비즈니스 불변식 | TS 타입 (discriminated union, sealed pattern) | (동일) |
+
+zod / react-hook-form 은 현재 `package.json` 에 없다. 첫 사용처가 생기는 시점에 의존성 추가 + 본 표의 "도입 시 표준" 칸이 그대로 발효된다. 그 전까지는 "현재 표준" 칸으로 충분한지 (대부분 페이지의 폼 1~2 개라면 충분) 먼저 판단한다.
 
 내부 상태 검증을 런타임 `if` 로 흩뿌리지 않는다. 타입으로 상태를 표현하면 잘못된 상태를 가질 수 없게 된다.
 
 ### 외부 입력은 일찍 검증
 
-API 응답, URL 파라미터, form 값을 "일단 믿고" 흘려보내지 않는다. zod 또는 type guard 로 경계에서 한 번 검증 후, 이후는 도메인 타입으로 흐른다.
+API 응답, URL 파라미터, form 값을 "일단 믿고" 흘려보내지 않는다. zod (도입 시) 또는 type guard / 명시 narrowing 으로 경계에서 한 번 검증 후, 이후는 도메인 타입으로 흐른다.
 
 ### 에러 메시지
 
@@ -320,7 +324,7 @@ index key 는 재정렬·삽입 시 React 가 잘못된 element 를 재사용해
 
 ### Controlled vs Uncontrolled
 
-폼 입력은 react-hook-form 으로 통일. 외부 라이브러리 (예: TipTap) 가 자체 상태를 갖는 경우는 uncontrolled 로 두고 onChange 만 받는다.
+폼 입력은 react-hook-form 으로 통일 (도입 시). 도입 전까지는 controlled `useState` 또는 form action 으로 단순 폼만 다룬다 — 폼이 늘면 RHF 도입을 별도 결정. 외부 라이브러리 (예: TipTap) 가 자체 상태를 갖는 경우는 uncontrolled 로 두고 onChange 만 받는다. 자세한 상태 분류는 `state.md`.
 
 ### Provider 중첩 회피
 
@@ -397,6 +401,10 @@ function PageListHeader() {
 - **Vitest** + **React Testing Library** + **MSW** (API mock).
 - E2E 가 필요하면 **Playwright** (도입 시점에 별도 도입 결정).
 
+### 현재 상태
+
+Vitest + RTL + MSW 인프라는 셋업 완료, `src/mocks/{handlers,server}.ts` 부트스트랩 완료. 실제 fixture 와 첫 테스트 케이스는 첫 사용처에서 추가한다. 첫 케이스 추가 시 본 문서의 "MSW 위치" 규칙대로 핸들러를 `src/mocks/handlers.ts` 에 모은다.
+
 ### 최소 커버리지
 
 - 새로 추가된 분기, 사용자 인터랙션, 에러 분기마다 검증 케이스 추가.
@@ -431,14 +439,26 @@ describe('PageEditor', () => {
 })
 ```
 
-## 포맷팅
+## 포맷팅 / 린트
 
-- ESLint 기본 + `eslint-config-next` (Next.js 가 셋업).
-- Prettier 적용. 옵션은 `.prettierrc` (필요 시 단순한 디폴트 + `printWidth: 100`).
-- 들여쓰기: 2 spaces.
-- 세미콜론: 일관되게 유지 (Next.js 기본을 따른다).
-- import 순서: 외부 → `@/*` → 상대 경로. 그룹 사이 한 줄 띄움. eslint 가 자동 정렬.
-- **와일드카드 import 금지** (`import * as X`) — 트리쉐이킹·가독성 손해.
+자동 검사 (`pnpm lint`, `pnpm format:check`) 와 리뷰 검사를 분리해 적는다. 둘 다 동등하게 따른다.
+
+### 현재 자동 활성 (`eslint.config.mjs` + `.prettierrc`)
+
+- ESLint: `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript` + `eslint-config-prettier`. 즉 Next.js 권장 + TypeScript + Prettier 충돌 회피.
+- Prettier (`.prettierrc` 명시값): `printWidth: 100`, `semi: true`, `singleQuote: false` (double quote), `trailingComma: "all"`, `tabWidth: 2`, `prettier-plugin-tailwindcss` (className 자동 정렬). Prettier 디폴트에 의존하지 않고 모두 명시한다 — 후속 변경에서 디폴트가 흔들리지 않게.
+- ignore: `.next/`, `out/`, `build/`, `next-env.d.ts`, `src/lib/api/schema.d.ts` (자동 산출물).
+
+### 리뷰에서 확인 (자동 검사 아님)
+
+다음 룰들은 현재 ESLint 설정에 명시적으로 포함되어 있지 않다. 그래서 **리뷰가 마지막 안전망**이다 (`/convention-check` 도 같은 항목을 점검한다). 실제 룰 추가는 별도 티켓.
+
+- import 순서: 외부 → `@/*` → 상대 경로. 그룹 사이 한 줄 띄움. (도입 후보: `eslint-plugin-import` 또는 `@trivago/prettier-plugin-sort-imports`)
+- **와일드카드 import 금지** (`import * as X`) — 트리쉐이킹·가독성 손해
+- `no-unused-vars` (TS 컴파일러도 일부 잡지만 ESLint 룰화 필요)
+- `react-hooks/exhaustive-deps` — Next preset 에 포함되어 있을 가능성 높지만, 명시 확인 필요
+- `@typescript-eslint/no-explicit-any`
+- `@typescript-eslint/no-non-null-assertion`
 
 ## 의존성 관리
 

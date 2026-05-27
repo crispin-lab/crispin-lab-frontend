@@ -6,6 +6,8 @@
 @rules/docs-style.md
 @rules/architecture.md
 @rules/conventions.md
+@rules/ui.md
+@rules/state.md
 @rules/comments.md
 @rules/api-client.md
 @rules/auth.md
