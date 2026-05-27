@@ -78,7 +78,7 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   const response = await fetch(path, {
     method: options.method ?? 'GET',
     headers: { 'Content-Type': 'application/json' },
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     credentials: 'include',     // httpOnly session cookie 동봉 (auth.md)
     signal: options.signal,
   })
@@ -86,12 +86,19 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   if (!response.ok) {
     throw await ApiError.fromResponse(response)
   }
-  return response.json() as Promise<T>
+  // 204 No Content — body 없음. T 가 void 인 호출만 안전 (호출부 시그니처 책임).
+  if (response.status === 204) return undefined as T
+  // 200 범위라도 body 가 비어 있을 수 있어 text() 로 받아 가드.
+  const text = await response.text()
+  if (text === '') return undefined as T
+  return JSON.parse(text) as T
 }
 ```
 
 - 브라우저는 항상 same-origin `/api/...` 로 호출. `BACKEND_URL` 은 클라이언트 번들에 절대 들어가지 않는다 (`NEXT_PUBLIC_` 미부착).
 - **credentials: 'include'** — httpOnly session cookie 가 자동으로 동봉되게.
+- **body 직렬화 분기는 `!== undefined`** — `0`, `false`, `""` 같은 falsy 값도 정상 payload 라 truthy 체크는 데이터 손실 위험.
+- **빈 body 가드 (204 + 200 + empty)** — 204 는 status 만 보고 빠르게, 200 범위는 `text()` 로 받아 빈 문자열을 가드. `response.json()` 이 빈 body 에서 `SyntaxError` 로 던지지 않게. catch-all BFF / `apiFetchServer` 도 같은 가드를 갖는다.
 - **타임아웃 / 재시도** — fetch 단에서는 두지 않는다. TanStack Query 의 `retry`, `staleTime` 으로 제어.
 - **AbortController** — TanStack Query 가 자동으로 `signal` 을 넘긴다. 래퍼는 그대로 전달.
 
@@ -114,14 +121,17 @@ export async function apiFetchServer<T>(
       'Content-Type': 'application/json',
       ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
     },
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     signal: options.signal,
   })
 
   if (!response.ok) {
     throw await ApiError.fromResponse(response)
   }
-  return response.json() as Promise<T>
+  if (response.status === 204) return undefined as T
+  const text = await response.text()
+  if (text === '') return undefined as T
+  return JSON.parse(text) as T
 }
 ```
 

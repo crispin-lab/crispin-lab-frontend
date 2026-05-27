@@ -5,7 +5,7 @@ coverage/
 node_modules/
 pnpm-lock.yaml
 next-env.d.ts
-src/lib/api/schema.d.ts
+src/lib/api/schema.*.d.ts
 
 # 룰·스킬 문서는 사람이 직접 큐레이션 — prettier 의 italic / 테이블 재포맷이 부담
 .claude/
