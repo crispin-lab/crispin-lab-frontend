@@ -1,4 +1,4 @@
-// 모듈 레벨 singleton — 같은 tick 안의 다중 401 을 한 번의 navigation 으로 묶는다.
+// 같은 tick 안의 다중 401 을 한 번의 navigation 으로 묶는 singleton.
 let isRedirecting = false;
 
 export function redirectToLogin(): void {
@@ -10,7 +10,6 @@ export function redirectToLogin(): void {
   window.location.assign(`/login?redirect=${encodeURIComponent(target)}`);
 }
 
-// 모듈 레벨 state 의 reset 은 외부 주입 / 컨테이너 없이 다른 방법이 없어 test-only 진입점을 둔다.
 export function resetRedirectGuardForTest(): void {
   isRedirecting = false;
 }

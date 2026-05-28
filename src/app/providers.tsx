@@ -19,7 +19,6 @@ function handleError(error: unknown): void {
 
 function makeQueryClient(): QueryClient {
   return new QueryClient({
-    // 등록된 onError 는 query 의 error propagation 을 막지 않는다 — 컴포넌트는 그대로 error 상태를 받는다.
     queryCache: new QueryCache({ onError: handleError }),
     mutationCache: new MutationCache({ onError: handleError }),
     defaultOptions: {

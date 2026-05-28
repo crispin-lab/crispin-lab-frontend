@@ -158,7 +158,6 @@ describe("POST /api/auth/login", () => {
   });
 
   it("빈 body 면 400 BFF_EMPTY_BODY 로 거절 (upstream 호출 안 함)", async () => {
-    // 핸들러 등록 안 함 — 호출되면 MSW onUnhandledRequest: 'error' 가 잡는다.
     const response = await callLogin(undefined, { raw: "" });
 
     expect(response.status).toBe(400);

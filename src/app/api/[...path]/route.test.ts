@@ -17,7 +17,7 @@ const BACKEND_URL = "https://backend.test";
 
 async function callProxy(request: Request, pathSegments: string[]): Promise<Response> {
   const { GET, POST, PUT, PATCH, DELETE } = await import("./route");
-  // Next.js 는 GET 만 export 해도 HEAD 를 자동 라우팅한다 — 같은 핸들러로 dispatch.
+  // Next 는 GET export 만 있어도 HEAD 를 자동 라우팅 — test 도 같은 핸들러로 dispatch.
   const dispatchMethod = request.method === "HEAD" ? "GET" : request.method;
   const handler = { GET, POST, PUT, PATCH, DELETE }[
     dispatchMethod as "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
@@ -82,7 +82,6 @@ describe("BFF catch-all proxy", () => {
     const response = await callProxy(request, ["v1", "pages", "public"]);
 
     expect(response.status).toBe(200);
-    // cookie 가 없으면 클라이언트가 보낸 Authorization 도 strip
     expect(receivedAuth).toBeNull();
   });
 

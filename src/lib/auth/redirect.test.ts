@@ -8,7 +8,7 @@ describe("redirectToLogin", () => {
   beforeEach(() => {
     resetRedirectGuardForTest();
     assignSpy = vi.fn();
-    // jsdom 의 window.location 은 직접 method spy 가 까다로워 전체 객체를 교체한다.
+    // jsdom 의 window.location 은 method spy 가 막혀 객체 자체를 교체한다.
     Object.defineProperty(window, "location", {
       configurable: true,
       writable: true,
@@ -69,7 +69,6 @@ describe("redirectToLogin", () => {
   });
 
   it("window 가 정의되지 않은 환경 (SSR) 에서는 조용히 return", () => {
-    // jsdom 의 window 를 한 번만 undefined 로 가린다
     const originalWindow = globalThis.window;
     delete (globalThis as { window?: Window }).window;
 

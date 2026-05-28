@@ -9,7 +9,6 @@ export type SessionCookieOptions = {
   path: "/";
 };
 
-// maxAge 미설정 — session cookie 로 두고 서버 측 sliding expiry 만 신뢰 (auth.md).
 export function sessionCookieOptions(value: string): SessionCookieOptions {
   return {
     name: SESSION_COOKIE_NAME,

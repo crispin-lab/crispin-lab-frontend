@@ -52,8 +52,6 @@ describe("POST /api/auth/logout", () => {
 
   it("session cookie 가 없으면 백엔드 호출 없이 cookie 삭제만 (멱등)", async () => {
     cookieGet.mockReturnValue(undefined);
-    // 핸들러 등록 안 함 — 만약 호출되면 MSW 의 onUnhandledRequest: 'error' 가 잡는다
-
     const response = await callLogout();
 
     expect(response.status).toBe(200);

@@ -2,8 +2,7 @@ import { cookies } from "next/headers";
 
 import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
-// hop-by-hop (RFC 7230 §6.1) + 본문 인코딩 헤더. request / response 양쪽에서 strip 한다.
-// 응답 측에서 undici 가 auto-decompress 한 후에도 헤더가 남으면 브라우저가 잘못 해석한다.
+// RFC 7230 §6.1 hop-by-hop + 본문 인코딩 헤더 — undici 가 auto-decompress 한 후에도 헤더가 남으면 브라우저가 잘못 해석.
 const HOP_BY_HOP_HEADERS = new Set([
   "connection",
   "keep-alive",
@@ -17,7 +16,6 @@ const HOP_BY_HOP_HEADERS = new Set([
   "content-length",
 ]);
 
-// 요청 측 추가 strip — 클라이언트가 위변조한 신뢰 정보가 백엔드 권한·rate-limit 로 새지 않게.
 const STRIPPED_REQUEST_HEADERS = new Set([
   ...HOP_BY_HOP_HEADERS,
   "cookie",
@@ -29,10 +27,8 @@ const STRIPPED_REQUEST_HEADERS = new Set([
   "x-real-ip",
 ]);
 
-// 응답 측 추가 strip — set-cookie 는 BFF 가 cookie 단일 출처. location 은 BFF 우회 방지 (auth.md).
 const STRIPPED_RESPONSE_HEADERS = new Set([...HOP_BY_HOP_HEADERS, "set-cookie", "location"]);
 
-// RFC 7230 — body 를 가질 수 없는 status. logout 같이 백엔드가 정상 204 를 던지는 흐름에서 본 가드 필수.
 const STATUSES_WITHOUT_BODY = new Set([204, 205, 304]);
 
 type RouteContext = { params: Promise<{ path: string[] }> };
@@ -72,8 +68,7 @@ async function proxy(request: Request, ctx: RouteContext): Promise<Response> {
 
   const upstream = await fetch(upstreamUrl, init);
 
-  // 3xx 응답은 외부 도메인을 가리키는 Location 으로 BFF 를 우회시킬 수 있어 일관되게 502 로 강등.
-  // 현재 백엔드가 3xx 를 던지는 endpoint 가 없지만 안전망. 필요해지면 endpoint 별 route 로 분리하며 명시.
+  // 3xx Location 이 외부 도메인을 가리키면 BFF 우회 — 안전망으로 502 강등.
   if (upstream.status >= 300 && upstream.status < 400) {
     return Response.json(
       { code: "BFF_UPSTREAM_REDIRECT", message: "요청을 처리하지 못했습니다." },
