@@ -71,7 +71,6 @@ describe("redirectToLogin", () => {
   it("window 가 정의되지 않은 환경 (SSR) 에서는 조용히 return", () => {
     // jsdom 의 window 를 한 번만 undefined 로 가린다
     const originalWindow = globalThis.window;
-    // @ts-expect-error 의도적으로 window 제거
     delete (globalThis as { window?: Window }).window;
 
     expect(() => redirectToLogin()).not.toThrow();
