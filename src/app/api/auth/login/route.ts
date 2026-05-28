@@ -6,6 +6,8 @@ import { sessionCookieOptions } from "@/lib/auth/session";
 // 백엔드 contract: POST /v1/sessions → 200 + { sessionToken: "sess_<43-base64>" }.
 const SESSION_TOKEN_PATTERN = /^sess_[A-Za-z0-9_-]{43}$/;
 
+const UPSTREAM_TIMEOUT_MS = 5_000;
+
 export async function POST(request: Request): Promise<Response> {
   const backendUrl = process.env.BACKEND_URL;
   if (!backendUrl) {
@@ -23,11 +25,24 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const upstream = await fetch(`${backendUrl.replace(/\/$/, "")}/v1/sessions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: requestBody,
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${backendUrl.replace(/\/$/, "")}/v1/sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: requestBody,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+  } catch (error) {
+    const isTimeout = error instanceof DOMException && error.name === "TimeoutError";
+    console.error("[auth/login] upstream fetch 실패", {
+      reason: isTimeout ? "timeout" : "network",
+    });
+    return NextResponse.json(
+      { code: "BFF_UPSTREAM_UNAVAILABLE", message: "요청을 처리하지 못했습니다." },
+      { status: 502 },
+    );
+  }
 
   if (!upstream.ok) {
     const contentType = upstream.headers.get("content-type") ?? "application/octet-stream";

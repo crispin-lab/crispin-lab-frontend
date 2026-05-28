@@ -31,6 +31,8 @@ const STRIPPED_RESPONSE_HEADERS = new Set([...HOP_BY_HOP_HEADERS, "set-cookie", 
 
 const STATUSES_WITHOUT_BODY = new Set([204, 205, 304]);
 
+const UPSTREAM_TIMEOUT_MS = 10_000;
+
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: Request, ctx: RouteContext): Promise<Response> {
@@ -60,13 +62,27 @@ async function proxy(request: Request, ctx: RouteContext): Promise<Response> {
     method: request.method,
     headers,
     redirect: "manual",
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   };
   if (request.method !== "GET" && request.method !== "HEAD") {
     const body = await request.arrayBuffer();
     if (body.byteLength > 0) init.body = body;
   }
 
-  const upstream = await fetch(upstreamUrl, init);
+  let upstream: Response;
+  try {
+    upstream = await fetch(upstreamUrl, init);
+  } catch (error) {
+    const isTimeout = error instanceof DOMException && error.name === "TimeoutError";
+    console.error("[bff] upstream fetch 실패", {
+      url: upstreamUrl,
+      reason: isTimeout ? "timeout" : "network",
+    });
+    return Response.json(
+      { code: "BFF_UPSTREAM_UNAVAILABLE", message: "요청을 처리하지 못했습니다." },
+      { status: 502 },
+    );
+  }
 
   // 3xx Location 이 외부 도메인을 가리키면 BFF 우회 — 안전망으로 502 강등.
   if (upstream.status >= 300 && upstream.status < 400) {

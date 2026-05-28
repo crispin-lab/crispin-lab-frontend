@@ -72,9 +72,11 @@ describe("redirectToLogin", () => {
     const originalWindow = globalThis.window;
     delete (globalThis as { window?: Window }).window;
 
-    expect(() => redirectToLogin()).not.toThrow();
-
-    globalThis.window = originalWindow;
+    try {
+      expect(() => redirectToLogin()).not.toThrow();
+    } finally {
+      globalThis.window = originalWindow;
+    }
   });
 
   it("search 가 비어 있으면 pathname 만 redirect 쿼리로", () => {

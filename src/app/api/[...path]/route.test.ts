@@ -321,6 +321,20 @@ describe("BFF catch-all proxy", () => {
     expect(receivedUrl).toBe(`${BACKEND_URL}/v1/pages/${encodeURIComponent("p 1")}`);
   });
 
+  it("upstream fetch 가 throw 하면 502 BFF_UPSTREAM_UNAVAILABLE", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    cookieGet.mockReturnValue({ value: "sess_xxx" });
+    server.use(http.get(`${BACKEND_URL}/v1/pages/p_dead`, () => HttpResponse.error()));
+
+    const request = new Request("http://localhost/api/v1/pages/p_dead", { method: "GET" });
+    const response = await callProxy(request, ["v1", "pages", "p_dead"]);
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({ code: "BFF_UPSTREAM_UNAVAILABLE" });
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
   it("POST body 가 비어 있어도 정상 (empty body 가드)", async () => {
     cookieGet.mockReturnValue({ value: "sess_xxx" });
     let receivedBody: string | undefined;

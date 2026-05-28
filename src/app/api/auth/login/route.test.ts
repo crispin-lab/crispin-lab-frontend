@@ -165,6 +165,19 @@ describe("POST /api/auth/login", () => {
     expect(cookieSet).not.toHaveBeenCalled();
   });
 
+  it("upstream fetch 가 throw 하면 502 BFF_UPSTREAM_UNAVAILABLE", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(http.post(`${BACKEND_URL}/v1/sessions`, () => HttpResponse.error()));
+
+    const response = await callLogin({ email: "a@b.com", password: "pw" });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({ code: "BFF_UPSTREAM_UNAVAILABLE" });
+    expect(cookieSet).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
   it("BACKEND_URL 미설정 시 500 BFF_MISCONFIGURED", async () => {
     vi.stubEnv("BACKEND_URL", "");
 
