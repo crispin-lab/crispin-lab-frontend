@@ -16,7 +16,7 @@ vi.mock("next/headers", () => ({
 const BACKEND_URL = "https://backend.test";
 const VALID_TOKEN = "sess_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ";
 
-describe("POST /api/auth/login", () => {
+describe("POST /api/auth/signup", () => {
   beforeEach(() => {
     vi.stubEnv("BACKEND_URL", BACKEND_URL);
     cookieSet.mockReset();
@@ -26,16 +26,18 @@ describe("POST /api/auth/login", () => {
     vi.unstubAllEnvs();
   });
 
-  it("/v1/auth/login 으로 프록시하고 cookie 발급 + { ok: true } 반환", async () => {
-    const upstreamHandler = vi.fn(() => HttpResponse.json({ userId: "42", token: VALID_TOKEN }));
-    server.use(http.post(`${BACKEND_URL}/v1/auth/login`, upstreamHandler));
+  it("/v1/users 로 프록시하고 cookie 발급 + { ok: true } 반환", async () => {
+    const upstreamHandler = vi.fn(() =>
+      HttpResponse.json({ userId: "42", token: VALID_TOKEN }, { status: 201 }),
+    );
+    server.use(http.post(`${BACKEND_URL}/v1/users`, upstreamHandler));
 
     const { POST } = await import("./route");
     const response = await POST(
-      new Request("http://localhost/api/auth/login", {
+      new Request("http://localhost/api/auth/signup", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: "a@b.com", password: "pw" }),
+        body: JSON.stringify({ email: "a@b.com", handle: "alice", password: "password1" }),
       }),
     );
 

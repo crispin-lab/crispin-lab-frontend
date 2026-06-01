@@ -57,7 +57,7 @@
 | `--sidebar*` | 좌 사이드바 전용 토큰 (저자 path 한정) | 사이드바 컴포넌트만 |
 
 - `primary` 는 **neutral 유지** — 모든 화면에서 가장 흔한 액션이라 진폭이 강하지 않게.
-- `accent` 는 **violet 으로 교체 예정**. 현재 `globals.css` 의 `--accent` 는 light `oklch(0.97 0 0)` / dark `oklch(0.269 0 0)` 로 같은 모드 `--muted` 와 동일 값이라 강조 역할을 못 하고 있다. violet 의 실제 oklch 값 교체는 *첫 화면 구현 PR* 에서 같은 PR 로 (light/dark 양쪽 시각 검증과 함께). 본 문서는 *방향* 만 박는다.
+- `accent` 는 **violet**. 실제 oklch 값은 `globals.css` 가 단일 출처 (`:root` light / `.dark` dark 양쪽).
 - **색 하드코딩 금지** — `bg-violet-600` / `text-zinc-500` 같은 raw 팔레트 className 을 컴포넌트에 쓰지 않는다. 의미 변수 (`bg-accent` / `text-muted-foreground`) 로.
 
 ## light 1순위 + dark 옵션
@@ -79,7 +79,6 @@
 - **본문 line-height 넉넉히** — `leading-7` 또는 `leading-relaxed` 가 reading 정합. workspace tool 의 `leading-6` 보다 한 단계 위.
 - heading 도 `font-sans` (`globals.css` 에서 `--font-heading: var(--font-sans)`). heading 만 다른 family 로 가지 않는다.
 - mono 는 코드·식별자 (`PageId` 같은 도메인 ID)·키 명령어 표기에 한정. 본문 강조에 쓰지 않는다.
-- **현재 wiring 결함 (후속 PR 정리 대상)**: `globals.css:10` 의 `--font-sans: var(--font-sans)` 가 self-reference 라 `layout.tsx` 가 주입한 `--font-geist-sans` 가 `--font-sans` 로 연결되지 않는다. 첫 화면 구현 PR 또는 별도 chore PR 에서 `--font-sans: var(--font-geist-sans)` 로 교체하면 본 절의 전제가 만족된다.
 
 ## 레이아웃 골격
 

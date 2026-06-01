@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { redirectToLogin, resetRedirectGuardForTest } from "./redirect";
+import { redirectToLogin, resetRedirectGuardForTest, safeRedirectTarget } from "./redirect";
 
 describe("redirectToLogin", () => {
   let assignSpy: ReturnType<typeof vi.fn>;
@@ -86,5 +86,39 @@ describe("redirectToLogin", () => {
     redirectToLogin();
 
     expect(assignSpy).toHaveBeenCalledWith(`/login?redirect=${encodeURIComponent("/spaces")}`);
+  });
+});
+
+describe("safeRedirectTarget", () => {
+  it("null/빈 문자열은 / 로", () => {
+    expect(safeRedirectTarget(null)).toBe("/");
+    expect(safeRedirectTarget(undefined)).toBe("/");
+    expect(safeRedirectTarget("")).toBe("/");
+  });
+
+  it("/ 로 시작하는 same-origin path 는 그대로 통과", () => {
+    expect(safeRedirectTarget("/pages/abc")).toBe("/pages/abc");
+    expect(safeRedirectTarget("/spaces?tab=draft")).toBe("/spaces?tab=draft");
+    expect(safeRedirectTarget("/")).toBe("/");
+  });
+
+  it("절대 URL 은 차단 (open redirect 방어)", () => {
+    expect(safeRedirectTarget("https://evil.com")).toBe("/");
+    expect(safeRedirectTarget("http://evil.com/path")).toBe("/");
+    expect(safeRedirectTarget("javascript:alert(1)")).toBe("/");
+  });
+
+  it("protocol-relative URL (// 시작) 도 차단", () => {
+    expect(safeRedirectTarget("//evil.com")).toBe("/");
+    expect(safeRedirectTarget("//evil.com/login")).toBe("/");
+  });
+
+  it("backslash 가 섞인 우회 시도도 차단", () => {
+    expect(safeRedirectTarget("/\\evil.com")).toBe("/");
+  });
+
+  it("/ 로 시작하지 않는 임의 문자열은 / 로", () => {
+    expect(safeRedirectTarget("pages/abc")).toBe("/");
+    expect(safeRedirectTarget("../../etc/passwd")).toBe("/");
   });
 });
