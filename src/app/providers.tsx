@@ -4,6 +4,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@ta
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 
+import { Toaster } from "@/components/ui/sonner";
 import { ApiError } from "@/lib/api/client";
 import { redirectToLogin } from "@/lib/auth/redirect";
 
@@ -43,6 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }): React.JS
   return (
     <QueryClientProvider client={queryClient}>
       {children}
+      <Toaster richColors closeButton position="top-right" />
       {process.env.NODE_ENV !== "production" && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
