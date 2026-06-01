@@ -109,6 +109,6 @@ describe("useSignup", () => {
     result.current.mutate({ email: "a@b.com", handle: "taken", password: "password1" });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(toastError).toHaveBeenCalledWith("이미 사용 중인 핸들입니다.");
+    expect(toastError).toHaveBeenCalledWith("이미 사용 중인 사용자 이름입니다.");
   });
 });

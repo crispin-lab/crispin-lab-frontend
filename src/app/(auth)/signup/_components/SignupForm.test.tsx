@@ -58,16 +58,17 @@ describe("SignupForm", () => {
     renderForm();
 
     await user.type(screen.getByLabelText("이메일"), "not-an-email");
-    await user.type(screen.getByLabelText("핸들"), "alice");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
     expect(await screen.findByText("올바른 이메일 형식이 아닙니다.")).toBeInTheDocument();
+    expect(screen.getByLabelText("이메일")).toHaveAttribute("aria-invalid", "true");
     expect(upstream).not.toHaveBeenCalled();
     expect(routerPush).not.toHaveBeenCalled();
   });
 
-  it("핸들에 대문자가 들어가면 FormMessage 노출 + submit 막힘", async () => {
+  it("사용자 이름에 대문자가 들어가면 FormMessage 노출 + submit 막힘", async () => {
     const upstream = vi.fn();
     server.use(
       http.post("/api/auth/signup", () => {
@@ -79,12 +80,12 @@ describe("SignupForm", () => {
     renderForm();
 
     await user.type(screen.getByLabelText("이메일"), "a@b.com");
-    await user.type(screen.getByLabelText("핸들"), "AliceX");
+    await user.type(screen.getByLabelText("사용자 이름"), "AliceX");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
     expect(
-      await screen.findByText("핸들은 영문 소문자·숫자·밑줄 3~30자입니다."),
+      await screen.findByText("사용자 이름은 영문 소문자·숫자·밑줄 3~30자입니다."),
     ).toBeInTheDocument();
     expect(upstream).not.toHaveBeenCalled();
   });
@@ -95,7 +96,7 @@ describe("SignupForm", () => {
     renderForm();
 
     await user.type(screen.getByLabelText("이메일"), "a@b.com");
-    await user.type(screen.getByLabelText("핸들"), "alice");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
@@ -109,7 +110,7 @@ describe("SignupForm", () => {
     renderForm();
 
     await user.type(screen.getByLabelText("이메일"), "a@b.com");
-    await user.type(screen.getByLabelText("핸들"), "alice");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
@@ -129,11 +130,13 @@ describe("SignupForm", () => {
     renderForm();
 
     await user.type(screen.getByLabelText("이메일"), "a@b.com");
-    await user.type(screen.getByLabelText("핸들"), "taken");
+    await user.type(screen.getByLabelText("사용자 이름"), "taken");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("이미 사용 중인 핸들입니다."));
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("이미 사용 중인 사용자 이름입니다."),
+    );
     expect(routerPush).not.toHaveBeenCalled();
   });
 

@@ -1,22 +1,22 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2Icon } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthFooterNav } from "@/app/(auth)/_components/AuthFooterNav";
+import { CtaLink } from "@/app/(auth)/_components/CtaLink";
+import { EditorialInput } from "@/app/(auth)/_components/EditorialInput";
+import { EDITORIAL_LABEL_CLASS } from "@/app/(auth)/_lib/labelClass";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useSignup } from "@/hooks/useAuth";
 import { safeRedirectTarget } from "@/lib/auth/redirect";
 import { signupSchema, type SignupInput } from "@/lib/schemas/auth";
@@ -43,78 +43,90 @@ export function SignupForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">crispin-lab</CardTitle>
-      </CardHeader>
+    <div className="space-y-12">
+      <div className="space-y-6">
+        <p className="text-muted-foreground text-xs tracking-[0.2em] uppercase">crispin-lab</p>
+        <hr className="border-border" />
+      </div>
+
+      <h1 className="text-3xl font-semibold tracking-tight">회원가입</h1>
+
       <Form {...form}>
-        <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>이메일</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      disabled={isPending}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="handle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>핸들</FormLabel>
-                  <FormControl>
-                    <Input type="text" autoComplete="username" disabled={isPending} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>비밀번호</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      autoComplete="new-password"
-                      disabled={isPending}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter className="grid gap-3">
-            <Button type="submit" size="lg" disabled={isPending} aria-busy={isPending}>
-              {isPending ? <Loader2Icon className="animate-spin" /> : null}
+        <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className={EDITORIAL_LABEL_CLASS}>이메일</FormLabel>
+                <FormControl>
+                  <EditorialInput
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    disabled={isPending}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="handle"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className={EDITORIAL_LABEL_CLASS}>사용자 이름</FormLabel>
+                <FormControl>
+                  <EditorialInput
+                    type="text"
+                    autoComplete="username"
+                    placeholder="alice_lab"
+                    disabled={isPending}
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  영문 소문자·숫자·밑줄 3~30자. 공개 페이지에 표시됩니다.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className={EDITORIAL_LABEL_CLASS}>비밀번호</FormLabel>
+                <FormControl>
+                  <EditorialInput
+                    type="password"
+                    autoComplete="new-password"
+                    disabled={isPending}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="pt-2">
+            <CtaLink type="submit" isPending={isPending}>
               회원가입
-            </Button>
-            <p className="text-muted-foreground text-center text-sm">
-              이미 계정이 있나요?{" "}
-              <Link href={loginHref} className="text-foreground font-medium hover:underline">
-                로그인 →
-              </Link>
-            </p>
-          </CardFooter>
+            </CtaLink>
+          </div>
         </form>
       </Form>
-    </Card>
+
+      <AuthFooterNav
+        links={[
+          { href: loginHref, label: "로그인" },
+          { href: "/", label: "위키로 돌아가기" },
+        ]}
+      />
+    </div>
   );
 }

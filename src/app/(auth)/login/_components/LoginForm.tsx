@@ -1,13 +1,12 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { AuthFooterNav } from "@/app/(auth)/_components/AuthFooterNav";
+import { CtaLink } from "@/app/(auth)/_components/CtaLink";
+import { EditorialInput } from "@/app/(auth)/_components/EditorialInput";
+import { EDITORIAL_LABEL_CLASS } from "@/app/(auth)/_lib/labelClass";
 import { Label } from "@/components/ui/label";
 import { useLogin } from "@/hooks/useAuth";
 import { safeRedirectTarget } from "@/lib/auth/redirect";
@@ -38,51 +37,58 @@ export function LoginForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">crispin-lab</CardTitle>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="login-email">이메일</Label>
-            <Input
-              id="login-email"
-              type="email"
-              inputMode="email"
-              autoComplete="username"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              disabled={isPending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="login-password">비밀번호</Label>
-            <Input
-              id="login-password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              disabled={isPending}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="grid gap-3">
-          <Button type="submit" size="lg" disabled={isPending} aria-busy={isPending}>
-            {isPending ? <Loader2Icon className="animate-spin" /> : null}
+    <div className="space-y-12">
+      <div className="space-y-6">
+        <p className="text-muted-foreground text-xs tracking-[0.2em] uppercase">crispin-lab</p>
+        <hr className="border-border" />
+      </div>
+
+      <h1 className="text-3xl font-semibold tracking-tight">로그인</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-2">
+          <Label htmlFor="login-email" className={EDITORIAL_LABEL_CLASS}>
+            이메일
+          </Label>
+          <EditorialInput
+            id="login-email"
+            type="email"
+            inputMode="email"
+            autoComplete="username"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            disabled={isPending}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="login-password" className={EDITORIAL_LABEL_CLASS}>
+            비밀번호
+          </Label>
+          <EditorialInput
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            disabled={isPending}
+          />
+        </div>
+
+        <div className="pt-2">
+          <CtaLink type="submit" isPending={isPending}>
             로그인
-          </Button>
-          <p className="text-muted-foreground text-center text-sm">
-            계정이 없으신가요?{" "}
-            <Link href={signupHref} className="text-foreground font-medium hover:underline">
-              회원가입 →
-            </Link>
-          </p>
-        </CardFooter>
+          </CtaLink>
+        </div>
       </form>
-    </Card>
+
+      <AuthFooterNav
+        links={[
+          { href: signupHref, label: "회원가입" },
+          { href: "/", label: "위키로 돌아가기" },
+        ]}
+      />
+    </div>
   );
 }

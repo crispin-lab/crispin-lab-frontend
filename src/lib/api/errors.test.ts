@@ -18,4 +18,20 @@ describe("toUserMessage", () => {
     expect(toUserMessage(undefined)).toBe("문제가 발생했습니다.");
     expect(toUserMessage("string error")).toBe("문제가 발생했습니다.");
   });
+
+  it("백엔드 메시지의 '핸들' 을 UI 용어 '사용자 이름' 으로 치환한다", () => {
+    const error = new ApiError(409, "HANDLE_ALREADY_USED", "이미 사용 중인 핸들입니다.");
+    expect(toUserMessage(error)).toBe("이미 사용 중인 사용자 이름입니다.");
+  });
+
+  it("백엔드 메시지에 '핸들' 이 여러 번 나와도 모두 치환한다", () => {
+    const error = new ApiError(
+      400,
+      "INVALID",
+      "핸들 형식이 잘못되었습니다. 핸들을 다시 입력해 주세요.",
+    );
+    expect(toUserMessage(error)).toBe(
+      "사용자 이름 형식이 잘못되었습니다. 사용자 이름을 다시 입력해 주세요.",
+    );
+  });
 });
