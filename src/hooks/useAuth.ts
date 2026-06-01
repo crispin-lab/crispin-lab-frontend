@@ -25,7 +25,7 @@ export function useLogin(): UseMutationResult<BffOk, ApiError, LoginInput> {
   return useMutation<BffOk, ApiError, LoginInput>({
     mutationFn: (body) => apiFetch<BffOk>("/api/auth/login", { method: "POST", body }),
     onSuccess: () => {
-      queryClient.clear();
+      queryClient.invalidateQueries();
     },
     onError: notifyError,
   });
@@ -36,7 +36,7 @@ export function useSignup(): UseMutationResult<BffOk, ApiError, SignupInput> {
   return useMutation<BffOk, ApiError, SignupInput>({
     mutationFn: (body) => apiFetch<BffOk>("/api/auth/signup", { method: "POST", body }),
     onSuccess: () => {
-      queryClient.clear();
+      queryClient.invalidateQueries();
     },
     onError: notifyError,
   });

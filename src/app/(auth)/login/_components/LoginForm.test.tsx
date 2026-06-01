@@ -27,13 +27,13 @@ function renderForm() {
   const client = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
-  const clearSpy = vi.spyOn(client, "clear");
+  const invalidateSpy = vi.spyOn(client, "invalidateQueries");
   const utils = render(
     <QueryClientProvider client={client}>
       <LoginForm />
     </QueryClientProvider>,
   );
-  return { ...utils, clearSpy };
+  return { ...utils, invalidateSpy };
 }
 
 function setRedirectQuery(value: string | null): void {
@@ -48,17 +48,17 @@ describe("LoginForm", () => {
     toastError.mockReset();
   });
 
-  it("정상 로그인 시 cache 를 clear 하고 / 로 push 한다", async () => {
+  it("정상 로그인 시 캐시를 invalidate 하고 / 로 push 한다", async () => {
     server.use(http.post("/api/auth/login", () => HttpResponse.json({ ok: true })));
     const user = userEvent.setup();
-    const { clearSpy } = renderForm();
+    const { invalidateSpy } = renderForm();
 
     await user.type(screen.getByLabelText("이메일"), "a@b.com");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
     await user.click(screen.getByRole("button", { name: "로그인" }));
 
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/"));
-    expect(clearSpy).toHaveBeenCalledTimes(1);
+    expect(invalidateSpy).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
   });
 

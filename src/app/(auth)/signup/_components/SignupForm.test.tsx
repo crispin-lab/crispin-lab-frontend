@@ -103,6 +103,20 @@ describe("SignupForm", () => {
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/"));
   });
 
+  it("same-origin redirect query 는 그대로 사용", async () => {
+    setRedirectQuery("/pages/abc");
+    server.use(http.post("/api/auth/signup", () => HttpResponse.json({ ok: true })));
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("이메일"), "a@b.com");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
+    await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.click(screen.getByRole("button", { name: "회원가입" }));
+
+    await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/pages/abc"));
+  });
+
   it("외부 URL redirect 는 / 로 fallback (open redirect 방어)", async () => {
     setRedirectQuery("https://evil.com");
     server.use(http.post("/api/auth/signup", () => HttpResponse.json({ ok: true })));

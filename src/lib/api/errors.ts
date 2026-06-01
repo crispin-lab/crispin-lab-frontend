@@ -6,6 +6,9 @@ function localize(message: string): string {
 }
 
 export function toUserMessage(error: unknown): string {
-  if (error instanceof ApiError) return localize(error.message);
+  if (error instanceof ApiError) {
+    const message = localize(error.message).trim();
+    return message || "문제가 발생했습니다.";
+  }
   return "문제가 발생했습니다.";
 }

@@ -185,6 +185,24 @@ describe("proxyAndIssueSession", () => {
     errorSpy.mockRestore();
   });
 
+  it("upstream 이 3xx redirect 응답 시 502 BFF_UPSTREAM_REDIRECT (인증 누설 차단)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(
+      http.post(
+        `${BACKEND_URL}${UPSTREAM_PATH}`,
+        () => new HttpResponse(null, { status: 302, headers: { location: "https://evil.com/" } }),
+      ),
+    );
+
+    const response = await call({ email: "a@b.com", password: "pw" });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({ code: "BFF_UPSTREAM_REDIRECT" });
+    expect(cookieSet).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining(LOG_TAG), expect.any(Object));
+    errorSpy.mockRestore();
+  });
+
   it("BACKEND_URL 미설정 시 500 BFF_MISCONFIGURED", async () => {
     vi.stubEnv("BACKEND_URL", "");
 

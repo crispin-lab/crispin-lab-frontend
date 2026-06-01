@@ -29,16 +29,16 @@ describe("useLogin", () => {
     toastError.mockReset();
   });
 
-  it("성공 시 queryClient.clear 가 호출되고 onError 는 호출되지 않는다", async () => {
+  it("성공 시 queryClient.invalidateQueries 가 호출되고 onError 는 호출되지 않는다", async () => {
     server.use(http.post("/api/auth/login", () => HttpResponse.json({ ok: true })));
     const client = createClient();
-    const clearSpy = vi.spyOn(client, "clear");
+    const invalidateSpy = vi.spyOn(client, "invalidateQueries");
 
     const { result } = renderHook(() => useLogin(), { wrapper: withClient(client) });
     result.current.mutate({ email: "a@b.com", password: "pw" });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(clearSpy).toHaveBeenCalledTimes(1);
+    expect(invalidateSpy).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
   });
 
@@ -82,16 +82,16 @@ describe("useSignup", () => {
     toastError.mockReset();
   });
 
-  it("성공 시 queryClient.clear 가 호출되고 onError 는 호출되지 않는다", async () => {
+  it("성공 시 queryClient.invalidateQueries 가 호출되고 onError 는 호출되지 않는다", async () => {
     server.use(http.post("/api/auth/signup", () => HttpResponse.json({ ok: true })));
     const client = createClient();
-    const clearSpy = vi.spyOn(client, "clear");
+    const invalidateSpy = vi.spyOn(client, "invalidateQueries");
 
     const { result } = renderHook(() => useSignup(), { wrapper: withClient(client) });
     result.current.mutate({ email: "a@b.com", handle: "alice", password: "password1" });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(clearSpy).toHaveBeenCalledTimes(1);
+    expect(invalidateSpy).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
   });
 
@@ -110,5 +110,22 @@ describe("useSignup", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toastError).toHaveBeenCalledWith("이미 사용 중인 사용자 이름입니다.");
+  });
+
+  it("INVALID_SESSION (401) 은 글로벌 가드가 redirect 로 처리하므로 toast 는 띄우지 않는다", async () => {
+    server.use(
+      http.post("/api/auth/signup", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    const { result } = renderHook(() => useSignup(), { wrapper: withClient(createClient()) });
+    result.current.mutate({ email: "a@b.com", handle: "alice", password: "password1" });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toastError).not.toHaveBeenCalled();
   });
 });
