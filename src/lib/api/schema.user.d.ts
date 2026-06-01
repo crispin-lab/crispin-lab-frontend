@@ -68,23 +68,8 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        "v1-users1255392465": {
-            /** @description 생성된 사용자 식별자＊ */
-            userId: string;
-            /** @description 발급된 세션 토큰＊ */
-            token: string;
-        };
-        "v1-auth-logout1664319328": {
-            /** @description revoke 대상 세션 토큰＊ */
-            token: string;
-        };
-        "v1-auth-login298699336": {
-            /** @description 비밀번호＊ */
-            password: string;
-            /** @description 이메일＊ */
-            email: string;
-        };
-        "v1-users1116461201": {
+        /** UserSignupRequest */
+        UserSignupRequest: {
             /** @description 비밀번호＊ */
             password: string;
             /** @description 핸들 (영문 소문자/숫자/_, 3~30자)＊ */
@@ -92,11 +77,31 @@ export interface components {
             /** @description 이메일＊ */
             email: string;
         };
-        "v1-auth-login-1893566759": {
+        /** UserSignupResponse */
+        UserSignupResponse: {
+            /** @description 생성된 사용자 식별자＊ */
+            userId: string;
+            /** @description 발급된 세션 토큰＊ */
+            token: string;
+        };
+        /** AuthLoginResponse */
+        AuthLoginResponse: {
             /** @description 사용자 식별자＊ */
             userId: string;
             /** @description 발급된 세션 토큰＊ */
             token: string;
+        };
+        /** AuthLogoutRequest */
+        AuthLogoutRequest: {
+            /** @description revoke 대상 세션 토큰＊ */
+            token: string;
+        };
+        /** AuthLoginRequest */
+        AuthLoginRequest: {
+            /** @description 비밀번호＊ */
+            password: string;
+            /** @description 이메일＊ */
+            email: string;
         };
     };
     responses: never;
@@ -116,7 +121,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-users1116461201"];
+                "application/json;charset=UTF-8": components["schemas"]["UserSignupRequest"];
             };
         };
         responses: {
@@ -126,7 +131,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-users1255392465"];
+                    "application/json": components["schemas"]["UserSignupResponse"];
                 };
             };
         };
@@ -140,7 +145,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-auth-login298699336"];
+                "application/json;charset=UTF-8": components["schemas"]["AuthLoginRequest"];
             };
         };
         responses: {
@@ -150,7 +155,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-auth-login-1893566759"];
+                    "application/json": components["schemas"]["AuthLoginResponse"];
                 };
             };
         };
@@ -164,7 +169,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-auth-logout1664319328"];
+                "application/json;charset=UTF-8": components["schemas"]["AuthLogoutRequest"];
             };
         };
         responses: {

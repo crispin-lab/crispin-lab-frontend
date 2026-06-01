@@ -356,7 +356,50 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        "v1-pages-1087482196": {
+        /** CommentEditResponse */
+        CommentEditResponse: {
+            /** @description 댓글 식별자＊ */
+            commentId: string;
+            /** @description 갱신된 본문＊ */
+            body: string;
+            /** @description 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
+        /** TagRegisterRequest */
+        TagRegisterRequest: {
+            /** @description 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 태그 이름＊ */
+            name: string;
+        };
+        /** PageTagListResponse */
+        PageTagListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 태그 목록＊ */
+            items: {
+                /** @description ⎯ 생성 시각 (ISO)＊ */
+                createdAt: string;
+                /** @description ⎯ 소속 스페이스 식별자＊ */
+                spaceId: string;
+                /** @description ⎯ 태그 식별자＊ */
+                tagId: string;
+                /** @description ⎯ 태그 이름＊ */
+                name: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
+        /** PageRegisterRequest */
+        PageRegisterRequest: {
             /** @description 소속 스페이스 식별자＊ */
             spaceId: string;
             /** @description 공개 범위 (DRAFT / INTERNAL / PUBLIC)＊ */
@@ -368,51 +411,8 @@ export interface components {
             /** @description 본문 (위키링크 [[...]] 추출 대상)＊ */
             content: string;
         };
-        "v1-tags-1141217090": {
-            /** @description 생성된 태그 식별자＊ */
-            tagId: string;
-        };
-        "v1-spaces-spaceId-members-userId1005729910": {
-            /** @description 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 갱신된 역할＊ */
-            role: string;
-            /** @description 멤버 식별자＊ */
-            spaceMemberId: string;
-            /** @description 사용자 식별자＊ */
-            userId: string;
-        };
-        "v1-spaces-spaceId175277175": {
-            /** @description 변경할 공개 범위 */
-            visibility?: string | null;
-            /** @description 변경할 이름 */
-            name?: string | null;
-            /** @description 변경할 설명 */
-            description?: string | null;
-        };
-        "v1-pages-pageId-comments-225807540": {
-            /** @description 댓글 본문＊ */
-            body: string;
-        };
-        "v1-spaces-spaceId-members-userId781967196": {
-            /** @description 새 역할＊ */
-            role: string;
-        };
-        "v1-spaces-spaceId-6516778": {
-            /** @description 생성 시각 (ISO)＊ */
-            createdAt: string;
-            /** @description 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 공개 범위＊ */
-            visibility: string;
-            /** @description 이름＊ */
-            name: string;
-            /** @description 설명＊ */
-            description: string;
-            /** @description 최근 갱신 시각 (ISO)＊ */
-            updatedAt: string;
-        };
-        "v1-spaces1523498116": {
+        /** SpaceListResponse */
+        SpaceListResponse: {
             /** @description 페이지당 항목 수＊ */
             size: number;
             /** @description 결과 비어 있음 여부＊ */
@@ -441,89 +441,8 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
-        "v1-pages-pageId-tags1826217235": {
-            /** @description 매핑할 태그 식별자＊ */
-            tagId: string;
-        };
-        "v1-pages-pageId-comments-commentId-1192310110": {
-            /** @description 생성 시각 (ISO)＊ */
-            createdAt: string;
-            /** @description 댓글 식별자＊ */
-            commentId: string;
-            /** @description 본문＊ */
-            body: string;
-            /** @description 작성자 식별자＊ */
-            authorId: string;
-            /** @description 소속 페이지 식별자＊ */
-            pageId: string;
-            /** @description 최근 갱신 시각 (ISO)＊ */
-            updatedAt: string;
-        };
-        "v1-pages-pageId-comments-1994389907": {
-            /** @description 생성된 댓글 식별자＊ */
-            commentId: string;
-        };
-        "v1-spaces-spaceId-members-472001083": {
-            /** @description 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 부여된 역할＊ */
-            role: string;
-            /** @description 멤버 식별자＊ */
-            spaceMemberId: string;
-            /** @description 사용자 식별자＊ */
-            userId: string;
-        };
-        "v1-spaces-1862598174": {
-            /** @description 공개 범위 (PUBLIC|INTERNAL)＊ */
-            visibility: string;
-            /** @description 스페이스 이름＊ */
-            name: string;
-            /** @description 스페이스 설명＊ */
-            description: string;
-        };
-        "v1-pages-pageId51781261": {
-            /** @description 새 제목＊ */
-            title: string;
-            /** @description 새 본문＊ */
-            content: string;
-        };
-        "v1-spaces-spaceId-members1907927139": {
-            /** @description 부여할 역할 */
-            role?: string | null;
-            /** @description 초대 대상 사용자 식별자 */
-            userId?: string | null;
-        };
-        "v1-pages-pageId-comments-commentId-183646062": {
-            /** @description 댓글 식별자＊ */
-            commentId: string;
-            /** @description 갱신된 본문＊ */
-            body: string;
-            /** @description 갱신 시각 (ISO)＊ */
-            updatedAt: string;
-        };
-        "v1-pages-pageId1619565545": {
-            /** @description 갱신된 제목＊ */
-            title: string;
-            /** @description 페이지 식별자＊ */
-            pageId: string;
-            /** @description 갱신 후 currentVersion＊ */
-            version: number;
-            /** @description 갱신 시각 (ISO)＊ */
-            updatedAt: string;
-        };
-        "v1-spaces-spaceId1622365333": {
-            /** @description 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 갱신된 공개 범위＊ */
-            visibility: string;
-            /** @description 갱신된 이름＊ */
-            name: string;
-            /** @description 갱신된 설명＊ */
-            description: string;
-            /** @description 갱신 시각 (ISO)＊ */
-            updatedAt: string;
-        };
-        "v1-pages-pageId-revisions-154523481": {
+        /** PageRevisionListResponse */
+        PageRevisionListResponse: {
             /** @description 페이지당 항목 수＊ */
             size: number;
             /** @description 결과 비어 있음 여부＊ */
@@ -552,68 +471,28 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
-        "v1-tags-1616429623": {
-            /** @description 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 태그 이름＊ */
-            name: string;
+        /** PageTagAttachRequest */
+        PageTagAttachRequest: {
+            /** @description 매핑할 태그 식별자＊ */
+            tagId: string;
         };
-        "v1-pages-1606830570": {
-            /** @description 생성된 페이지 식별자＊ */
-            pageId: string;
-        };
-        "v1-spaces-spaceId-tags546803558": {
-            /** @description 페이지당 항목 수＊ */
-            size: number;
-            /** @description 결과 비어 있음 여부＊ */
-            isEmpty: boolean;
-            /** @description 총 페이지 수＊ */
-            totalPages: number;
-            /** @description 다음 페이지 존재 여부＊ */
-            hasNext: boolean;
-            /** @description 현재 페이지＊ */
-            page: number;
-            /** @description 태그 목록＊ */
-            items: {
-                /** @description ⎯ 생성 시각 (ISO)＊ */
-                createdAt: string;
-                /** @description ⎯ 소속 스페이스 식별자＊ */
-                spaceId: string;
-                /** @description ⎯ 태그 식별자＊ */
-                tagId: string;
-                /** @description ⎯ 태그 이름＊ */
-                name: string;
-            }[];
-            /** @description 총 항목 수＊ */
-            totalElements: number;
-        };
-        "v1-pages-pageId-comments-commentId378525178": {
-            /** @description 수정된 본문＊ */
-            body: string;
-        };
-        "v1-pages-pageId2116066709": {
+        /** SpaceGetResponse */
+        SpaceGetResponse: {
             /** @description 생성 시각 (ISO)＊ */
             createdAt: string;
-            /** @description 소속 스페이스 식별자＊ */
+            /** @description 스페이스 식별자＊ */
             spaceId: string;
             /** @description 공개 범위＊ */
             visibility: string;
-            /** @description 부모 페이지 식별자 */
-            parentPageId?: string | null;
-            /** @description 제목＊ */
-            title: string;
-            /** @description 작성자 식별자＊ */
-            authorId: string;
-            /** @description 페이지 식별자＊ */
-            pageId: string;
-            /** @description 현재 버전＊ */
-            currentVersion: number;
-            /** @description 본문＊ */
-            content: string;
+            /** @description 이름＊ */
+            name: string;
+            /** @description 설명＊ */
+            description: string;
             /** @description 최근 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
-        "v1-spaces-spaceId-members-1854409151": {
+        /** SpaceMemberListResponse */
+        SpaceMemberListResponse: {
             /** @description 페이지당 항목 수＊ */
             size: number;
             /** @description 결과 비어 있음 여부＊ */
@@ -640,52 +519,8 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
-        "v1-pages-pageId-revisions-version1964469920": {
-            /** @description 리비전 식별자＊ */
-            revisionId: string;
-            /** @description 기록된 시각 (ISO)＊ */
-            createdAt: string;
-            /** @description 작성자 식별자＊ */
-            authorId: string;
-            /** @description 그 시점의 제목＊ */
-            title: string;
-            /** @description 소속 페이지 식별자＊ */
-            pageId: string;
-            /** @description 리비전 버전＊ */
-            version: number;
-            /** @description 그 시점의 본문＊ */
-            content: string;
-        };
-        "v1-pages365256445": {
-            /** @description 페이지당 항목 수＊ */
-            size: number;
-            /** @description 결과 비어 있음 여부＊ */
-            isEmpty: boolean;
-            /** @description 총 페이지 수＊ */
-            totalPages: number;
-            /** @description 다음 페이지 존재 여부＊ */
-            hasNext: boolean;
-            /** @description 현재 페이지＊ */
-            page: number;
-            /** @description 검색 결과 목록＊ */
-            items: {
-                /** @description ⎯ 소속 스페이스 식별자＊ */
-                spaceId: string;
-                /** @description ⎯ 제목＊ */
-                title: string;
-                /** @description ⎯ 페이지 식별자＊ */
-                pageId: string;
-                /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
-                updatedAt: string;
-            }[];
-            /** @description 총 항목 수＊ */
-            totalElements: number;
-        };
-        "v1-spaces1657775542": {
-            /** @description 생성된 스페이스 식별자＊ */
-            spaceId: string;
-        };
-        "v1-pages-pageId-comments618867481": {
+        /** CommentListResponse */
+        CommentListResponse: {
             /** @description 페이지당 항목 수＊ */
             size: number;
             /** @description 결과 비어 있음 여부＊ */
@@ -713,6 +548,226 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
+        };
+        /** PageEditRequest */
+        PageEditRequest: {
+            /** @description 새 제목＊ */
+            title: string;
+            /** @description 새 본문＊ */
+            content: string;
+        };
+        /** TagListResponse */
+        TagListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 태그 목록＊ */
+            items: {
+                /** @description ⎯ 생성 시각 (ISO)＊ */
+                createdAt: string;
+                /** @description ⎯ 소속 스페이스 식별자＊ */
+                spaceId: string;
+                /** @description ⎯ 태그 식별자＊ */
+                tagId: string;
+                /** @description ⎯ 태그 이름＊ */
+                name: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
+        /** SpaceMemberJoinRequest */
+        SpaceMemberJoinRequest: {
+            /** @description 부여할 역할 */
+            role?: string | null;
+            /** @description 초대 대상 사용자 식별자 */
+            userId?: string | null;
+        };
+        /** PageEditResponse */
+        PageEditResponse: {
+            /** @description 갱신된 제목＊ */
+            title: string;
+            /** @description 페이지 식별자＊ */
+            pageId: string;
+            /** @description 갱신 후 currentVersion＊ */
+            version: number;
+            /** @description 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
+        /** CommentRegisterRequest */
+        CommentRegisterRequest: {
+            /** @description 댓글 본문＊ */
+            body: string;
+        };
+        /** SpaceMemberRoleChangeRequest */
+        SpaceMemberRoleChangeRequest: {
+            /** @description 새 역할＊ */
+            role: string;
+        };
+        /** SpaceRegisterResponse */
+        SpaceRegisterResponse: {
+            /** @description 생성된 스페이스 식별자＊ */
+            spaceId: string;
+        };
+        /** PageSearchResponse */
+        PageSearchResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 검색 결과 목록＊ */
+            items: {
+                /** @description ⎯ 소속 스페이스 식별자＊ */
+                spaceId: string;
+                /** @description ⎯ 제목＊ */
+                title: string;
+                /** @description ⎯ 페이지 식별자＊ */
+                pageId: string;
+                /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
+                updatedAt: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
+        /** SpaceMemberJoinResponse */
+        SpaceMemberJoinResponse: {
+            /** @description 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 부여된 역할＊ */
+            role: string;
+            /** @description 멤버 식별자＊ */
+            spaceMemberId: string;
+            /** @description 사용자 식별자＊ */
+            userId: string;
+        };
+        /** SpaceMemberRoleChangeResponse */
+        SpaceMemberRoleChangeResponse: {
+            /** @description 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 갱신된 역할＊ */
+            role: string;
+            /** @description 멤버 식별자＊ */
+            spaceMemberId: string;
+            /** @description 사용자 식별자＊ */
+            userId: string;
+        };
+        /** CommentGetResponse */
+        CommentGetResponse: {
+            /** @description 생성 시각 (ISO)＊ */
+            createdAt: string;
+            /** @description 댓글 식별자＊ */
+            commentId: string;
+            /** @description 본문＊ */
+            body: string;
+            /** @description 작성자 식별자＊ */
+            authorId: string;
+            /** @description 소속 페이지 식별자＊ */
+            pageId: string;
+            /** @description 최근 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
+        /** SpaceRegisterRequest */
+        SpaceRegisterRequest: {
+            /** @description 공개 범위 (PUBLIC|INTERNAL)＊ */
+            visibility: string;
+            /** @description 스페이스 이름＊ */
+            name: string;
+            /** @description 스페이스 설명＊ */
+            description: string;
+        };
+        /** TagRegisterResponse */
+        TagRegisterResponse: {
+            /** @description 생성된 태그 식별자＊ */
+            tagId: string;
+        };
+        /** PageRegisterResponse */
+        PageRegisterResponse: {
+            /** @description 생성된 페이지 식별자＊ */
+            pageId: string;
+        };
+        /** PageRevisionGetResponse */
+        PageRevisionGetResponse: {
+            /** @description 리비전 식별자＊ */
+            revisionId: string;
+            /** @description 기록된 시각 (ISO)＊ */
+            createdAt: string;
+            /** @description 작성자 식별자＊ */
+            authorId: string;
+            /** @description 그 시점의 제목＊ */
+            title: string;
+            /** @description 소속 페이지 식별자＊ */
+            pageId: string;
+            /** @description 리비전 버전＊ */
+            version: number;
+            /** @description 그 시점의 본문＊ */
+            content: string;
+        };
+        /** SpaceEditResponse */
+        SpaceEditResponse: {
+            /** @description 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 갱신된 공개 범위＊ */
+            visibility: string;
+            /** @description 갱신된 이름＊ */
+            name: string;
+            /** @description 갱신된 설명＊ */
+            description: string;
+            /** @description 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
+        /** CommentRegisterResponse */
+        CommentRegisterResponse: {
+            /** @description 생성된 댓글 식별자＊ */
+            commentId: string;
+        };
+        /** SpaceEditRequest */
+        SpaceEditRequest: {
+            /** @description 변경할 공개 범위 */
+            visibility?: string | null;
+            /** @description 변경할 이름 */
+            name?: string | null;
+            /** @description 변경할 설명 */
+            description?: string | null;
+        };
+        /** PageGetResponse */
+        PageGetResponse: {
+            /** @description 생성 시각 (ISO)＊ */
+            createdAt: string;
+            /** @description 소속 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 공개 범위＊ */
+            visibility: string;
+            /** @description 부모 페이지 식별자 */
+            parentPageId?: string | null;
+            /** @description 제목＊ */
+            title: string;
+            /** @description 작성자 식별자＊ */
+            authorId: string;
+            /** @description 페이지 식별자＊ */
+            pageId: string;
+            /** @description 현재 버전＊ */
+            currentVersion: number;
+            /** @description 본문＊ */
+            content: string;
+            /** @description 최근 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
+        /** CommentEditRequest */
+        CommentEditRequest: {
+            /** @description 수정된 본문＊ */
+            body: string;
         };
     };
     responses: never;
@@ -757,7 +812,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages365256445"];
+                    "application/json": components["schemas"]["PageSearchResponse"];
                 };
             };
         };
@@ -777,7 +832,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-pages-1087482196"];
+                "application/json;charset=UTF-8": components["schemas"]["PageRegisterRequest"];
             };
         };
         responses: {
@@ -787,7 +842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-1606830570"];
+                    "application/json": components["schemas"]["PageRegisterResponse"];
                 };
             };
         };
@@ -818,7 +873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces1523498116"];
+                    "application/json": components["schemas"]["SpaceListResponse"];
                 };
             };
         };
@@ -838,7 +893,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-spaces-1862598174"];
+                "application/json;charset=UTF-8": components["schemas"]["SpaceRegisterRequest"];
             };
         };
         responses: {
@@ -848,7 +903,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces1657775542"];
+                    "application/json": components["schemas"]["SpaceRegisterResponse"];
                 };
             };
         };
@@ -868,7 +923,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-tags-1616429623"];
+                "application/json;charset=UTF-8": components["schemas"]["TagRegisterRequest"];
             };
         };
         responses: {
@@ -878,7 +933,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-tags-1141217090"];
+                    "application/json": components["schemas"]["TagRegisterResponse"];
                 };
             };
         };
@@ -906,7 +961,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-pageId2116066709"];
+                    "application/json": components["schemas"]["PageGetResponse"];
                 };
             };
         };
@@ -928,7 +983,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-pages-pageId51781261"];
+                "application/json;charset=UTF-8": components["schemas"]["PageEditRequest"];
             };
         };
         responses: {
@@ -938,7 +993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-pageId1619565545"];
+                    "application/json": components["schemas"]["PageEditResponse"];
                 };
             };
         };
@@ -992,7 +1047,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces-spaceId-6516778"];
+                    "application/json": components["schemas"]["SpaceGetResponse"];
                 };
             };
         };
@@ -1014,7 +1069,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-spaces-spaceId175277175"];
+                "application/json;charset=UTF-8": components["schemas"]["SpaceEditRequest"];
             };
         };
         responses: {
@@ -1024,7 +1079,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces-spaceId1622365333"];
+                    "application/json": components["schemas"]["SpaceEditResponse"];
                 };
             };
         };
@@ -1109,7 +1164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-pageId-comments618867481"];
+                    "application/json": components["schemas"]["CommentListResponse"];
                 };
             };
         };
@@ -1131,7 +1186,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-pages-pageId-comments-225807540"];
+                "application/json;charset=UTF-8": components["schemas"]["CommentRegisterRequest"];
             };
         };
         responses: {
@@ -1141,7 +1196,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-pageId-comments-1994389907"];
+                    "application/json": components["schemas"]["CommentRegisterResponse"];
                 };
             };
         };
@@ -1168,7 +1223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-pageId-revisions-154523481"];
+                    "application/json": components["schemas"]["PageRevisionListResponse"];
                 };
             };
         };
@@ -1201,7 +1256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces-spaceId-tags546803558"];
+                    "application/json": components["schemas"]["PageTagListResponse"];
                 };
             };
         };
@@ -1223,7 +1278,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-pages-pageId-tags1826217235"];
+                "application/json;charset=UTF-8": components["schemas"]["PageTagAttachRequest"];
             };
         };
         responses: {
@@ -1258,7 +1313,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces-spaceId-members-1854409151"];
+                    "application/json": components["schemas"]["SpaceMemberListResponse"];
                 };
             };
         };
@@ -1280,7 +1335,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-spaces-spaceId-members1907927139"];
+                "application/json;charset=UTF-8": components["schemas"]["SpaceMemberJoinRequest"];
             };
         };
         responses: {
@@ -1290,7 +1345,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces-spaceId-members-472001083"];
+                    "application/json": components["schemas"]["SpaceMemberJoinResponse"];
                 };
             };
         };
@@ -1323,7 +1378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces-spaceId-tags546803558"];
+                    "application/json": components["schemas"]["TagListResponse"];
                 };
             };
         };
@@ -1352,7 +1407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-pageId-comments-commentId-1192310110"];
+                    "application/json": components["schemas"]["CommentGetResponse"];
                 };
             };
         };
@@ -1375,7 +1430,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-pages-pageId-comments-commentId378525178"];
+                "application/json;charset=UTF-8": components["schemas"]["CommentEditRequest"];
             };
         };
         responses: {
@@ -1385,7 +1440,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-pageId-comments-commentId-183646062"];
+                    "application/json": components["schemas"]["CommentEditResponse"];
                 };
             };
         };
@@ -1435,7 +1490,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-pages-pageId-revisions-version1964469920"];
+                    "application/json": components["schemas"]["PageRevisionGetResponse"];
                 };
             };
         };
@@ -1485,7 +1540,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json;charset=UTF-8": components["schemas"]["v1-spaces-spaceId-members-userId781967196"];
+                "application/json;charset=UTF-8": components["schemas"]["SpaceMemberRoleChangeRequest"];
             };
         };
         responses: {
@@ -1495,7 +1550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1-spaces-spaceId-members-userId1005729910"];
+                    "application/json": components["schemas"]["SpaceMemberRoleChangeResponse"];
                 };
             };
         };
