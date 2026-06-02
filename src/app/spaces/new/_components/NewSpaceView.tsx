@@ -55,8 +55,7 @@ export function NewSpaceView() {
           router.push(`/pages/new?spaceId=${encodeURIComponent(spaceId)}`);
         },
         onError: (mutationError) => {
-          // 401 INVALID_SESSION 은 providers.tsx 의 MutationCache.onError 가 글로벌 redirect 를 담당.
-          // 여기서는 toast 중복만 막는다.
+          // providers.tsx 의 MutationCache.onError 가 글로벌 redirect 처리.
           if (mutationError.status === 401 && mutationError.code === "INVALID_SESSION") return;
           toast.error(toUserMessage(mutationError));
         },
@@ -65,8 +64,7 @@ export function NewSpaceView() {
   }
 
   return (
-    // noValidate: HTML 단 validation 을 끄고 canSubmit/JS 가드 한 곳으로 일관.
-    // 필드의 `required` 는 a11y/시각 표시용으로만 유지.
+    // HTML validation 끄고 canSubmit 단일 가드. required 는 a11y 표시용.
     <form
       onSubmit={handleSubmit}
       className="mx-auto w-full max-w-2xl space-y-6 px-6 py-10"

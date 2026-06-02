@@ -9,8 +9,7 @@ import { useSpaceList } from "@/hooks/useSpace";
 import { toUserMessage } from "@/lib/api/errors";
 
 export function SpaceListView() {
-  // refetchOnMount: "always" — Next.js Router Cache 가 client component instance 를 보존하더라도
-  // mount 시점에 무조건 fetch 발화시켜 zombie pending state 가 stuck 되지 않게.
+  // Router Cache 가 instance 를 보존해도 fetch 가 stuck 되지 않게 mount 시 강제 refetch.
   const { data, isPending, isError, error, refetch, isFetching } = useSpaceList(
     { page: 0, size: 20 },
     { refetchOnMount: "always" },

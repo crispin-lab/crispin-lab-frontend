@@ -8,7 +8,6 @@ type Props = {
   className?: string;
 };
 
-// SSR/CSR 양쪽에서 같은 출력이 나오도록 fixed locale + options. `toLocaleDateString` 의 환경의존 회피.
 const UPDATED_AT_FORMAT = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
   month: "2-digit",

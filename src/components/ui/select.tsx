@@ -107,8 +107,7 @@ function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props) 
 }
 
 function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Props) {
-  // shadcn 디폴트 `focus:bg-accent` (violet) 를 `bg-muted` 로 교체.
-  // design.md "accent 는 한 화면에 1~2 군데" 정신 + Button outline 의 aria-expanded:bg-muted 와 톤 통일.
+  // shadcn 디폴트 `focus:bg-accent` (violet) 를 `bg-muted` 로 교체 — design.md accent 사용 한도 정합.
   return (
     <SelectPrimitive.Item
       data-slot="select-item"

@@ -18,8 +18,6 @@ function isLoginPath(pathname: string): boolean {
   return pathname === "/login" || pathname.startsWith("/login/");
 }
 
-// Server Component 의 cookie 가드 / signup 의 "로그인" 링크 등 같은 origin 안에서
-// "원래 가려던 path 로 돌아오게" 만들 때 공통으로 쓰는 URL 빌더.
 export function loginRedirectUrl(target: string): string {
   return `/login?redirect=${encodeURIComponent(target)}`;
 }
