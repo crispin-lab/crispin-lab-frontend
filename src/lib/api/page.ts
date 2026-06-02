@@ -21,7 +21,7 @@ export type PageSearchParams = {
 };
 
 export function fetchPage(pageId: PageId, signal?: AbortSignal): Promise<Page> {
-  return apiFetch<Page>(`/api/v1/pages/${pageId}`, { signal });
+  return apiFetch<Page>(`/api/v1/pages/${encodeURIComponent(pageId)}`, { signal });
 }
 
 export function searchPages(
@@ -34,7 +34,7 @@ export function searchPages(
 }
 
 export function updatePage(pageId: PageId, body: PageUpdateRequest): Promise<PageUpdateResult> {
-  return apiFetch<PageUpdateResult>(`/api/v1/pages/${pageId}`, {
+  return apiFetch<PageUpdateResult>(`/api/v1/pages/${encodeURIComponent(pageId)}`, {
     method: "PUT",
     body,
   });
