@@ -85,4 +85,25 @@ describe("NewPageView", () => {
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("스페이스를 찾을 수 없습니다."));
     expect(routerPush).not.toHaveBeenCalled();
   });
+
+  it("INVALID_SESSION (401) 은 글로벌 가드가 처리하므로 toast 도 navigate 도 하지 않는다", async () => {
+    server.use(
+      http.post("*/api/v1/pages", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
+
+    await user.type(screen.getByPlaceholderText("제목을 입력해 주세요"), "새 글");
+    await user.click(screen.getByRole("button", { name: "만들기" }));
+
+    await waitFor(() => expect(routerPush).not.toHaveBeenCalled());
+    expect(toastError).not.toHaveBeenCalled();
+  });
 });

@@ -32,7 +32,6 @@
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-query-devtools": "^5.100.14",
     "@tiptap/extension-bubble-menu": "^3.24.0",
-    "@tiptap/extension-link": "^3.24.0",
     "@tiptap/extension-mention": "^3.24.0",
     "@tiptap/react": "^3.24.0",
     "@tiptap/starter-kit": "^3.24.0",
