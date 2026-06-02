@@ -15,4 +15,10 @@ export type PageCreateResult = PageSchemas["PageRegisterResponse"];
 export type PageUpdateRequest = PageSchemas["PageEditRequest"];
 export type PageUpdateResult = PageSchemas["PageEditResponse"];
 
+export type Space = PageSchemas["SpaceGetResponse"];
+export type SpaceListResult = PageSchemas["SpaceListResponse"];
+export type SpaceSummary = SpaceListResult["items"][number];
+export type SpaceCreateRequest = PageSchemas["SpaceRegisterRequest"];
+export type SpaceCreateResult = PageSchemas["SpaceRegisterResponse"];
+
 export type LoginInput = UserSchemas["AuthLoginRequest"];
