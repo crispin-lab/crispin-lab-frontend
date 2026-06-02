@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useSignup } from "@/hooks/useAuth";
-import { safeRedirectTarget } from "@/lib/auth/redirect";
+import { loginRedirectUrl, safeRedirectTarget } from "@/lib/auth/redirect";
 import { signupSchema, type SignupInput } from "@/lib/schemas/auth";
 
 export function SignupForm() {
@@ -32,7 +32,7 @@ export function SignupForm() {
   });
 
   const rawRedirect = searchParams.get("redirect");
-  const loginHref = rawRedirect ? `/login?redirect=${encodeURIComponent(rawRedirect)}` : "/login";
+  const loginHref = rawRedirect ? loginRedirectUrl(rawRedirect) : "/login";
 
   function onSubmit(values: SignupInput) {
     mutate(values, {

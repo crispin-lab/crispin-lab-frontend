@@ -18,6 +18,10 @@ function isLoginPath(pathname: string): boolean {
   return pathname === "/login" || pathname.startsWith("/login/");
 }
 
+export function loginRedirectUrl(target: string): string {
+  return `/login?redirect=${encodeURIComponent(target)}`;
+}
+
 // attacker 가 제어하는 redirect 쿼리에 대한 open redirect 방어 — same-origin path 만 허용.
 export function safeRedirectTarget(raw: string | null | undefined): string {
   if (!raw) return "/";

@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { redirectToLogin, resetRedirectGuardForTest, safeRedirectTarget } from "./redirect";
+import {
+  loginRedirectUrl,
+  redirectToLogin,
+  resetRedirectGuardForTest,
+  safeRedirectTarget,
+} from "./redirect";
 
 describe("redirectToLogin", () => {
   let assignSpy: ReturnType<typeof vi.fn>;
@@ -86,6 +91,15 @@ describe("redirectToLogin", () => {
     redirectToLogin();
 
     expect(assignSpy).toHaveBeenCalledWith(`/login?redirect=${encodeURIComponent("/spaces")}`);
+  });
+});
+
+describe("loginRedirectUrl", () => {
+  it("target 을 encodeURIComponent 로 감싸 /login?redirect=... 를 만든다", () => {
+    expect(loginRedirectUrl("/spaces")).toBe("/login?redirect=%2Fspaces");
+    expect(loginRedirectUrl("/pages/p_1?tab=draft")).toBe(
+      "/login?redirect=%2Fpages%2Fp_1%3Ftab%3Ddraft",
+    );
   });
 });
 

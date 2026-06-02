@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { asSpaceId } from "@/lib/api/ids";
+import { loginRedirectUrl } from "@/lib/auth/redirect";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
 import { NewPageView } from "./_components/NewPageView";
@@ -18,7 +19,7 @@ export default async function NewPageRoute({
     const target = spaceId
       ? `/pages/new?${new URLSearchParams({ spaceId }).toString()}`
       : "/pages/new";
-    redirect(`/login?redirect=${encodeURIComponent(target)}`);
+    redirect(loginRedirectUrl(target));
   }
 
   if (!spaceId) {
