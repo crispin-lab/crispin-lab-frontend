@@ -26,7 +26,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    // suppressHydrationWarning: 번역 확장 (Trancy 등) / 향후 dark 토글 (next-themes) 이
+    // <html> 의 root attribute / class 를 client 에서 손대는 케이스를 false-positive 로 띄우지 않게.
+    // <html> 한 단계만 적용 — 그 안의 컴포넌트는 정상 hydration 검증.
+    <html
+      lang="ko"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
       </body>
