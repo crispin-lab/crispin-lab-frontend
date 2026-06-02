@@ -17,3 +17,23 @@ export const signupSchema = z.object({
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;
+
+export const signupFormSchema = signupSchema
+  .extend({
+    passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해 주세요."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.passwordConfirm !== "" && data.password !== data.passwordConfirm) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["passwordConfirm"],
+        message: "비밀번호가 일치하지 않습니다.",
+      });
+    }
+  });
+
+export type SignupFormInput = z.infer<typeof signupFormSchema>;
+
+export function toSignupInput(form: SignupFormInput): SignupInput {
+  return { email: form.email, handle: form.handle, password: form.password };
+}

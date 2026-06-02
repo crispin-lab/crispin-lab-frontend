@@ -19,23 +19,23 @@ import {
 } from "@/components/ui/form";
 import { useSignup } from "@/hooks/useAuth";
 import { loginRedirectUrl, safeRedirectTarget } from "@/lib/auth/redirect";
-import { signupSchema, type SignupInput } from "@/lib/schemas/auth";
+import { signupFormSchema, toSignupInput, type SignupFormInput } from "@/lib/schemas/auth";
 
 export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { mutate, isPending } = useSignup();
 
-  const form = useForm<SignupInput>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { email: "", handle: "", password: "" },
+  const form = useForm<SignupFormInput>({
+    resolver: zodResolver(signupFormSchema),
+    defaultValues: { email: "", handle: "", password: "", passwordConfirm: "" },
   });
 
   const rawRedirect = searchParams.get("redirect");
   const loginHref = rawRedirect ? loginRedirectUrl(rawRedirect) : "/login";
 
-  function onSubmit(values: SignupInput) {
-    mutate(values, {
+  function onSubmit(values: SignupFormInput) {
+    mutate(toSignupInput(values), {
       onSuccess: () => {
         router.push(safeRedirectTarget(rawRedirect));
       },
@@ -100,6 +100,24 @@ export function SignupForm() {
             render={({ field }) => (
               <FormItem className="space-y-2">
                 <FormLabel className={EDITORIAL_LABEL_CLASS}>비밀번호</FormLabel>
+                <FormControl>
+                  <EditorialInput
+                    type="password"
+                    autoComplete="new-password"
+                    disabled={isPending}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="passwordConfirm"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className={EDITORIAL_LABEL_CLASS}>비밀번호 확인</FormLabel>
                 <FormControl>
                   <EditorialInput
                     type="password"

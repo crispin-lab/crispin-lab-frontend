@@ -90,8 +90,14 @@ describe("SignupForm", () => {
     expect(upstream).not.toHaveBeenCalled();
   });
 
-  it("정상 입력 시 mutation 호출 + / 로 push", async () => {
-    server.use(http.post("/api/auth/signup", () => HttpResponse.json({ ok: true })));
+  it("비밀번호 확인이 비어 있으면 FormMessage 노출 + submit 막힘", async () => {
+    const upstream = vi.fn();
+    server.use(
+      http.post("/api/auth/signup", () => {
+        upstream();
+        return HttpResponse.json({ ok: true });
+      }),
+    );
     const user = userEvent.setup();
     renderForm();
 
@@ -100,7 +106,56 @@ describe("SignupForm", () => {
     await user.type(screen.getByLabelText("비밀번호"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
+    expect(await screen.findByText("비밀번호 확인을 입력해 주세요.")).toBeInTheDocument();
+    expect(upstream).not.toHaveBeenCalled();
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("비밀번호와 비밀번호 확인이 다르면 FormMessage 노출 + submit 막힘", async () => {
+    const upstream = vi.fn();
+    server.use(
+      http.post("/api/auth/signup", () => {
+        upstream();
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("이메일"), "a@b.com");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
+    await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "password2");
+    await user.click(screen.getByRole("button", { name: "회원가입" }));
+
+    expect(await screen.findByText("비밀번호가 일치하지 않습니다.")).toBeInTheDocument();
+    expect(upstream).not.toHaveBeenCalled();
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("정상 입력 시 mutation 호출 + / 로 push", async () => {
+    const requestBody = vi.fn<(body: unknown) => void>();
+    server.use(
+      http.post("/api/auth/signup", async ({ request }) => {
+        requestBody(await request.json());
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("이메일"), "a@b.com");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
+    await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
+    await user.click(screen.getByRole("button", { name: "회원가입" }));
+
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/"));
+    expect(requestBody).toHaveBeenCalledWith({
+      email: "a@b.com",
+      handle: "alice",
+      password: "password1",
+    });
   });
 
   it("same-origin redirect query 는 그대로 사용", async () => {
@@ -112,6 +167,7 @@ describe("SignupForm", () => {
     await user.type(screen.getByLabelText("이메일"), "a@b.com");
     await user.type(screen.getByLabelText("사용자 이름"), "alice");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/pages/abc"));
@@ -126,6 +182,7 @@ describe("SignupForm", () => {
     await user.type(screen.getByLabelText("이메일"), "a@b.com");
     await user.type(screen.getByLabelText("사용자 이름"), "alice");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/"));
@@ -146,6 +203,7 @@ describe("SignupForm", () => {
     await user.type(screen.getByLabelText("이메일"), "a@b.com");
     await user.type(screen.getByLabelText("사용자 이름"), "taken");
     await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
     await waitFor(() =>
