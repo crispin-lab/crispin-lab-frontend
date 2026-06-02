@@ -9,10 +9,12 @@ import { useSpaceList } from "@/hooks/useSpace";
 import { toUserMessage } from "@/lib/api/errors";
 
 export function SpaceListView() {
-  const { data, isPending, isError, error, refetch, isFetching } = useSpaceList({
-    page: 0,
-    size: 20,
-  });
+  // refetchOnMount: "always" — Next.js Router Cache 가 client component instance 를 보존하더라도
+  // mount 시점에 무조건 fetch 발화시켜 zombie pending state 가 stuck 되지 않게.
+  const { data, isPending, isError, error, refetch, isFetching } = useSpaceList(
+    { page: 0, size: 20 },
+    { refetchOnMount: "always" },
+  );
 
   return (
     <section className="space-y-6">
