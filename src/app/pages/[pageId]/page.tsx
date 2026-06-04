@@ -28,7 +28,9 @@ export default async function PageReadingRoute({
       if (error.status === 401) {
         redirect(loginRedirectUrl(`/pages/${pageId}`));
       }
-      if (error.status === 403 || error.status === 404) notFound();
+      if (error.status === 403 || error.status === 404) {
+        notFound();
+      }
     }
     throw error;
   }

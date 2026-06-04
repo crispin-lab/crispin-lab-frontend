@@ -108,7 +108,8 @@ describe("NewPageView", () => {
     await user.type(screen.getByPlaceholderText("제목을 입력해 주세요"), "새 글");
     await user.click(screen.getByRole("button", { name: "만들기" }));
 
-    await waitFor(() => expect(routerPush).not.toHaveBeenCalled());
+    await waitFor(() => expect(redirectToLoginMock).toHaveBeenCalledTimes(1));
+    expect(routerPush).not.toHaveBeenCalled();
     expect(toastError).not.toHaveBeenCalled();
   });
 });

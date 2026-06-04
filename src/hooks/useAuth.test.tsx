@@ -68,6 +68,7 @@ describe("useLogin", () => {
     result.current.mutate({ email: "a@b.com", password: "pw" });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(redirectToLoginMock).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
   });
 });
@@ -124,6 +125,7 @@ describe("useSignup", () => {
     result.current.mutate({ email: "a@b.com", handle: "alice", password: "password1" });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(redirectToLoginMock).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
   });
 });

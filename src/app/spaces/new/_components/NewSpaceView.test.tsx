@@ -133,7 +133,8 @@ describe("NewSpaceView", () => {
     await user.type(screen.getByLabelText("설명"), "설명");
     await user.click(screen.getByRole("button", { name: "만들기" }));
 
-    await waitFor(() => expect(routerPush).not.toHaveBeenCalled());
+    await waitFor(() => expect(redirectToLoginMock).toHaveBeenCalledTimes(1));
+    expect(routerPush).not.toHaveBeenCalled();
     expect(toastError).not.toHaveBeenCalled();
   });
 });
