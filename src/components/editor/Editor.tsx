@@ -7,7 +7,7 @@ import { parseEditorContent, serializeEditorContent } from "@/lib/editor/content
 import { cn } from "@/lib/utils";
 
 import { EditorBubbleMenu } from "./BubbleMenu";
-import { editorExtensions } from "./extensions";
+import { editorExtensions } from "./extensions/editor";
 
 type Props = {
   spaceId: SpaceId;

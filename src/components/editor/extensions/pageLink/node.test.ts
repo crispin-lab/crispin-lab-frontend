@@ -1,7 +1,7 @@
 import { generateHTML, generateJSON } from "@tiptap/react";
 import { describe, expect, it } from "vitest";
 
-import { viewerExtensions } from "../index";
+import { viewerExtensions } from "../viewer";
 
 describe("PageLinkNode", () => {
   it("JSON 의 pageLink 노드를 chip span 으로 직렬화한다", () => {
@@ -29,6 +29,8 @@ describe("PageLinkNode", () => {
     expect(html).toContain("회의록");
     expect(html).toContain("page-link-chip");
     expect(html).toContain("bg-accent");
+    expect(html).toContain('role="link"');
+    expect(html).toContain('tabindex="0"');
   });
 
   it("HTML 의 chip span 을 JSON 으로 복원한다", () => {
