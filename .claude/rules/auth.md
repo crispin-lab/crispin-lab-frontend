@@ -177,6 +177,14 @@ export { proxy as GET, proxy as POST, proxy as PUT, proxy as DELETE }
 - BFF 가 cookie 가 없으면 `Authorization` 헤더를 안 붙이고 호출 → 백엔드가 anonymous 흐름.
 - cookie 가 있는데 백엔드가 401 (만료/위변조) → 401 그대로 패스스루, 클라이언트는 재로그인 흐름.
 
+### 403 / 404 — PRIVATE 페이지 존재 비노출
+
+PRIVATE 페이지에 권한이 없는 사용자가 접근하면 백엔드가 403 또는 404 를 줄 수 있다. 프론트는 **둘을 동일하게 흡수해 `notFound()` 로 보낸다**.
+
+- Server Component: `if (error.status === 403 || error.status === 404) notFound()`. 403 만 별도로 `/forbidden` 등으로 보내지 않는다.
+- 글로벌 `not-found.tsx` 의 문구는 "권한" 류 단어를 쓰지 않는다 — 권한 부재와 미존재를 한 화면으로 묶어 페이지 존재 여부 자체를 누출하지 않는 것이 목적 (`design.md` 와이어프레임 02 의 "비로그인 PRIVATE 접근 시 404" 정합).
+- Client Component 의 query 404 는 컴포넌트별 inline UI 또는 redirect. mutation 404 는 사용자 액션 실패라 글로벌 toast 가 그대로 받는다.
+
 ## Server Component 에서 인증
 
 ```tsx

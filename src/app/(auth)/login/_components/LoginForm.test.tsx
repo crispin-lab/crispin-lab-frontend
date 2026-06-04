@@ -1,15 +1,17 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/mocks/server";
+import { redirectModuleMock } from "@/test/mocks/redirect";
+import { createQueryWrapper, createTestQueryClient } from "@/test/queryWrapper";
 
-const { routerPush, searchParamsGet, toastError } = vi.hoisted(() => ({
+const { routerPush, searchParamsGet, toastError, redirectToLoginMock } = vi.hoisted(() => ({
   routerPush: vi.fn(),
   searchParamsGet: vi.fn() as ReturnType<typeof vi.fn<(key: string) => string | null>>,
   toastError: vi.fn(),
+  redirectToLoginMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -21,17 +23,18 @@ vi.mock("sonner", () => ({
   toast: { error: toastError },
 }));
 
+vi.mock("@/lib/auth/redirect", () => redirectModuleMock(redirectToLoginMock));
+
 import { LoginForm } from "./LoginForm";
 
 function renderForm() {
-  const client = new QueryClient({
-    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
-  });
+  const client = createTestQueryClient();
   const invalidateSpy = vi.spyOn(client, "invalidateQueries");
+  const { Wrapper } = createQueryWrapper(client);
   const utils = render(
-    <QueryClientProvider client={client}>
+    <Wrapper>
       <LoginForm />
-    </QueryClientProvider>,
+    </Wrapper>,
   );
   return { ...utils, invalidateSpy };
 }
@@ -46,6 +49,7 @@ describe("LoginForm", () => {
     searchParamsGet.mockReset();
     setRedirectQuery(null);
     toastError.mockReset();
+    redirectToLoginMock.mockReset();
   });
 
   it("정상 로그인 시 캐시를 invalidate 하고 / 로 push 한다", async () => {

@@ -4,6 +4,7 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/mocks/server";
+import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
 const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
@@ -16,11 +17,15 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPush }),
 }));
 
+const { redirectToLoginMock } = vi.hoisted(() => ({ redirectToLoginMock: vi.fn() }));
+vi.mock("@/lib/auth/redirect", () => redirectModuleMock(redirectToLoginMock));
+
 import { NewSpaceView } from "./NewSpaceView";
 
 beforeEach(() => {
   toastError.mockReset();
   routerPush.mockReset();
+  redirectToLoginMock.mockReset();
 });
 
 describe("NewSpaceView", () => {

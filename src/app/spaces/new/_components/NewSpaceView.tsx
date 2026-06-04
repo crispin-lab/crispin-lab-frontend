@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +16,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useSpaceCreate } from "@/hooks/useSpace";
 import { asSpaceId } from "@/lib/api/ids";
-import { toUserMessage } from "@/lib/api/errors";
 import {
   SPACE_VISIBILITY_VALUES,
   type SpaceVisibility,
@@ -53,11 +51,6 @@ export function NewSpaceView() {
         onSuccess: (result) => {
           const spaceId = asSpaceId(result.spaceId);
           router.push(`/pages/new?spaceId=${encodeURIComponent(spaceId)}`);
-        },
-        onError: (mutationError) => {
-          // providers.tsx 의 MutationCache.onError 가 글로벌 redirect 처리.
-          if (mutationError.status === 401 && mutationError.code === "INVALID_SESSION") return;
-          toast.error(toUserMessage(mutationError));
         },
       },
     );

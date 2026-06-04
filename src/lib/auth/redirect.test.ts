@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   loginRedirectUrl,
   redirectToLogin,
-  resetRedirectGuardForTest,
+  __resetRedirectGuardForTest__,
   safeRedirectTarget,
 } from "./redirect";
 
@@ -11,7 +11,7 @@ describe("redirectToLogin", () => {
   let assignSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    resetRedirectGuardForTest();
+    __resetRedirectGuardForTest__();
     assignSpy = vi.fn();
     // jsdom 의 window.location 은 method spy 가 막혀 객체 자체를 교체한다.
     Object.defineProperty(window, "location", {
@@ -26,7 +26,7 @@ describe("redirectToLogin", () => {
   });
 
   afterEach(() => {
-    resetRedirectGuardForTest();
+    __resetRedirectGuardForTest__();
   });
 
   it("현재 pathname + search 를 redirect 쿼리로 인코딩해 /login 으로 이동한다", () => {

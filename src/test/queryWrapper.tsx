@@ -1,8 +1,12 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+
+import { handleMutationError, handleQueryError } from "@/lib/api/queryErrorHandlers";
 
 export function createTestQueryClient(): QueryClient {
   return new QueryClient({
+    queryCache: new QueryCache({ onError: handleQueryError }),
+    mutationCache: new MutationCache({ onError: handleMutationError }),
     defaultOptions: {
       queries: { retry: false, staleTime: 0 },
       mutations: { retry: false },
