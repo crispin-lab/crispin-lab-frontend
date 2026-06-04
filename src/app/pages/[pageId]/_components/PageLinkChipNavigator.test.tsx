@@ -49,6 +49,23 @@ describe("PageLinkChipNavigator", () => {
     expect(pushMock).toHaveBeenCalledWith("/pages/p_target");
   });
 
+  it("data-page-id 에 특수문자가 있으면 encodeURIComponent 후 push 된다", async () => {
+    const user = userEvent.setup();
+    pushMock.mockReset();
+
+    render(
+      <PageLinkChipNavigator>
+        <span data-page-link="" data-page-id="a/b?c#d" role="link" tabIndex={0}>
+          이상한 페이지
+        </span>
+      </PageLinkChipNavigator>,
+    );
+
+    await user.click(screen.getByText("이상한 페이지"));
+
+    expect(pushMock).toHaveBeenCalledWith("/pages/a%2Fb%3Fc%23d");
+  });
+
   it("chip 이 아닌 본문 click 은 navigation 을 트리거하지 않는다", async () => {
     const user = userEvent.setup();
     pushMock.mockReset();

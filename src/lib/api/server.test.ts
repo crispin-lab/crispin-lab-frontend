@@ -110,6 +110,70 @@ describe("apiFetchServer", () => {
     await expect(apiFetchServer("/api/v1/pages/p_1")).rejects.toThrow(/BACKEND_URL 직접 호출용/);
   });
 
+  it("allowAnonymousFallback=true 면 401 에서 Authorization 없이 재시도해 PUBLIC 응답을 받는다", async () => {
+    getCookieMock.mockImplementation((name: string) =>
+      name === SESSION_COOKIE_NAME ? { value: "sess_expired" } : undefined,
+    );
+    const captured: string[] = [];
+    server.use(
+      http.get("https://backend.test/v1/pages/p_public", ({ request }) => {
+        const auth = request.headers.get("authorization") ?? "";
+        captured.push(auth);
+        if (auth !== "") {
+          return HttpResponse.json(
+            { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+            { status: 401 },
+          );
+        }
+        return HttpResponse.json({ pageId: "p_public", visibility: "PUBLIC" });
+      }),
+    );
+
+    const result = await apiFetchServer<{ pageId: string }>("/v1/pages/p_public", {
+      allowAnonymousFallback: true,
+    });
+
+    expect(result).toEqual({ pageId: "p_public", visibility: "PUBLIC" });
+    expect(captured).toEqual(["Bearer sess_expired", ""]);
+  });
+
+  it("allowAnonymousFallback=true 라도 anonymous 재시도가 401 이면 ApiError 를 던진다", async () => {
+    getCookieMock.mockImplementation((name: string) =>
+      name === SESSION_COOKIE_NAME ? { value: "sess_expired" } : undefined,
+    );
+    server.use(
+      http.get("https://backend.test/v1/pages/p_internal", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    await expect(
+      apiFetchServer("/v1/pages/p_internal", { allowAnonymousFallback: true }),
+    ).rejects.toMatchObject({ status: 401, code: "INVALID_SESSION" });
+  });
+
+  it("allowAnonymousFallback 미지정이면 401 을 그대로 던진다 (기존 흐름)", async () => {
+    getCookieMock.mockImplementation((name: string) =>
+      name === SESSION_COOKIE_NAME ? { value: "sess_xxx" } : undefined,
+    );
+    server.use(
+      http.get("https://backend.test/v1/pages/p_internal", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    await expect(apiFetchServer("/v1/pages/p_internal")).rejects.toMatchObject({
+      status: 401,
+      code: "INVALID_SESSION",
+    });
+  });
+
   it("BACKEND_URL 미설정 시 즉시 던진다", async () => {
     vi.stubEnv("BACKEND_URL", "");
 

@@ -20,7 +20,7 @@ export function PageLinkChipNavigator({ children, className }: Props) {
       if (!chip) return false;
       const pageId = chip.getAttribute("data-page-id");
       if (!pageId) return false;
-      router.push(`/pages/${pageId}`);
+      router.push(`/pages/${encodeURIComponent(pageId)}`);
       return true;
     },
     [router],

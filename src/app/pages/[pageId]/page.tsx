@@ -20,7 +20,9 @@ export default async function PageReadingRoute({
 
   let page: Page;
   try {
-    page = await apiFetchServer<Page>(`/v1/pages/${encodeURIComponent(pageId)}`);
+    page = await apiFetchServer<Page>(`/v1/pages/${encodeURIComponent(pageId)}`, {
+      allowAnonymousFallback: true,
+    });
   } catch (error) {
     if (error instanceof ApiError) {
       if (error.status === 401 || error.status === 403) {

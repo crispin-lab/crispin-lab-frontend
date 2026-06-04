@@ -128,16 +128,19 @@ function tocIndentClass(level: 1 | 2 | 3): string {
 
 function buildTocAndAssignIds(doc: JSONContent): TocItem[] {
   const items: TocItem[] = [];
-  for (const node of doc.content ?? []) {
-    if (node.type !== "heading") continue;
-    const level = node.attrs?.level;
-    if (level !== 1 && level !== 2 && level !== 3) continue;
-    const text = collectText(node);
-    if (text === "") continue;
-    const id = `toc-${items.length}`;
-    node.attrs = { ...node.attrs, id };
-    items.push({ id, level, text });
-  }
+  const visit = (node: JSONContent) => {
+    if (node.type === "heading") {
+      const level = node.attrs?.level;
+      const text = collectText(node);
+      if ((level === 1 || level === 2 || level === 3) && text !== "") {
+        const id = `toc-${items.length}`;
+        node.attrs = { ...node.attrs, id };
+        items.push({ id, level, text });
+      }
+    }
+    for (const child of node.content ?? []) visit(child);
+  };
+  visit(doc);
   return items;
 }
 
@@ -159,5 +162,6 @@ function formatDate(iso: string): string {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+    timeZone: "Asia/Seoul",
   }).format(date);
 }
