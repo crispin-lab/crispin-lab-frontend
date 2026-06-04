@@ -83,7 +83,11 @@ function PageEditForm({
   return (
     <article className="mx-auto w-full max-w-3xl space-y-6 px-6 py-10">
       <header className="flex items-center justify-between gap-4">
-        {/* visibility 는 PageEditRequest 가 받지 않아 편집 화면에선 read-only. 변경 UI 는 별도 endpoint·티켓. */}
+        {/*
+        todo    :: visibility 변경 UI 추가 — PageEditRequest 가 visibility 를 받지 않아 별도 endpoint 필요
+         author :: crispin
+         date   :: 2026-06-04T10:30:00KST
+         */}
         <VisibilityBadge visibility={visibility} />
         <span className="text-muted-foreground text-xs">
           v{currentVersion} · {formatPageTimestamp(updatedAt)}
