@@ -10,7 +10,7 @@ export function redirectToLogin(): void {
   window.location.assign(`/login?redirect=${encodeURIComponent(target)}`);
 }
 
-export function resetRedirectGuardForTest(): void {
+export function __resetRedirectGuardForTest__(): void {
   isRedirecting = false;
 }
 

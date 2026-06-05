@@ -6,12 +6,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { asPageId } from "@/lib/api/ids";
 import type { Page } from "@/lib/api/types";
 import { server } from "@/mocks/server";
+import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
 const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
 vi.mock("sonner", () => ({
   toast: { error: toastError },
 }));
+
+const { redirectToLoginMock } = vi.hoisted(() => ({ redirectToLoginMock: vi.fn() }));
+vi.mock("@/lib/auth/redirect", () => redirectModuleMock(redirectToLoginMock));
+
+// 실제 notFound() 는 throw 하지만, 테스트는 호출 사실만 검증하고 fall-through 렌더는 무시한다 (jsdom 에 ErrorBoundary 가 없어 throw 시 unhandled).
+const { notFoundMock } = vi.hoisted(() => ({ notFoundMock: vi.fn() }));
+vi.mock("next/navigation", () => ({ notFound: notFoundMock }));
 
 // Editor 는 TipTap 기반이라 jsdom 에서 무겁다. 화면 회귀의 본질 (저장 흐름) 만 검증하면 되므로 가벼운 텍스트 영역으로 대체.
 vi.mock("@/components/editor/Editor", () => ({
@@ -50,6 +58,8 @@ function pageBody(overrides: Partial<Page> = {}): Page {
 
 beforeEach(() => {
   toastError.mockReset();
+  redirectToLoginMock.mockReset();
+  notFoundMock.mockClear();
 });
 
 describe("PageEditView", () => {
@@ -155,7 +165,7 @@ describe("PageEditView", () => {
     expect(toastError).not.toHaveBeenCalled();
   });
 
-  it("페이지 조회 실패 시 에러 메시지를 노출한다", async () => {
+  it("404 면 notFound() — PRIVATE 페이지 존재 비노출", async () => {
     server.use(
       http.get("*/api/v1/pages/p_1", () =>
         HttpResponse.json(
@@ -168,6 +178,33 @@ describe("PageEditView", () => {
     const { Wrapper } = createQueryWrapper();
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("페이지를 찾을 수 없습니다.");
+    await waitFor(() => expect(notFoundMock).toHaveBeenCalled());
+  });
+
+  it("403 도 notFound() — reading 경로와 동일하게 흡수", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () =>
+        HttpResponse.json({ code: "FORBIDDEN", message: "권한이 없습니다." }, { status: 403 }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(notFoundMock).toHaveBeenCalled());
+  });
+
+  it("기타 5xx 등은 inline alert 로 노출", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () =>
+        HttpResponse.json({ code: "INTERNAL", message: "서버 오류입니다." }, { status: 500 }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("서버 오류입니다.");
+    expect(notFoundMock).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { Editor } from "@/components/editor/Editor";
 import { TitleInput } from "@/components/page/TitleInput";
@@ -17,7 +16,6 @@ import {
 } from "@/components/ui/select";
 import { usePageCreate } from "@/hooks/usePage";
 import { type SpaceId } from "@/lib/api/ids";
-import { toUserMessage } from "@/lib/api/errors";
 import { emptyEditorContent, serializeEditorContent } from "@/lib/editor/content";
 import {
   VISIBILITY_VALUES,
@@ -53,10 +51,6 @@ export function NewPageView({ spaceId }: Props) {
       {
         onSuccess: (result) => {
           router.push(`/pages/${result.pageId}`);
-        },
-        onError: (mutationError) => {
-          if (mutationError.status === 401 && mutationError.code === "INVALID_SESSION") return;
-          toast.error(toUserMessage(mutationError));
         },
       },
     );

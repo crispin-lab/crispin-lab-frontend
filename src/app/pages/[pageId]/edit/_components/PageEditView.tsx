@@ -1,13 +1,14 @@
 "use client";
 
+import { notFound } from "next/navigation";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 
 import { Editor } from "@/components/editor/Editor";
 import { TitleInput } from "@/components/page/TitleInput";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import { Button } from "@/components/ui/button";
 import { usePage, usePageUpdate } from "@/hooks/usePage";
+import { ApiError } from "@/lib/api/client";
 import { type PageId, type SpaceId, asSpaceId } from "@/lib/api/ids";
 import { toUserMessage } from "@/lib/api/errors";
 
@@ -22,6 +23,9 @@ export function PageEditView({ pageId }: Props) {
     return <PageEditSkeleton />;
   }
   if (isError) {
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+      notFound();
+    }
     return (
       <p role="alert" className="text-destructive">
         {toUserMessage(error)}
@@ -67,15 +71,7 @@ function PageEditForm({
   const { mutate, isPending } = usePageUpdate();
 
   function handleSave() {
-    mutate(
-      { pageId, body: { title, content: contentRef.current } },
-      {
-        onError: (mutationError) => {
-          if (mutationError.status === 401 && mutationError.code === "INVALID_SESSION") return;
-          toast.error(toUserMessage(mutationError));
-        },
-      },
-    );
+    mutate({ pageId, body: { title, content: contentRef.current } });
   }
 
   const canSave = title.trim() !== "" && !isPending;

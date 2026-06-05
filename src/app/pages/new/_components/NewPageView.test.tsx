@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { asSpaceId } from "@/lib/api/ids";
 import { server } from "@/mocks/server";
+import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
 const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
@@ -17,6 +18,9 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPush }),
 }));
 
+const { redirectToLoginMock } = vi.hoisted(() => ({ redirectToLoginMock: vi.fn() }));
+vi.mock("@/lib/auth/redirect", () => redirectModuleMock(redirectToLoginMock));
+
 vi.mock("@/components/editor/Editor", () => ({
   Editor: ({ onChange }: { onChange?: (next: string) => void }) => (
     <textarea aria-label="본문 (mock)" onChange={(event) => onChange?.(event.target.value)} />
@@ -28,6 +32,7 @@ import { NewPageView } from "./NewPageView";
 beforeEach(() => {
   toastError.mockReset();
   routerPush.mockReset();
+  redirectToLoginMock.mockReset();
 });
 
 describe("NewPageView", () => {
@@ -103,7 +108,8 @@ describe("NewPageView", () => {
     await user.type(screen.getByPlaceholderText("제목을 입력해 주세요"), "새 글");
     await user.click(screen.getByRole("button", { name: "만들기" }));
 
-    await waitFor(() => expect(routerPush).not.toHaveBeenCalled());
+    await waitFor(() => expect(redirectToLoginMock).toHaveBeenCalledTimes(1));
+    expect(routerPush).not.toHaveBeenCalled();
     expect(toastError).not.toHaveBeenCalled();
   });
 });

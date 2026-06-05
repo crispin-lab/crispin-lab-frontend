@@ -1,40 +1,35 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/mocks/server";
+import { redirectModuleMock } from "@/test/mocks/redirect";
+import { createQueryWrapper, createTestQueryClient } from "@/test/queryWrapper";
 
 const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
 vi.mock("sonner", () => ({
   toast: { error: toastError },
 }));
 
+const { redirectToLoginMock } = vi.hoisted(() => ({ redirectToLoginMock: vi.fn() }));
+vi.mock("@/lib/auth/redirect", () => redirectModuleMock(redirectToLoginMock));
+
 import { useLogin, useSignup } from "./useAuth";
-
-function withClient(client: QueryClient) {
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
-  };
-}
-
-function createClient() {
-  return new QueryClient({
-    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
-  });
-}
 
 describe("useLogin", () => {
   beforeEach(() => {
     toastError.mockReset();
+    redirectToLoginMock.mockReset();
   });
 
   it("성공 시 queryClient.invalidateQueries 가 호출되고 onError 는 호출되지 않는다", async () => {
     server.use(http.post("/api/auth/login", () => HttpResponse.json({ ok: true })));
-    const client = createClient();
+    const client = createTestQueryClient();
     const invalidateSpy = vi.spyOn(client, "invalidateQueries");
 
-    const { result } = renderHook(() => useLogin(), { wrapper: withClient(client) });
+    const { result } = renderHook(() => useLogin(), {
+      wrapper: createQueryWrapper(client).Wrapper,
+    });
     result.current.mutate({ email: "a@b.com", password: "pw" });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -52,7 +47,7 @@ describe("useLogin", () => {
       ),
     );
 
-    const { result } = renderHook(() => useLogin(), { wrapper: withClient(createClient()) });
+    const { result } = renderHook(() => useLogin(), { wrapper: createQueryWrapper().Wrapper });
     result.current.mutate({ email: "a@b.com", password: "wrong" });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -69,10 +64,11 @@ describe("useLogin", () => {
       ),
     );
 
-    const { result } = renderHook(() => useLogin(), { wrapper: withClient(createClient()) });
+    const { result } = renderHook(() => useLogin(), { wrapper: createQueryWrapper().Wrapper });
     result.current.mutate({ email: "a@b.com", password: "pw" });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(redirectToLoginMock).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
   });
 });
@@ -80,14 +76,17 @@ describe("useLogin", () => {
 describe("useSignup", () => {
   beforeEach(() => {
     toastError.mockReset();
+    redirectToLoginMock.mockReset();
   });
 
   it("성공 시 queryClient.invalidateQueries 가 호출되고 onError 는 호출되지 않는다", async () => {
     server.use(http.post("/api/auth/signup", () => HttpResponse.json({ ok: true })));
-    const client = createClient();
+    const client = createTestQueryClient();
     const invalidateSpy = vi.spyOn(client, "invalidateQueries");
 
-    const { result } = renderHook(() => useSignup(), { wrapper: withClient(client) });
+    const { result } = renderHook(() => useSignup(), {
+      wrapper: createQueryWrapper(client).Wrapper,
+    });
     result.current.mutate({ email: "a@b.com", handle: "alice", password: "password1" });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -105,7 +104,7 @@ describe("useSignup", () => {
       ),
     );
 
-    const { result } = renderHook(() => useSignup(), { wrapper: withClient(createClient()) });
+    const { result } = renderHook(() => useSignup(), { wrapper: createQueryWrapper().Wrapper });
     result.current.mutate({ email: "a@b.com", handle: "taken", password: "password1" });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -122,10 +121,11 @@ describe("useSignup", () => {
       ),
     );
 
-    const { result } = renderHook(() => useSignup(), { wrapper: withClient(createClient()) });
+    const { result } = renderHook(() => useSignup(), { wrapper: createQueryWrapper().Wrapper });
     result.current.mutate({ email: "a@b.com", handle: "alice", password: "password1" });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(redirectToLoginMock).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
   });
 });

@@ -122,13 +122,13 @@ function PageList({ spaceId }: { spaceId: SpaceId }) {
 
 - 라우팅이면 `<Link>` (next/link). 페이지를 바꾼다 = link.
 - 액션 (mutation, dialog open, state toggle) 이면 `<Button>` (shadcn).
-- 시각이 button 인데 라우팅이 필요하면 shadcn `Button asChild` 로 합친다.
+- 시각이 button 인데 라우팅이 필요하면 본 레포 Button (base-ui 기반) 의 `render` prop 으로 합친다 — shadcn `asChild` 등가.
 
 ```tsx
-<Button asChild>
-  <Link href="/spaces">스페이스 둘러보기</Link>
-</Button>
+<Button nativeButton={false} render={<Link href="/spaces">스페이스 둘러보기</Link>} />
 ```
+
+`nativeButton={false}` 가 빠지면 `<button><a/></button>` 으로 nested 렌더되어 hydration mismatch 가 난다 — base-ui 가 기본으로 `<button>` 을 가정하기 때문. Link 처럼 비-button element 로 교체할 때 항상 `nativeButton={false}` 동반.
 
 - 우클릭 컨텍스트 메뉴 (새 탭 열기, 링크 복사) 가 필요하면 반드시 `<Link>`. `<Button onClick={() => router.push(...)}>` 는 접근성·UX 둘 다 손해.
 

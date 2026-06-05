@@ -6,22 +6,12 @@ import { useState } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { ApiError } from "@/lib/api/client";
-import { redirectToLogin } from "@/lib/auth/redirect";
-
-function isInvalidSession(error: unknown): boolean {
-  return error instanceof ApiError && error.status === 401 && error.code === "INVALID_SESSION";
-}
-
-function handleError(error: unknown): void {
-  if (isInvalidSession(error)) {
-    redirectToLogin();
-  }
-}
+import { handleMutationError, handleQueryError } from "@/lib/api/queryErrorHandlers";
 
 function makeQueryClient(): QueryClient {
   return new QueryClient({
-    queryCache: new QueryCache({ onError: handleError }),
-    mutationCache: new MutationCache({ onError: handleError }),
+    queryCache: new QueryCache({ onError: handleQueryError }),
+    mutationCache: new MutationCache({ onError: handleMutationError }),
     defaultOptions: {
       queries: {
         staleTime: 30_000,
