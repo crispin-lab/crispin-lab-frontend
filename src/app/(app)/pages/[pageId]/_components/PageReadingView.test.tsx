@@ -54,13 +54,6 @@ describe("PageReadingView", () => {
     expect(editLink).toHaveAttribute("href", "/pages/p_1/edit");
   });
 
-  it("로그인 상태의 app bar 는 로그인 link 대신 '내 스페이스' link 를 보인다", () => {
-    render(<PageReadingView page={makePage()} isAuthenticated={true} />);
-
-    expect(screen.queryByRole("link", { name: /로그인/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /내 스페이스/ })).toBeInTheDocument();
-  });
-
   it("PageLink 노드는 chip 으로 렌더링되며 data-page-id 와 role=link 를 갖는다", () => {
     const page = makePage({
       content: makeDoc([

@@ -11,10 +11,18 @@ vi.mock("sonner", () => ({
   toast: { error: toastError },
 }));
 
-const { redirectToLoginMock } = vi.hoisted(() => ({ redirectToLoginMock: vi.fn() }));
-vi.mock("@/lib/auth/redirect", () => redirectModuleMock(redirectToLoginMock));
+const { redirectToLoginMock, navigateAfterLogoutMock } = vi.hoisted(() => ({
+  redirectToLoginMock: vi.fn(),
+  navigateAfterLogoutMock: vi.fn(),
+}));
+vi.mock("@/lib/auth/redirect", () =>
+  redirectModuleMock({
+    redirectToLogin: redirectToLoginMock,
+    navigateAfterLogout: navigateAfterLogoutMock,
+  }),
+);
 
-import { useLogin, useSignup } from "./useAuth";
+import { useLogin, useLogout, useMe, useSignup } from "./useAuth";
 
 describe("useLogin", () => {
   beforeEach(() => {
@@ -127,5 +135,113 @@ describe("useSignup", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(redirectToLoginMock).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
+  });
+});
+
+describe("useMe", () => {
+  beforeEach(() => {
+    toastError.mockReset();
+    redirectToLoginMock.mockReset();
+  });
+
+  it("200 응답이면 응답 본문을 그대로 반환한다", async () => {
+    server.use(
+      http.get("/api/v1/users/me", () =>
+        HttpResponse.json({
+          userId: "u_1",
+          handle: "crispin",
+          email: "crispin@example.com",
+          role: "USER",
+        }),
+      ),
+    );
+
+    const { result } = renderHook(() => useMe(), { wrapper: createQueryWrapper().Wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({
+      userId: "u_1",
+      handle: "crispin",
+      email: "crispin@example.com",
+      role: "USER",
+    });
+    expect(redirectToLoginMock).not.toHaveBeenCalled();
+  });
+
+  it("401 INVALID_SESSION 은 null 로 흡수되고 글로벌 redirect 가 걸리지 않는다", async () => {
+    server.use(
+      http.get("/api/v1/users/me", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    const { result } = renderHook(() => useMe(), { wrapper: createQueryWrapper().Wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toBeNull();
+    expect(redirectToLoginMock).not.toHaveBeenCalled();
+  });
+
+  it("5xx 는 error 로 노출된다 (옵셔널 인증 흡수는 401 에만 한정)", async () => {
+    server.use(
+      http.get("/api/v1/users/me", () =>
+        HttpResponse.json(
+          { code: "INTERNAL_ERROR", message: "잠시 후 다시 시도해 주세요." },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    const { result } = renderHook(() => useMe(), { wrapper: createQueryWrapper().Wrapper });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe("useLogout", () => {
+  beforeEach(() => {
+    toastError.mockReset();
+    redirectToLoginMock.mockReset();
+    navigateAfterLogoutMock.mockReset();
+  });
+
+  it("성공 시 캐시를 clear 하고 navigateAfterLogout 으로 떠난다", async () => {
+    server.use(http.post("/api/auth/logout", () => HttpResponse.json({ ok: true })));
+    const client = createTestQueryClient();
+    const clearSpy = vi.spyOn(client, "clear");
+
+    const { result } = renderHook(() => useLogout(), {
+      wrapper: createQueryWrapper(client).Wrapper,
+    });
+    result.current.mutate();
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(clearSpy).toHaveBeenCalledTimes(1);
+    expect(navigateAfterLogoutMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("BFF 가 5xx 여도 onSettled 로 cleanup 이 동일하게 수행된다 (사용자가 의도대로 떠날 수 있어야 함)", async () => {
+    server.use(
+      http.post("/api/auth/logout", () =>
+        HttpResponse.json(
+          { code: "BFF_UPSTREAM_UNAVAILABLE", message: "요청을 처리하지 못했습니다." },
+          { status: 502 },
+        ),
+      ),
+    );
+    const client = createTestQueryClient();
+    const clearSpy = vi.spyOn(client, "clear");
+
+    const { result } = renderHook(() => useLogout(), {
+      wrapper: createQueryWrapper(client).Wrapper,
+    });
+    result.current.mutate();
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(clearSpy).toHaveBeenCalledTimes(1);
+    expect(navigateAfterLogoutMock).toHaveBeenCalledTimes(1);
   });
 });

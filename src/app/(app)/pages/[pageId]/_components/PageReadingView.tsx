@@ -9,7 +9,6 @@ import { parseEditorContent } from "@/lib/editor/content";
 import { cn } from "@/lib/utils";
 
 import { PageLinkChipNavigator } from "./PageLinkChipNavigator";
-import { PublicAppBar } from "./PublicAppBar";
 
 type Props = {
   page: Page;
@@ -34,8 +33,7 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
   const showUpdatedAt = new Date(page.updatedAt).getTime() !== new Date(page.createdAt).getTime();
 
   return (
-    <div className={cn("min-h-screen", className)}>
-      <PublicAppBar isAuthenticated={isAuthenticated} />
+    <div className={className}>
       <div
         className={cn(
           "mx-auto w-full max-w-3xl px-6 py-10",

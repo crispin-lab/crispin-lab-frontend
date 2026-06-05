@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   loginRedirectUrl,
+  navigateAfterLogout,
   redirectToLogin,
   __resetRedirectGuardForTest__,
   safeRedirectTarget,
@@ -100,6 +101,45 @@ describe("loginRedirectUrl", () => {
     expect(loginRedirectUrl("/pages/p_1?tab=draft")).toBe(
       "/login?redirect=%2Fpages%2Fp_1%3Ftab%3Ddraft",
     );
+  });
+});
+
+describe("navigateAfterLogout", () => {
+  let replaceSpy: ReturnType<typeof vi.fn>;
+  let assignSpy: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    replaceSpy = vi.fn();
+    assignSpy = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: {
+        pathname: "/spaces",
+        search: "",
+        assign: assignSpy,
+        replace: replaceSpy,
+      },
+    });
+  });
+
+  it("/login 으로 history 를 치환하며 (`replace`) 이동한다 — 직전 페이지가 백버튼으로 잠깐 노출되는 회귀 방지", () => {
+    navigateAfterLogout();
+
+    expect(replaceSpy).toHaveBeenCalledTimes(1);
+    expect(replaceSpy).toHaveBeenCalledWith("/login");
+    expect(assignSpy).not.toHaveBeenCalled();
+  });
+
+  it("window 가 정의되지 않은 환경 (SSR) 에서는 조용히 return", () => {
+    const originalWindow = globalThis.window;
+    delete (globalThis as { window?: Window }).window;
+
+    try {
+      expect(() => navigateAfterLogout()).not.toThrow();
+    } finally {
+      globalThis.window = originalWindow;
+    }
   });
 });
 

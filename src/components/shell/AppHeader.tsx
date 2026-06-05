@@ -1,0 +1,86 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { useMe } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
+
+import { AccountMenu } from "./AccountMenu";
+
+type Props = {
+  className?: string;
+};
+
+export function AppHeader({ className }: Props) {
+  return (
+    <header
+      className={cn(
+        "border-border bg-background sticky top-0 z-10 border-b",
+        "flex h-12 items-center gap-4 px-6",
+        className,
+      )}
+    >
+      <Link href="/" className="text-sm font-semibold tracking-tight">
+        crispin-lab
+      </Link>
+      <SearchInput />
+      <AccountSlot />
+    </header>
+  );
+}
+
+function SearchInput() {
+  const router = useRouter();
+  const [value, setValue] = useState("");
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = value.trim();
+    if (query === "") return;
+    router.push(`/search?query=${encodeURIComponent(query)}`);
+  }
+
+  return (
+    <form className="flex-1" role="search" onSubmit={handleSubmit}>
+      <input
+        type="search"
+        name="query"
+        aria-label="검색"
+        placeholder="검색"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        className="border-input bg-muted/40 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full max-w-md rounded-md border px-3 text-sm outline-none focus-visible:ring-3"
+      />
+    </form>
+  );
+}
+
+function AccountSlot() {
+  const { data: me, isPending, isError } = useMe();
+
+  // 첫 로드 동안 깜빡임 방지 + 5xx 일시 장애에서 "로그아웃된 것처럼 보이는" 회귀 방지를 같이 잡는다.
+  // 트레이드오프: 백엔드 영구 5xx 시 비로그인 사용자가 로그인 link 도 못 보지만, 로그인 페이지는 BFF 의 다른 경로라
+  // 직접 URL 로 진입 가능. 깜빡임이 더 흔한 경험이라 placeholder 쪽으로 기운다.
+  if (isPending || isError) {
+    return (
+      <div
+        aria-hidden
+        data-testid="account-slot-placeholder"
+        data-state={isError ? "error" : "loading"}
+        className="h-8 w-20"
+      />
+    );
+  }
+
+  if (me == null) {
+    return (
+      <Link href="/login" className="text-muted-foreground text-sm hover:underline">
+        로그인 →
+      </Link>
+    );
+  }
+
+  return <AccountMenu me={me} />;
+}
