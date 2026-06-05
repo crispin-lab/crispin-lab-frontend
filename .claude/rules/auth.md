@@ -61,7 +61,7 @@ const sessionCookie = {
 
 - `SameSite=Lax`: 일반 GET navigation 에는 cookie 가 동봉되지만, cross-site `fetch` / form POST 에는 미전송 → CSRF 1 차 방어.
 - `Secure`: HTTPS 전용. 로컬 개발 (HTTP) 에서는 환경 변수 분기로 false.
-- CSRF 추가 방어: state-changing BFF route handler 는 `Sec-Fetch-Site` 헤더가 `same-origin` 인지 검사한다. 그 외 (`cross-site`, `same-site`, 누락) 는 403 `CSRF_BLOCKED` 으로 거부. forced-logout 류 공격에 대한 1.5 차 방어 — SameSite=Lax 가 막지 못하는 응답 부수효과 (예: `Set-Cookie: session=; Max-Age=0` 도달) 까지 차단한다. 적용 위치는 endpoint 별 route handler — catch-all BFF 는 본 검사를 *하지 않는다* (catch-all 은 backend 의 의미 모르고, backend 단 권한 / 인증이 같은 역할). state-changing endpoint 별 분리된 route handler (현재 `/api/auth/logout`) 에서만 검사.
+- CSRF 추가 방어: state-changing BFF route handler 는 `Sec-Fetch-Site === 'same-origin'` 으로 1 차 통과시키고, 헤더가 누락된 경우 `Origin` 헤더가 본 요청 URL 의 origin 과 일치하는지로 fallback. 둘 다 만족하지 못하면 403 `CSRF_BLOCKED`. forced-logout 류 공격에 대한 1.5 차 방어 — SameSite=Lax 가 막지 못하는 응답 부수효과 (예: `Set-Cookie: session=; Max-Age=0` 도달) 까지 차단한다. Origin fallback 은 헤더 미지원 환경 (확장 프로그램 간섭, 일부 WebView, 일부 fetch polyfill) 에서 정상 사용자가 차단되는 false-positive 를 줄이는 안전망 — Origin 도 브라우저가 박는 신뢰 가능 헤더라 보안 수준은 거의 동등. 적용 위치는 endpoint 별 route handler — catch-all BFF 는 본 검사를 *하지 않는다* (catch-all 은 backend 의 의미 모르고, backend 단 권한 / 인증이 같은 역할). state-changing endpoint 별 분리된 route handler (현재 `/api/auth/logout`) 에서만 검사.
 
 ## 로그인 / 로그아웃 흐름
 

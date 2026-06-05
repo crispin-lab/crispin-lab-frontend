@@ -16,13 +16,20 @@ vi.mock("next/headers", () => ({
 
 const BACKEND_URL = "https://backend.test";
 
-async function callLogout(options: { fetchSite?: string | null } = {}): Promise<Response> {
+const REQUEST_URL = "https://app.test/api/auth/logout";
+
+async function callLogout(
+  options: { fetchSite?: string | null; origin?: string | null } = {},
+): Promise<Response> {
   const { POST } = await import("./route");
   const headers = new Headers();
   if (options.fetchSite !== null) {
     headers.set("sec-fetch-site", options.fetchSite ?? "same-origin");
   }
-  return POST(new Request("https://app.test/api/auth/logout", { method: "POST", headers }));
+  if (options.origin !== null && options.origin !== undefined) {
+    headers.set("origin", options.origin);
+  }
+  return POST(new Request(REQUEST_URL, { method: "POST", headers }));
 }
 
 describe("POST /api/auth/logout", () => {
@@ -105,9 +112,29 @@ describe("POST /api/auth/logout", () => {
     expect(cookieDelete).not.toHaveBeenCalled();
   });
 
-  it("Sec-Fetch-Site 헤더 누락 시에도 403 (forced-logout 방어 — 헤더 없는 구식 브라우저 차단)", async () => {
+  it("Sec-Fetch-Site 누락 + Origin 이 요청 origin 과 일치하면 통과 (헤더 미지원 환경 fallback)", async () => {
     cookieGet.mockReturnValue({ value: "sess_xxx" });
-    const response = await callLogout({ fetchSite: null });
+    server.use(
+      http.delete(`${BACKEND_URL}/v1/sessions/me`, () => new HttpResponse(null, { status: 204 })),
+    );
+
+    const response = await callLogout({ fetchSite: null, origin: "https://app.test" });
+
+    expect(response.status).toBe(200);
+    expect(cookieDelete).toHaveBeenCalledWith("session");
+  });
+
+  it("Sec-Fetch-Site 누락 + Origin 도 미일치면 403 (cross-origin form post 류 차단)", async () => {
+    cookieGet.mockReturnValue({ value: "sess_xxx" });
+    const response = await callLogout({ fetchSite: null, origin: "https://attacker.test" });
+
+    expect(response.status).toBe(403);
+    expect(cookieDelete).not.toHaveBeenCalled();
+  });
+
+  it("Sec-Fetch-Site / Origin 둘 다 누락이면 403 (정보 0 — 보수적 거부)", async () => {
+    cookieGet.mockReturnValue({ value: "sess_xxx" });
+    const response = await callLogout({ fetchSite: null, origin: null });
 
     expect(response.status).toBe(403);
     expect(cookieDelete).not.toHaveBeenCalled();
