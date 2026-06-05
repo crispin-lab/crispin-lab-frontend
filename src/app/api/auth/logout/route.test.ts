@@ -16,9 +16,13 @@ vi.mock("next/headers", () => ({
 
 const BACKEND_URL = "https://backend.test";
 
-async function callLogout(): Promise<Response> {
+async function callLogout(options: { fetchSite?: string | null } = {}): Promise<Response> {
   const { POST } = await import("./route");
-  return POST();
+  const headers = new Headers();
+  if (options.fetchSite !== null) {
+    headers.set("sec-fetch-site", options.fetchSite ?? "same-origin");
+  }
+  return POST(new Request("https://app.test/api/auth/logout", { method: "POST", headers }));
 }
 
 describe("POST /api/auth/logout", () => {
@@ -90,5 +94,22 @@ describe("POST /api/auth/logout", () => {
 
     expect(response.status).toBe(200);
     expect(cookieDelete).toHaveBeenCalledWith("session");
+  });
+
+  it("Sec-Fetch-Site 가 cross-site 면 403 CSRF_BLOCKED 로 거부 (cookie 보존)", async () => {
+    cookieGet.mockReturnValue({ value: "sess_xxx" });
+    const response = await callLogout({ fetchSite: "cross-site" });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({ code: "CSRF_BLOCKED" });
+    expect(cookieDelete).not.toHaveBeenCalled();
+  });
+
+  it("Sec-Fetch-Site 헤더 누락 시에도 403 (forced-logout 방어 — 헤더 없는 구식 브라우저 차단)", async () => {
+    cookieGet.mockReturnValue({ value: "sess_xxx" });
+    const response = await callLogout({ fetchSite: null });
+
+    expect(response.status).toBe(403);
+    expect(cookieDelete).not.toHaveBeenCalled();
   });
 });

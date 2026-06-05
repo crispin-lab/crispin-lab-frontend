@@ -61,7 +61,7 @@ const sessionCookie = {
 
 - `SameSite=Lax`: 일반 GET navigation 에는 cookie 가 동봉되지만, cross-site `fetch` / form POST 에는 미전송 → CSRF 1 차 방어.
 - `Secure`: HTTPS 전용. 로컬 개발 (HTTP) 에서는 환경 변수 분기로 false.
-- CSRF 추가 방어: state-changing 요청 (POST/PUT/DELETE) 은 `X-Requested-With: fetch` 같은 커스텀 헤더 또는 double-submit token 으로 한 겹 더. SameSite=Lax 만으로도 대부분 케이스에서 충분하지만 본 결정은 도입 시점에 별도 검토.
+- CSRF 추가 방어: state-changing BFF route handler 는 `Sec-Fetch-Site` 헤더가 `same-origin` 인지 검사한다. 그 외 (`cross-site`, `same-site`, 누락) 는 403 `CSRF_BLOCKED` 으로 거부. forced-logout 류 공격에 대한 1.5 차 방어 — SameSite=Lax 가 막지 못하는 응답 부수효과 (예: `Set-Cookie: session=; Max-Age=0` 도달) 까지 차단한다. 적용 위치는 endpoint 별 route handler — catch-all BFF 는 본 검사를 *하지 않는다* (catch-all 은 backend 의 의미 모르고, backend 단 권한 / 인증이 같은 역할). state-changing endpoint 별 분리된 route handler (현재 `/api/auth/logout`) 에서만 검사.
 
 ## 로그인 / 로그아웃 흐름
 
