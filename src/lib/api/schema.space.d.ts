@@ -365,6 +365,15 @@ export interface components {
             /** @description 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
+        /** PageEditRequest */
+        PageEditRequest: {
+            /** @description 변경할 공개 범위 (DRAFT / INTERNAL / PUBLIC). 생략 시 기존 값 유지. */
+            visibility?: string | null;
+            /** @description 새 제목＊ */
+            title: string;
+            /** @description 새 본문＊ */
+            content: string;
+        };
         /** TagRegisterRequest */
         TagRegisterRequest: {
             /** @description 스페이스 식별자＊ */
@@ -548,13 +557,6 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
-        };
-        /** PageEditRequest */
-        PageEditRequest: {
-            /** @description 새 제목＊ */
-            title: string;
-            /** @description 새 본문＊ */
-            content: string;
         };
         /** TagListResponse */
         TagListResponse: {

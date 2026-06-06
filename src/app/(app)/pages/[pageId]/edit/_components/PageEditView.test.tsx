@@ -91,12 +91,20 @@ describe("PageEditView", () => {
     expect(saveButton).toBeDisabled();
   });
 
-  it("저장 시 PUT 으로 새 title/content 가 전송된다", async () => {
-    const captured: { value: { title: string; content: string } | null } = { value: null };
+  it("저장 시 PUT 으로 새 title/content/visibility 가 전송된다", async () => {
+    const captured: {
+      value: { title: string; content: string; visibility: string } | null;
+    } = { value: null };
     server.use(
-      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ title: "원본" }))),
+      http.get("*/api/v1/pages/p_1", () =>
+        HttpResponse.json(pageBody({ title: "원본", visibility: "PUBLIC" })),
+      ),
       http.put("*/api/v1/pages/p_1", async ({ request }) => {
-        const body = (await request.json()) as { title: string; content: string };
+        const body = (await request.json()) as {
+          title: string;
+          content: string;
+          visibility: string;
+        };
         captured.value = body;
         return HttpResponse.json({
           title: body.title,
@@ -119,7 +127,62 @@ describe("PageEditView", () => {
 
     await waitFor(() => expect(captured.value).not.toBeNull());
     expect(captured.value?.title).toBe("수정");
+    expect(captured.value?.visibility).toBe("PUBLIC");
     expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("공개 범위를 바꿔 저장하면 PUT body 의 visibility 가 새 값으로 전송된다", async () => {
+    const captured: { value: { visibility: string } | null } = { value: null };
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ visibility: "PUBLIC" }))),
+      http.put("*/api/v1/pages/p_1", async ({ request }) => {
+        const body = (await request.json()) as { visibility: string };
+        captured.value = body;
+        return HttpResponse.json({
+          title: "원본 제목",
+          pageId: "p_1",
+          version: 4,
+          updatedAt: "2026-05-27T00:00:00Z",
+        });
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByLabelText("공개 범위"));
+    await user.click(await screen.findByRole("option", { name: /비공개/ }));
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(captured.value).not.toBeNull());
+    expect(captured.value?.visibility).toBe("INTERNAL");
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("저장 시 권한 거부 (403) 는 글로벌 mutation 에러 toast 로 흡수된다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.put("*/api/v1/pages/p_1", () =>
+        HttpResponse.json(
+          { code: "FORBIDDEN", message: "공개 범위를 변경할 권한이 없습니다." },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("공개 범위를 변경할 권한이 없습니다."),
+    );
+    expect(notFoundMock).not.toHaveBeenCalled();
   });
 
   it("저장 실패 시 toast 가 백엔드 message 로 노출된다", async () => {

@@ -15,9 +15,8 @@ const VISIBILITY_DESCRIPTION: Record<Visibility, string> = {
   PUBLIC: "누구나 볼 수 있는 공개 페이지",
 };
 
-export function visibilityLabel(value: string): string {
-  if (isVisibility(value)) return VISIBILITY_LABEL[value];
-  return value;
+export function visibilityLabel(value: Visibility): string {
+  return VISIBILITY_LABEL[value];
 }
 
 export function visibilityDescription(value: Visibility): string {
