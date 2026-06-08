@@ -106,7 +106,7 @@ describe("useSignup", () => {
     server.use(
       http.post("/api/auth/signup", () =>
         HttpResponse.json(
-          { code: "HANDLE_ALREADY_USED", message: "이미 사용 중인 핸들입니다." },
+          { code: "HANDLE_ALREADY_USED", message: "이미 등록된 사용자 이름입니다." },
           { status: 409 },
         ),
       ),
@@ -116,7 +116,7 @@ describe("useSignup", () => {
     result.current.mutate({ email: "a@b.com", handle: "taken", password: "password1" });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(toastError).toHaveBeenCalledWith("이미 사용 중인 사용자 이름입니다.");
+    expect(toastError).toHaveBeenCalledWith("이미 등록된 사용자 이름입니다.");
   });
 
   it("INVALID_SESSION (401) 은 글로벌 가드가 redirect 로 처리하므로 toast 는 띄우지 않는다", async () => {
