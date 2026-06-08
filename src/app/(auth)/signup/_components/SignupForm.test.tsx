@@ -195,7 +195,7 @@ describe("SignupForm", () => {
     server.use(
       http.post("/api/auth/signup", () =>
         HttpResponse.json(
-          { code: "HANDLE_ALREADY_USED", message: "이미 사용 중인 핸들입니다." },
+          { code: "HANDLE_ALREADY_USED", message: "이미 등록된 사용자 이름입니다." },
           { status: 409 },
         ),
       ),
@@ -209,9 +209,7 @@ describe("SignupForm", () => {
     await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
-    await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("이미 사용 중인 사용자 이름입니다."),
-    );
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("이미 등록된 사용자 이름입니다."));
     expect(routerPush).not.toHaveBeenCalled();
   });
 
