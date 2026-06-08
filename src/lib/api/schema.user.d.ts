@@ -64,19 +64,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessions/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 현재 세션 로그아웃
+         * @description 현재 세션 로그아웃
+         */
+        delete: operations["Session \uD604\uC7AC \uC138\uC158 \uB85C\uADF8\uC544\uC6C3 \uC815\uC0C1 \uC778\uC99D \uC2DC 204 \uB97C \uBC18\uD658\uD55C\uB2E4"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 현재 세션 사용자 조회
+         * @description 현재 세션 사용자 조회
+         */
+        get: operations["User \uD604\uC7AC \uC138\uC158 \uC0AC\uC6A9\uC790 \uC870\uD68C \uC815\uC0C1 \uC778\uC99D \uC2DC 200 \uACFC \uC790\uAE30 \uC815\uBCF4\uB97C \uBC18\uD658\uD55C\uB2E4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** UserSignupRequest */
-        UserSignupRequest: {
-            /** @description 비밀번호＊ */
-            password: string;
-            /** @description 핸들 (영문 소문자/숫자/_, 3~30자)＊ */
-            handle: string;
-            /** @description 이메일＊ */
-            email: string;
-        };
         /** UserSignupResponse */
         UserSignupResponse: {
             /** @description 생성된 사용자 식별자＊ */
@@ -100,6 +131,26 @@ export interface components {
         AuthLoginRequest: {
             /** @description 비밀번호＊ */
             password: string;
+            /** @description 이메일＊ */
+            email: string;
+        };
+        /** UserSignupRequest */
+        UserSignupRequest: {
+            /** @description 비밀번호＊ */
+            password: string;
+            /** @description 사용자 이름 (영문 소문자/숫자/_, 3~30자)＊ */
+            handle: string;
+            /** @description 이메일＊ */
+            email: string;
+        };
+        /** UserMeResponse */
+        UserMeResponse: {
+            /** @description 사용자 이름＊ */
+            handle: string;
+            /** @description ADMIN 권한 보유 여부＊ */
+            isAdmin: boolean;
+            /** @description 사용자 식별자＊ */
+            userId: string;
             /** @description 이메일＊ */
             email: string;
         };
@@ -179,6 +230,56 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    "Session \uD604\uC7AC \uC138\uC158 \uB85C\uADF8\uC544\uC6C3 \uC815\uC0C1 \uC778\uC99D \uC2DC 204 \uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 204 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "User \uD604\uC7AC \uC138\uC158 \uC0AC\uC6A9\uC790 \uC870\uD68C \uC815\uC0C1 \uC778\uC99D \uC2DC 200 \uACFC \uC790\uAE30 \uC815\uBCF4\uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 42:USER
+                 */
+                Authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserMeResponse"];
+                };
             };
         };
     };
