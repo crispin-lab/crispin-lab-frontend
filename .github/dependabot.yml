@@ -23,6 +23,12 @@ updates:
       testing-library:
         patterns:
           - "@testing-library/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
 
   - package-ecosystem: "github-actions"
     directory: "/"
