@@ -13,6 +13,16 @@ updates:
     commit-message:
       prefix: "[chore]"
       include: "scope"
+    groups:
+      tiptap:
+        patterns:
+          - "@tiptap/*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      testing-library:
+        patterns:
+          - "@testing-library/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
