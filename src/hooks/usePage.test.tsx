@@ -17,6 +17,8 @@ function pageBody(overrides: Partial<Page> = {}): Page {
     spaceId: "s_1",
     visibility: "PUBLIC",
     parentPageId: null,
+    displayOrder: 0,
+    ancestors: [],
     title: "안녕",
     authorId: "u_1",
     pageId: "p_1",
@@ -33,6 +35,7 @@ function pageSummary(overrides: Partial<PageSummary> = {}): PageSummary {
     title: "이전",
     pageId: "p_1",
     updatedAt: "2026-01-01T00:00:00Z",
+    displayOrder: 0,
     ...overrides,
   };
 }

@@ -8,9 +8,27 @@ import { MentionList, type MentionListHandle } from "./MentionList";
 
 function makeItems(): PageSummary[] {
   return [
-    { pageId: "p_a", title: "회의록", spaceId: "s_1", updatedAt: "2026-01-01T00:00:00Z" },
-    { pageId: "p_b", title: "아이디어", spaceId: "s_1", updatedAt: "2026-01-02T00:00:00Z" },
-    { pageId: "p_c", title: "독서", spaceId: "s_1", updatedAt: "2026-01-03T00:00:00Z" },
+    {
+      pageId: "p_a",
+      title: "회의록",
+      spaceId: "s_1",
+      updatedAt: "2026-01-01T00:00:00Z",
+      displayOrder: 0,
+    },
+    {
+      pageId: "p_b",
+      title: "아이디어",
+      spaceId: "s_1",
+      updatedAt: "2026-01-02T00:00:00Z",
+      displayOrder: 1,
+    },
+    {
+      pageId: "p_c",
+      title: "독서",
+      spaceId: "s_1",
+      updatedAt: "2026-01-03T00:00:00Z",
+      displayOrder: 2,
+    },
   ];
 }
 

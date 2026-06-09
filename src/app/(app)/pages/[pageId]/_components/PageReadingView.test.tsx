@@ -19,6 +19,8 @@ function makePage(overrides: Partial<Page> = {}): Page {
     spaceId: "s_1",
     visibility: "PUBLIC",
     parentPageId: null,
+    displayOrder: 0,
+    ancestors: [],
     title: "TipTap 위키 링크 구현 메모",
     authorId: "u_crispin",
     pageId: "p_1",
