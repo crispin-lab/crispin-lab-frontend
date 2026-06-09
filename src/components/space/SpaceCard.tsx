@@ -1,6 +1,7 @@
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SpaceSummary } from "@/lib/api/types";
+import { formatUpdatedAtKR } from "@/lib/format/date";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -8,15 +9,9 @@ type Props = {
   className?: string;
 };
 
-const UPDATED_AT_FORMAT = new Intl.DateTimeFormat("ko-KR", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
 export function SpaceCard({ space, className }: Props) {
-  const description = (space.description ?? "").trim();
-  const updatedAtLabel = UPDATED_AT_FORMAT.format(new Date(space.updatedAt));
+  const description = space.description.trim();
+  const updatedAtLabel = formatUpdatedAtKR(space.updatedAt);
 
   return (
     <Card className={cn("h-full", className)}>
