@@ -8,9 +8,15 @@ import {
 } from "@tanstack/react-query";
 
 import { type ApiError } from "@/lib/api/client";
-import { spaceKeys, spaceListOptions } from "@/lib/api/queries/space";
+import type { SpaceId } from "@/lib/api/ids";
+import { spaceDetailOptions, spaceKeys, spaceListOptions } from "@/lib/api/queries/space";
 import { createSpace, type SpaceListParams } from "@/lib/api/space";
-import type { SpaceCreateRequest, SpaceCreateResult, SpaceListResult } from "@/lib/api/types";
+import type {
+  Space,
+  SpaceCreateRequest,
+  SpaceCreateResult,
+  SpaceListResult,
+} from "@/lib/api/types";
 
 type QueryOverrides<TData> = Omit<UseQueryOptions<TData, ApiError, TData>, "queryKey" | "queryFn">;
 
@@ -19,6 +25,13 @@ export function useSpaceList(
   overrides?: QueryOverrides<SpaceListResult>,
 ): UseQueryResult<SpaceListResult, ApiError> {
   return useQuery({ ...spaceListOptions(params), ...overrides });
+}
+
+export function useSpaceDetail(
+  spaceId: SpaceId,
+  overrides?: QueryOverrides<Space>,
+): UseQueryResult<Space, ApiError> {
+  return useQuery({ ...spaceDetailOptions(spaceId), ...overrides });
 }
 
 export function useSpaceCreate(): UseMutationResult<

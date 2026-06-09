@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { SpaceCard } from "@/components/space/SpaceCard";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useSpaceList } from "@/hooks/useSpace";
 import { toUserMessage } from "@/lib/api/errors";
@@ -15,13 +15,18 @@ export function SpaceListView() {
     { refetchOnMount: "always" },
   );
 
+  const isEmpty = data !== undefined && data.items.length === 0;
+
   return (
     <section className="space-y-6">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">내가 속한 스페이스</h1>
-        <Link href="/spaces/new" className={buttonVariants()}>
-          새 스페이스 만들기
-        </Link>
+        {!isEmpty && (
+          <Button
+            nativeButton={false}
+            render={<Link href="/spaces/new">새 스페이스 만들기</Link>}
+          />
+        )}
       </header>
 
       {isPending && <SpaceListSkeleton />}
@@ -37,13 +42,14 @@ export function SpaceListView() {
         </Card>
       )}
 
-      {data && data.items.length === 0 && (
+      {isEmpty && (
         <Card>
           <CardContent className="flex flex-col items-start gap-3 py-10">
             <p className="text-sm">아직 스페이스가 없습니다.</p>
-            <Link href="/spaces/new" className={buttonVariants()}>
-              첫 스페이스 만들기
-            </Link>
+            <Button
+              nativeButton={false}
+              render={<Link href="/spaces/new">첫 스페이스 만들기</Link>}
+            />
           </CardContent>
         </Card>
       )}
@@ -52,7 +58,13 @@ export function SpaceListView() {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((space) => (
             <li key={space.spaceId}>
-              <SpaceCard space={space} />
+              <Link
+                href={`/spaces/${space.spaceId}`}
+                className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                aria-label={`${space.name} 스페이스로 이동`}
+              >
+                <SpaceCard space={space} />
+              </Link>
             </li>
           ))}
         </ul>

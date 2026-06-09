@@ -17,6 +17,7 @@ export function spaceDetailOptions(spaceId: SpaceId) {
   return queryOptions<Space, ApiError>({
     queryKey: spaceKeys.detail(spaceId),
     queryFn: ({ signal }) => fetchSpace(spaceId, signal),
+    staleTime: 30_000,
   });
 }
 

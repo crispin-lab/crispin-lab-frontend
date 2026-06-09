@@ -38,10 +38,12 @@ describe("SpaceListView", () => {
 
     expect(await screen.findByText("공개 스페이스")).toBeInTheDocument();
     expect(screen.getByText("설명")).toBeInTheDocument();
-    // visibility badge 가 정상 라벨로 매핑 (PUBLIC → "공개")
     expect(screen.getByLabelText(/공개 범위: 공개/)).toBeInTheDocument();
-    // 카드 메타가 updatedAt 의 "수정 …" prefix 로 노출
     expect(screen.getByText(/^수정 /)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /공개 스페이스 스페이스로 이동/ })).toHaveAttribute(
+      "href",
+      "/spaces/s_1",
+    );
   });
 
   it("결과가 비어 있으면 빈 상태 안내 + 첫 스페이스 CTA 를 보여준다", async () => {
@@ -63,7 +65,8 @@ describe("SpaceListView", () => {
     render(<SpaceListView />, { wrapper: Wrapper });
 
     expect(await screen.findByText("아직 스페이스가 없습니다.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "첫 스페이스 만들기" })).toHaveAttribute(
+    // base-ui Button + render={<Link/>} 은 <a role="button"> 로 렌더 — accessible role 은 button.
+    expect(screen.getByRole("button", { name: "첫 스페이스 만들기" })).toHaveAttribute(
       "href",
       "/spaces/new",
     );

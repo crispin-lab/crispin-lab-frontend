@@ -3,12 +3,13 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/lib/api/client";
+import { asSpaceId } from "@/lib/api/ids";
 import { server } from "@/mocks/server";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
-import type { SpaceListResult, SpaceSummary } from "@/lib/api/types";
+import type { Space, SpaceListResult, SpaceSummary } from "@/lib/api/types";
 
-import { useSpaceCreate, useSpaceList } from "./useSpace";
+import { useSpaceCreate, useSpaceDetail, useSpaceList } from "./useSpace";
 
 function listBody(items: SpaceSummary[]): SpaceListResult {
   return {
@@ -32,6 +33,26 @@ describe("useSpaceList", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.items).toEqual([]);
     expect(result.current.data?.isEmpty).toBe(true);
+  });
+});
+
+describe("useSpaceDetail", () => {
+  it("주어진 spaceId 의 상세를 그대로 노출한다", async () => {
+    const body: Space = {
+      createdAt: "2026-01-01T00:00:00Z",
+      spaceId: "s_1",
+      visibility: "PUBLIC",
+      name: "공개 위키",
+      description: "설명",
+      updatedAt: "2026-06-01T00:00:00Z",
+    };
+    server.use(http.get("*/api/v1/spaces/s_1", () => HttpResponse.json(body)));
+
+    const { Wrapper } = createQueryWrapper();
+    const { result } = renderHook(() => useSpaceDetail(asSpaceId("s_1")), { wrapper: Wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(body);
   });
 });
 
