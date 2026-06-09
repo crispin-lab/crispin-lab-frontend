@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type UseQueryResult } from "@tanstack/react-query";
 
+import { ErrorRetryCard } from "@/components/ErrorRetryCard";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,19 +48,11 @@ function SpaceMetaSection({ query }: { query: UseQueryResult<Space, ApiError> })
   }
   if (query.isError) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-start gap-3 py-6">
-          <p className="text-sm">{toUserMessage(query.error)}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => query.refetch()}
-            disabled={query.isFetching}
-          >
-            {query.isFetching ? "재시도 중..." : "다시 시도"}
-          </Button>
-        </CardContent>
-      </Card>
+      <ErrorRetryCard
+        message={toUserMessage(query.error)}
+        onRetry={() => query.refetch()}
+        isRetrying={query.isFetching}
+      />
     );
   }
 
@@ -90,6 +83,7 @@ function PageListSection({
   query: UseQueryResult<PageSearchResult, ApiError>;
   newPageHref: string;
 }) {
+  const hasItems = query.data !== undefined && query.data.items.length > 0;
   const isEmpty = query.data !== undefined && query.data.items.length === 0;
 
   return (
@@ -98,7 +92,7 @@ function PageListSection({
         <h2 id="page-list-heading" className="text-2xl font-semibold">
           페이지
         </h2>
-        {!isEmpty && (
+        {hasItems && (
           <Button nativeButton={false} render={<Link href={newPageHref}>새 페이지 만들기</Link>} />
         )}
       </header>
@@ -106,19 +100,11 @@ function PageListSection({
       {query.isPending && <PageListSkeleton />}
 
       {query.isError && (
-        <Card>
-          <CardContent className="flex flex-col items-start gap-3 py-6">
-            <p className="text-sm">{toUserMessage(query.error)}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => query.refetch()}
-              disabled={query.isFetching}
-            >
-              {query.isFetching ? "재시도 중..." : "다시 시도"}
-            </Button>
-          </CardContent>
-        </Card>
+        <ErrorRetryCard
+          message={toUserMessage(query.error)}
+          onRetry={() => query.refetch()}
+          isRetrying={query.isFetching}
+        />
       )}
 
       {isEmpty && (
@@ -133,7 +119,7 @@ function PageListSection({
         </Card>
       )}
 
-      {query.data && query.data.items.length > 0 && (
+      {hasItems && (
         <ul className="divide-border divide-y overflow-hidden rounded-lg border">
           {query.data.items.map((page) => {
             const updatedAtLabel = formatUpdatedAtKR(page.updatedAt);

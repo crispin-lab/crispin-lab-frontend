@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { ErrorRetryCard } from "@/components/ErrorRetryCard";
 import { SpaceCard } from "@/components/space/SpaceCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -15,13 +16,14 @@ export function SpaceListView() {
     { refetchOnMount: "always" },
   );
 
+  const hasItems = data !== undefined && data.items.length > 0;
   const isEmpty = data !== undefined && data.items.length === 0;
 
   return (
     <section className="space-y-6">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">내가 속한 스페이스</h1>
-        {!isEmpty && (
+        {hasItems && (
           <Button
             nativeButton={false}
             render={<Link href="/spaces/new">새 스페이스 만들기</Link>}
@@ -32,14 +34,11 @@ export function SpaceListView() {
       {isPending && <SpaceListSkeleton />}
 
       {isError && (
-        <Card>
-          <CardContent className="flex flex-col items-start gap-3 py-6">
-            <p className="text-sm">{toUserMessage(error)}</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              {isFetching ? "재시도 중..." : "다시 시도"}
-            </Button>
-          </CardContent>
-        </Card>
+        <ErrorRetryCard
+          message={toUserMessage(error)}
+          onRetry={() => refetch()}
+          isRetrying={isFetching}
+        />
       )}
 
       {isEmpty && (
@@ -54,12 +53,12 @@ export function SpaceListView() {
         </Card>
       )}
 
-      {data && data.items.length > 0 && (
+      {hasItems && (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((space) => (
             <li key={space.spaceId}>
               <Link
-                href={`/spaces/${space.spaceId}`}
+                href={`/spaces/${encodeURIComponent(space.spaceId)}`}
                 className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 aria-label={`${space.name} 스페이스로 이동`}
               >
