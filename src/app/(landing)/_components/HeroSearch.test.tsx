@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPush }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 import { HeroSearch } from "./HeroSearch";
@@ -21,9 +22,8 @@ describe("HeroSearch", () => {
     const input = screen.getByRole("searchbox", { name: "검색" });
     await user.type(input, "위키 링크{Enter}");
 
-    expect(routerPush).toHaveBeenCalledWith(
-      "/search?query=%EC%9C%84%ED%82%A4%20%EB%A7%81%ED%81%AC",
-    );
+    // URLSearchParams 는 공백을 `+` 로 인코딩 — backend 는 `+` 와 `%20` 을 동등 디코딩.
+    expect(routerPush).toHaveBeenCalledWith("/search?query=%EC%9C%84%ED%82%A4+%EB%A7%81%ED%81%AC");
   });
 
   it("공백만 있는 query 는 submit 해도 push 가 호출되지 않는다", async () => {

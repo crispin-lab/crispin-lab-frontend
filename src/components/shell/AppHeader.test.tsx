@@ -7,9 +7,13 @@ import { server } from "@/mocks/server";
 import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
-const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
+const { routerPush, urlSearchParams } = vi.hoisted(() => ({
+  routerPush: vi.fn(),
+  urlSearchParams: { current: new URLSearchParams() },
+}));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPush }),
+  useSearchParams: () => urlSearchParams.current,
 }));
 
 const { redirectToLoginMock, navigateAfterLogoutMock } = vi.hoisted(() => ({
@@ -34,6 +38,8 @@ function resetAllSpies() {
   routerPush.mockReset();
   redirectToLoginMock.mockReset();
   navigateAfterLogoutMock.mockReset();
+  urlSearchParams.current = new URLSearchParams();
+  window.history.replaceState({}, "", "/");
 }
 
 describe("AppHeader — 비로그인", () => {
@@ -200,9 +206,7 @@ describe("AppHeader — 검색 input", () => {
     const input = screen.getByRole("searchbox", { name: "검색" });
     await user.type(input, "위키 링크{Enter}");
 
-    expect(routerPush).toHaveBeenCalledWith(
-      "/search?query=%EC%9C%84%ED%82%A4%20%EB%A7%81%ED%81%AC",
-    );
+    expect(routerPush).toHaveBeenCalledWith("/search?query=%EC%9C%84%ED%82%A4+%EB%A7%81%ED%81%AC");
   });
 
   it("빈 query 는 submit 해도 push 가 호출되지 않는다", async () => {
@@ -213,5 +217,27 @@ describe("AppHeader — 검색 input", () => {
     await user.type(input, "   {Enter}");
 
     expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("URL 의 query 가 input 의 초기값으로 들어간다 (검색 페이지 재방문 시 검색어 보존)", async () => {
+    urlSearchParams.current = new URLSearchParams({ query: "위키" });
+    renderHeader();
+
+    const input = await screen.findByRole<HTMLInputElement>("searchbox", { name: "검색" });
+    expect(input.value).toBe("위키");
+  });
+
+  it("URL 의 sort/space 도 보존된 채 새 query 로 push 한다", async () => {
+    // useSearchSubmit 은 callback 시점의 window.location.search 를 읽는다.
+    window.history.replaceState({}, "", "/search?sort=RELEVANCE&space=s_1&page=3");
+    const user = userEvent.setup();
+    renderHeader();
+
+    const input = screen.getByRole("searchbox", { name: "검색" });
+    await user.type(input, "링크{Enter}");
+
+    expect(routerPush).toHaveBeenCalledWith(
+      "/search?query=%EB%A7%81%ED%81%AC&space=s_1&sort=RELEVANCE",
+    );
   });
 });

@@ -5,31 +5,19 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
-import { ApiError } from "@/lib/api/client";
 import { handleMutationError, handleQueryError } from "@/lib/api/queryErrorHandlers";
+import { queryDefaultOptions } from "@/lib/queryClient";
 
-function makeQueryClient(): QueryClient {
+function makeBrowserQueryClient(): QueryClient {
   return new QueryClient({
     queryCache: new QueryCache({ onError: handleQueryError }),
     mutationCache: new MutationCache({ onError: handleMutationError }),
-    defaultOptions: {
-      queries: {
-        staleTime: 30_000,
-        gcTime: 300_000,
-        refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
-            return false;
-          }
-          return failureCount < 1;
-        },
-      },
-    },
+    defaultOptions: queryDefaultOptions,
   });
 }
 
 export function Providers({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const [queryClient] = useState(() => makeQueryClient());
+  const [queryClient] = useState(() => makeBrowserQueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
