@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 
 import type { ApiError } from "../client";
 import type { PageId } from "../ids";
@@ -26,5 +26,7 @@ export function pageListOptions(params: PageSearchParams) {
   return queryOptions<PageSearchResult, ApiError>({
     queryKey: pageKeys.list(params),
     queryFn: ({ signal }) => searchPages(params, signal),
+    // 페이지·필터 전환 중 직전 결과 유지 — layout shift 와 pagination 사라짐 방지.
+    placeholderData: keepPreviousData,
   });
 }

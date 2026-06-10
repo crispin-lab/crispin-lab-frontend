@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import { useMe } from "@/hooks/useAuth";
 import { useSearchSubmit } from "@/hooks/useSearchSubmit";
@@ -28,15 +29,27 @@ export function AppHeader({ className, variant = "full" }: Props) {
       <Link href="/" className="text-sm font-semibold tracking-tight">
         crispin-lab
       </Link>
-      {variant === "full" ? <SearchInput /> : <div aria-hidden className="flex-1" />}
+      {variant === "full" ? (
+        <Suspense fallback={<div aria-hidden className="flex-1" />}>
+          <SearchInput />
+        </Suspense>
+      ) : (
+        <div aria-hidden className="flex-1" />
+      )}
       <AccountSlot />
     </header>
   );
 }
 
 function SearchInput() {
+  // key remount 로 URL 변경 시 initialValue 를 새로 흘림 — props→state useEffect 동기화 회피.
+  const urlQuery = useSearchParams().get("query") ?? "";
+  return <SearchInputInner key={urlQuery} initialValue={urlQuery} />;
+}
+
+function SearchInputInner({ initialValue }: { initialValue: string }) {
   const submitSearch = useSearchSubmit();
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
