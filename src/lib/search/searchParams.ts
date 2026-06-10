@@ -11,9 +11,16 @@ export type SearchUrlParams = {
   size?: number;
 };
 
+// SearchFilters 와 SearchResultList 가 같은 size 로 TanStack Query cache 를 공유해야 결과 행의
+// 스페이스명 누락이 비결정적으로 나지 않는다. 한도 초과 시 별도 검색 endpoint (별도 티켓).
+export const SPACE_LIST_SIZE = 100;
+
+export function isSearchSort(value: string): value is SearchSort {
+  return value === "RELEVANCE" || value === "UPDATED_AT" || value === "CREATED_AT";
+}
+
 type SearchParamsLike = Pick<URLSearchParams, "get">;
 
-const VALID_SORTS: ReadonlySet<SearchSort> = new Set(["RELEVANCE", "CREATED_AT", "UPDATED_AT"]);
 const MIN_SIZE = 1;
 const MAX_SIZE = 100;
 
@@ -27,7 +34,7 @@ export function parseSearchParams(raw: SearchParamsLike): SearchUrlParams {
   if (space !== null && space !== "") result.spaceId = asSpaceId(space);
 
   const sort = raw.get("sort");
-  if (sort !== null && VALID_SORTS.has(sort as SearchSort)) result.sort = sort as SearchSort;
+  if (sort !== null && isSearchSort(sort)) result.sort = sort;
 
   const pageRaw = raw.get("page");
   if (pageRaw !== null) {

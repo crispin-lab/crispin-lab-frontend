@@ -11,7 +11,13 @@ import {
 } from "@/components/ui/select";
 import { useSpaceList } from "@/hooks/useSpace";
 import { asSpaceId } from "@/lib/api/ids";
-import { buildSearchUrl, type SearchSort, type SearchUrlParams } from "@/lib/search/searchParams";
+import {
+  buildSearchUrl,
+  isSearchSort,
+  type SearchSort,
+  type SearchUrlParams,
+  SPACE_LIST_SIZE,
+} from "@/lib/search/searchParams";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -20,8 +26,6 @@ type Props = {
 };
 
 const ALL_SPACES = "__all__";
-// 스페이스 dropdown 은 옵션이 전체를 덮는 게 기대치. 한도 초과 시 별도 검색 endpoint (별도 티켓).
-const SPACE_LIST_SIZE = 100;
 
 const SORT_LABELS: Record<SearchSort, string> = {
   RELEVANCE: "관련도순",
@@ -89,10 +93,6 @@ export function SearchFilters({ current, className }: Props) {
       </Select>
     </div>
   );
-}
-
-function isSearchSort(value: string): value is SearchSort {
-  return value === "RELEVANCE" || value === "UPDATED_AT" || value === "CREATED_AT";
 }
 
 function resolveSpaceLabel(

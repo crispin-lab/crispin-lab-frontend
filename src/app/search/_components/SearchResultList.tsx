@@ -8,6 +8,7 @@ import { useSpaceList } from "@/hooks/useSpace";
 import { type ApiError } from "@/lib/api/client";
 import { toUserMessage } from "@/lib/api/errors";
 import type { PageSearchResult } from "@/lib/api/types";
+import { SPACE_LIST_SIZE } from "@/lib/search/searchParams";
 import { cn } from "@/lib/utils";
 
 import { SearchResultRow } from "./SearchResultRow";
@@ -17,9 +18,6 @@ type Props = {
   searchQuery: string | undefined;
   className?: string;
 };
-
-// SearchFilters 와 같은 size — 행마다 스페이스명이 비결정적으로 누락되는 회귀 방지.
-const SPACE_LIST_SIZE = 100;
 
 export function SearchResultList({ query, searchQuery, className }: Props) {
   const spaceListQuery = useSpaceList({ size: SPACE_LIST_SIZE });
