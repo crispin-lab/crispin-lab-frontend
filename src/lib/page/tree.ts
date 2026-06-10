@@ -1,3 +1,4 @@
+import type { PageId } from "@/lib/api/ids";
 import type { PageSummary } from "@/lib/api/types";
 
 export type PageTreeNode = {
@@ -36,7 +37,7 @@ export function buildPageTree(items: readonly PageSummary[]): PageTreeNode[] {
 
 // 활성 페이지의 조상 체인 (root → ... → 자기 자신 포함) id 모음.
 // 사이드바의 디폴트 expand 대상 계산용. cycle 데이터에서도 안전 종료.
-export function ancestorIdsOf(items: readonly PageSummary[], pageId: string): ReadonlySet<string> {
+export function ancestorIdsOf(items: readonly PageSummary[], pageId: PageId): ReadonlySet<string> {
   const byId = new Map(items.map((item) => [item.pageId, item]));
   const ids = new Set<string>();
   let cursor: string | null | undefined = pageId;

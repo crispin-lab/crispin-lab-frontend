@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { asPageId } from "@/lib/api/ids";
 import type { PageSummary } from "@/lib/api/types";
 
 import { ancestorIdsOf, buildPageTree, type PageTreeNode } from "./tree";
@@ -135,7 +136,7 @@ describe("ancestorIdsOf", () => {
       page({ pageId: "p_child", title: "자식", parentPageId: "p_root" }),
       page({ pageId: "p_grand", title: "손자", parentPageId: "p_child" }),
     ];
-    const set = ancestorIdsOf(items, "p_grand");
+    const set = ancestorIdsOf(items, asPageId("p_grand"));
     expect(set).toEqual(new Set(["p_grand", "p_child", "p_root"]));
   });
 
@@ -144,11 +145,11 @@ describe("ancestorIdsOf", () => {
       page({ pageId: "p_a", title: "가", parentPageId: "p_b" }),
       page({ pageId: "p_b", title: "나", parentPageId: "p_a" }),
     ];
-    const set = ancestorIdsOf(items, "p_a");
+    const set = ancestorIdsOf(items, asPageId("p_a"));
     expect(set).toEqual(new Set(["p_a", "p_b"]));
   });
 
   it("입력 목록에 없는 id 는 빈 집합을 반환한다", () => {
-    expect(ancestorIdsOf([], "p_missing")).toEqual(new Set());
+    expect(ancestorIdsOf([], asPageId("p_missing"))).toEqual(new Set());
   });
 });
