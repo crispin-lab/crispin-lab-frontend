@@ -150,6 +150,36 @@ describe("AppHeader — 5xx 일시 장애", () => {
   });
 });
 
+describe("AppHeader — variant", () => {
+  beforeEach(() => {
+    resetAllSpies();
+    server.use(
+      http.get("/api/v1/users/me", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+  });
+
+  it("variant='thin' 이면 검색 input 을 렌더하지 않는다", async () => {
+    const { Wrapper } = createQueryWrapper();
+    render(<AppHeader variant="thin" />, { wrapper: Wrapper });
+
+    await screen.findByRole("link", { name: /로그인/ });
+    expect(screen.queryByRole("searchbox", { name: "검색" })).not.toBeInTheDocument();
+  });
+
+  it("디폴트(variant 생략) 는 검색 input 을 렌더한다", async () => {
+    const { Wrapper } = createQueryWrapper();
+    render(<AppHeader />, { wrapper: Wrapper });
+
+    await screen.findByRole("link", { name: /로그인/ });
+    expect(screen.getByRole("searchbox", { name: "검색" })).toBeInTheDocument();
+  });
+});
+
 describe("AppHeader — 검색 input", () => {
   beforeEach(() => {
     resetAllSpies();
