@@ -9,7 +9,7 @@ import type {
   PageUpdateResult,
 } from "./types";
 
-export type PageSort = "CREATED_AT" | "UPDATED_AT" | "RELEVANCE";
+export type PageSort = "CREATED_AT" | "UPDATED_AT" | "RELEVANCE" | "TREE";
 
 export type PageSearchParams = {
   query?: string;

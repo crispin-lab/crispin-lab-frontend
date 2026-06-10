@@ -633,6 +633,10 @@ export interface components {
             items: {
                 /** @description ⎯ 소속 스페이스 식별자＊ */
                 spaceId: string;
+                /** @description ⎯ 부모 페이지 식별자 */
+                parentPageId?: string | null;
+                /** @description ⎯ 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
+                displayOrder: number;
                 /** @description ⎯ 제목＊ */
                 title: string;
                 /** @description ⎯ 페이지 식별자＊ */
@@ -677,6 +681,38 @@ export interface components {
             authorId: string;
             /** @description 소속 페이지 식별자＊ */
             pageId: string;
+            /** @description 최근 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
+        /** PageGetResponse */
+        PageGetResponse: {
+            /** @description 생성 시각 (ISO)＊ */
+            createdAt: string;
+            /** @description 소속 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 공개 범위＊ */
+            visibility: string;
+            /** @description 부모 페이지 식별자 */
+            parentPageId?: string | null;
+            /** @description 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
+            displayOrder: number;
+            /** @description 조상 페이지 목록 — root → 직계 부모 순서＊ */
+            ancestors: {
+                /** @description ⎯ 조상 페이지 제목＊ */
+                title: string;
+                /** @description ⎯ 조상 페이지 식별자＊ */
+                pageId: string;
+            }[];
+            /** @description 제목＊ */
+            title: string;
+            /** @description 작성자 식별자＊ */
+            authorId: string;
+            /** @description 페이지 식별자＊ */
+            pageId: string;
+            /** @description 현재 버전＊ */
+            currentVersion: number;
+            /** @description 본문＊ */
+            content: string;
             /** @description 최근 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
@@ -743,29 +779,6 @@ export interface components {
             /** @description 변경할 설명 */
             description?: string | null;
         };
-        /** PageGetResponse */
-        PageGetResponse: {
-            /** @description 생성 시각 (ISO)＊ */
-            createdAt: string;
-            /** @description 소속 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 공개 범위＊ */
-            visibility: string;
-            /** @description 부모 페이지 식별자 */
-            parentPageId?: string | null;
-            /** @description 제목＊ */
-            title: string;
-            /** @description 작성자 식별자＊ */
-            authorId: string;
-            /** @description 페이지 식별자＊ */
-            pageId: string;
-            /** @description 현재 버전＊ */
-            currentVersion: number;
-            /** @description 본문＊ */
-            content: string;
-            /** @description 최근 갱신 시각 (ISO)＊ */
-            updatedAt: string;
-        };
         /** CommentEditRequest */
         CommentEditRequest: {
             /** @description 수정된 본문＊ */
@@ -789,7 +802,7 @@ export interface operations {
                 space?: string;
                 /** @description 태그 ID 필터 (다중 시 AND 매칭) */
                 tag?: string;
-                /** @description 정렬 옵션 (CREATED_AT / UPDATED_AT / RELEVANCE, 기본값 UPDATED_AT) */
+                /** @description 정렬 옵션 (CREATED_AT / UPDATED_AT / RELEVANCE / TREE, 기본값 UPDATED_AT) */
                 sort?: string;
                 /** @description 페이지 */
                 page?: string;

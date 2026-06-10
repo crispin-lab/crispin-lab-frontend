@@ -46,6 +46,8 @@ function pageBody(overrides: Partial<Page> = {}): Page {
     spaceId: "s_1",
     visibility: "PUBLIC",
     parentPageId: null,
+    displayOrder: 0,
+    ancestors: [],
     title: "원본 제목",
     authorId: "u_1",
     pageId: "p_1",
