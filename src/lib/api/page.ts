@@ -47,7 +47,7 @@ export function createPage(body: PageCreateRequest): Promise<PageCreateResult> {
   });
 }
 
-function buildSearchPagesQuery(params: PageSearchParams): string {
+export function buildSearchPagesQuery(params: PageSearchParams): string {
   const search = new URLSearchParams();
   if (params.query !== undefined && params.query !== "") {
     search.append("query", params.query);

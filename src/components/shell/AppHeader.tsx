@@ -1,19 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useMe } from "@/hooks/useAuth";
+import { useSearchSubmit } from "@/hooks/useSearchSubmit";
 import { cn } from "@/lib/utils";
 
 import { AccountMenu } from "./AccountMenu";
 
+type Variant = "full" | "thin";
+
 type Props = {
   className?: string;
+  variant?: Variant;
 };
 
-export function AppHeader({ className }: Props) {
+export function AppHeader({ className, variant = "full" }: Props) {
   return (
     <header
       className={cn(
@@ -25,21 +28,19 @@ export function AppHeader({ className }: Props) {
       <Link href="/" className="text-sm font-semibold tracking-tight">
         crispin-lab
       </Link>
-      <SearchInput />
+      {variant === "full" ? <SearchInput /> : <div aria-hidden className="flex-1" />}
       <AccountSlot />
     </header>
   );
 }
 
 function SearchInput() {
-  const router = useRouter();
+  const submitSearch = useSearchSubmit();
   const [value, setValue] = useState("");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const query = value.trim();
-    if (query === "") return;
-    router.push(`/search?query=${encodeURIComponent(query)}`);
+    submitSearch(value);
   }
 
   return (
