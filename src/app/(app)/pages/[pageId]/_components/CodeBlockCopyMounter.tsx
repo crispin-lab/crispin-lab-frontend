@@ -17,7 +17,6 @@ export function CodeBlockCopyMounter({ children }: Props) {
     if (!root) return;
     const pres = root.querySelectorAll<HTMLPreElement>("pre");
     const cleanups: (() => void)[] = [];
-    const timers = new Set<ReturnType<typeof setTimeout>>();
 
     pres.forEach((pre) => {
       if (pre.dataset.copyEnhanced === "true") return;
@@ -30,18 +29,26 @@ export function CodeBlockCopyMounter({ children }: Props) {
       // Tailwind JIT 가 동적 className 을 못 잡아 code-highlight.css 의 plain 클래스로.
       button.className = "code-block-copy-button";
 
+      // 연속 클릭 시 이전 timer 를 덮어써야 마지막 클릭 기준 1.5s 가 보장된다.
+      let copiedTimer: ReturnType<typeof setTimeout> | null = null;
+
       const handleClick = async () => {
+        if (button.textContent === "복사됨") return;
         const code = pre.querySelector("code");
-        if (!code) return;
+        const text = code?.textContent ?? "";
+        if (text.trim() === "") {
+          toast.info("복사할 내용이 없습니다.");
+          return;
+        }
         try {
-          await navigator.clipboard.writeText(code.textContent ?? "");
+          await navigator.clipboard.writeText(text);
           button.textContent = "복사됨";
           toast.success("코드를 복사했습니다.");
-          const timer = setTimeout(() => {
+          if (copiedTimer !== null) clearTimeout(copiedTimer);
+          copiedTimer = setTimeout(() => {
             button.textContent = "복사";
-            timers.delete(timer);
+            copiedTimer = null;
           }, 1500);
-          timers.add(timer);
         } catch {
           toast.error("복사에 실패했습니다.");
         }
@@ -50,16 +57,14 @@ export function CodeBlockCopyMounter({ children }: Props) {
       pre.appendChild(button);
 
       cleanups.push(() => {
+        if (copiedTimer !== null) clearTimeout(copiedTimer);
         button.removeEventListener("click", handleClick);
         button.remove();
         delete pre.dataset.copyEnhanced;
       });
     });
 
-    return () => {
-      cleanups.forEach((cleanup) => cleanup());
-      timers.forEach((timer) => clearTimeout(timer));
-    };
+    return () => cleanups.forEach((cleanup) => cleanup());
   }, []);
 
   return <div ref={ref}>{children}</div>;

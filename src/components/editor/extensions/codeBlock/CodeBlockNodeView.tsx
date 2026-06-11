@@ -29,8 +29,13 @@ export function CodeBlockNodeView({ node, updateAttributes, editor }: NodeViewPr
   }, []);
 
   const handleCopy = async () => {
+    if (copied) return;
     // node.textContent 는 NodeView 가 render 된 시점의 snapshot. 사용자 입력 직후 NodeView re-render 전의 race 를 피해 DOM 에서 직접 읽는다.
     const text = preRef.current?.querySelector("code")?.textContent ?? "";
+    if (text.trim() === "") {
+      toast.info("복사할 내용이 없습니다.");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
