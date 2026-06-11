@@ -9,11 +9,11 @@ import {
 } from "lucide-react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
-// light 고정 (design.md "light 1순위") — dark 토글 도입 시 ThemeProvider 와 연결.
+// dark 고정 (design.md "dark 1순위") — light 토글 도입 시 ThemeProvider 와 연결.
 function Toaster(props: ToasterProps) {
   return (
     <Sonner
-      theme="light"
+      theme="dark"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
