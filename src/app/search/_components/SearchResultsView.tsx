@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 
+import { PageHeading } from "@/components/PageHeading";
 import { usePageList } from "@/hooks/usePage";
 import { parseSearchParams } from "@/lib/search/searchParams";
 import { cn } from "@/lib/utils";
@@ -47,9 +48,7 @@ function SearchHeader({
 }) {
   return (
     <header className="space-y-1">
-      <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
-        {query === undefined ? "검색" : <>&ldquo;{query}&rdquo;</>}
-      </h1>
+      <PageHeading>{query === undefined ? "검색" : <>&ldquo;{query}&rdquo;</>}</PageHeading>
       {totalElements !== undefined && (
         <p className="text-muted-foreground text-sm">
           결과 {totalElements.toLocaleString("ko-KR")}건

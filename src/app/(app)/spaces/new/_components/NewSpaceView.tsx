@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,9 +64,7 @@ export function NewSpaceView() {
       className="mx-auto w-full max-w-2xl space-y-6 px-6 py-10"
       noValidate
     >
-      <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
-        새 스페이스
-      </h1>
+      <PageHeading>새 스페이스</PageHeading>
 
       <div className="space-y-2">
         <Label htmlFor="new-space-name">이름</Label>

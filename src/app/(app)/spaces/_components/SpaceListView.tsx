@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { PageHeading } from "@/components/PageHeading";
 import { SpaceCard } from "@/components/space/SpaceCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -22,9 +23,7 @@ export function SpaceListView() {
   return (
     <section className="space-y-6">
       <header className="flex items-center justify-between">
-        <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
-          내가 속한 스페이스
-        </h1>
+        <PageHeading>내가 속한 스페이스</PageHeading>
         {hasItems && (
           <Button
             nativeButton={false}

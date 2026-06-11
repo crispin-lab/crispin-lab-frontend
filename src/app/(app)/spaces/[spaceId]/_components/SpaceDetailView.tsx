@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { type UseQueryResult } from "@tanstack/react-query";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { PageHeading } from "@/components/PageHeading";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,12 +63,7 @@ function SpaceMetaSection({ query }: { query: UseQueryResult<Space, ApiError> })
 
   return (
     <header aria-labelledby="space-meta-heading" className="space-y-3">
-      <h1
-        id="space-meta-heading"
-        className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent"
-      >
-        {space.name}
-      </h1>
+      <PageHeading id="space-meta-heading">{space.name}</PageHeading>
       {description !== "" && <p className="text-muted-foreground leading-7">{description}</p>}
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <VisibilityBadge visibility={space.visibility} />
