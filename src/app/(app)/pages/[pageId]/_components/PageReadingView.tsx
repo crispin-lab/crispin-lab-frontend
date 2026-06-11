@@ -8,6 +8,7 @@ import type { Page } from "@/lib/api/types";
 import { parseEditorContent } from "@/lib/editor/content";
 import { cn } from "@/lib/utils";
 
+import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
 import { PageLinkChipNavigator } from "./PageLinkChipNavigator";
 
 type Props = {
@@ -73,20 +74,23 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
             <p className="text-muted-foreground italic">본문이 비어 있습니다.</p>
           ) : (
             <PageLinkChipNavigator>
-              <div
-                className={cn(
-                  "prose-page leading-7",
-                  "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-semibold",
-                  "[&_h2]:mt-7 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-semibold",
-                  "[&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold",
-                  "[&_p]:my-3",
-                  "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
-                  "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6",
-                  "[&_code]:bg-muted [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-sm",
-                  "[&_a]:text-accent [&_a]:underline",
-                )}
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
+              {/* updatedAt 변경 시 mounter 를 remount 해 새 본문 HTML 에 복사 버튼을 다시 부착. */}
+              <CodeBlockCopyMounter key={page.updatedAt}>
+                {/* inline-code 스타일은 code-highlight.css 의 `.prose-page :not(pre) > code` 에서 담당. */}
+                <div
+                  className={cn(
+                    "prose-page leading-7",
+                    "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-semibold",
+                    "[&_h2]:mt-7 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-semibold",
+                    "[&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold",
+                    "[&_p]:my-3",
+                    "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
+                    "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6",
+                    "[&_a]:text-accent [&_a]:underline",
+                  )}
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              </CodeBlockCopyMounter>
             </PageLinkChipNavigator>
           )}
         </article>
