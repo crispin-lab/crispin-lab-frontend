@@ -1,5 +1,5 @@
 /*
- * highlight.js GitHub / GitHub Dark 테마 (BSD-3-Clause). dark 는 .dark 스코프 wrapping 으로 분리.
+ * highlight.js GitHub Dark / GitHub Light 테마 (BSD-3-Clause). dark-first: base 가 GitHub Dark, .light 스코프가 옵션.
  *
  * `.prose-page pre` 만 컨테이너 스타일을 잡는 이유: editor 의 NodeView (CodeBlockNodeView) 는 자체 wrapper / pre 에
  * Tailwind 유틸로 동일 스타일을 직접 부착한다. 본 CSS 는 viewer (RSC static-renderer) 의 정적 HTML 만 책임진다.
@@ -57,6 +57,7 @@
   color: inherit;
 }
 
+/* GitHub Dark (base — dark-first) */
 .hljs-doctag,
 .hljs-keyword,
 .hljs-meta .hljs-keyword,
@@ -64,13 +65,13 @@
 .hljs-template-variable,
 .hljs-type,
 .hljs-variable.language_ {
-  color: #d73a49;
+  color: #ff7b72;
 }
 .hljs-title,
 .hljs-title.class_,
 .hljs-title.class_.inherited__,
 .hljs-title.function_ {
-  color: #6f42c1;
+  color: #d2a8ff;
 }
 .hljs-attr,
 .hljs-attribute,
@@ -82,125 +83,126 @@
 .hljs-selector-attr,
 .hljs-selector-class,
 .hljs-selector-id {
-  color: #005cc5;
+  color: #79c0ff;
 }
 .hljs-regexp,
 .hljs-string,
 .hljs-meta .hljs-string {
-  color: #032f62;
+  color: #a5d6ff;
 }
 .hljs-built_in,
 .hljs-symbol {
-  color: #e36209;
+  color: #ffa657;
 }
 .hljs-comment,
 .hljs-code,
 .hljs-formula {
-  color: #6a737d;
+  color: #8b949e;
 }
 .hljs-name,
 .hljs-quote,
 .hljs-selector-tag,
 .hljs-selector-pseudo {
-  color: #22863a;
-}
-.hljs-subst {
-  color: #24292e;
-}
-.hljs-section {
-  color: #005cc5;
-  font-weight: bold;
-}
-.hljs-bullet {
-  color: #735c0f;
-}
-.hljs-emphasis {
-  color: #24292e;
-  font-style: italic;
-}
-.hljs-strong {
-  color: #24292e;
-  font-weight: bold;
-}
-.hljs-addition {
-  color: #22863a;
-  background-color: #f0fff4;
-}
-.hljs-deletion {
-  color: #b31d28;
-  background-color: #ffeef0;
-}
-
-.dark .hljs-doctag,
-.dark .hljs-keyword,
-.dark .hljs-meta .hljs-keyword,
-.dark .hljs-template-tag,
-.dark .hljs-template-variable,
-.dark .hljs-type,
-.dark .hljs-variable.language_ {
-  color: #ff7b72;
-}
-.dark .hljs-title,
-.dark .hljs-title.class_,
-.dark .hljs-title.class_.inherited__,
-.dark .hljs-title.function_ {
-  color: #d2a8ff;
-}
-.dark .hljs-attr,
-.dark .hljs-attribute,
-.dark .hljs-literal,
-.dark .hljs-meta,
-.dark .hljs-number,
-.dark .hljs-operator,
-.dark .hljs-variable,
-.dark .hljs-selector-attr,
-.dark .hljs-selector-class,
-.dark .hljs-selector-id {
-  color: #79c0ff;
-}
-.dark .hljs-regexp,
-.dark .hljs-string,
-.dark .hljs-meta .hljs-string {
-  color: #a5d6ff;
-}
-.dark .hljs-built_in,
-.dark .hljs-symbol {
-  color: #ffa657;
-}
-.dark .hljs-comment,
-.dark .hljs-code,
-.dark .hljs-formula {
-  color: #8b949e;
-}
-.dark .hljs-name,
-.dark .hljs-quote,
-.dark .hljs-selector-tag,
-.dark .hljs-selector-pseudo {
   color: #7ee787;
 }
-.dark .hljs-subst {
+.hljs-subst {
   color: #c9d1d9;
 }
-.dark .hljs-section {
+.hljs-section {
   color: #1f6feb;
   font-weight: bold;
 }
-.dark .hljs-bullet {
+.hljs-bullet {
   color: #f2cc60;
 }
-.dark .hljs-emphasis {
+.hljs-emphasis {
   color: #c9d1d9;
   font-style: italic;
 }
-.dark .hljs-strong {
+.hljs-strong {
   color: #c9d1d9;
   font-weight: bold;
 }
-.dark .hljs-addition {
+.hljs-addition {
   color: #aff5b4;
   background-color: #033a16;
 }
-.dark .hljs-deletion {
+.hljs-deletion {
   color: #ffdcd7;
   background-color: #67060c;
+}
+
+/* GitHub Light (.light 옵션) */
+.light .hljs-doctag,
+.light .hljs-keyword,
+.light .hljs-meta .hljs-keyword,
+.light .hljs-template-tag,
+.light .hljs-template-variable,
+.light .hljs-type,
+.light .hljs-variable.language_ {
+  color: #d73a49;
+}
+.light .hljs-title,
+.light .hljs-title.class_,
+.light .hljs-title.class_.inherited__,
+.light .hljs-title.function_ {
+  color: #6f42c1;
+}
+.light .hljs-attr,
+.light .hljs-attribute,
+.light .hljs-literal,
+.light .hljs-meta,
+.light .hljs-number,
+.light .hljs-operator,
+.light .hljs-variable,
+.light .hljs-selector-attr,
+.light .hljs-selector-class,
+.light .hljs-selector-id {
+  color: #005cc5;
+}
+.light .hljs-regexp,
+.light .hljs-string,
+.light .hljs-meta .hljs-string {
+  color: #032f62;
+}
+.light .hljs-built_in,
+.light .hljs-symbol {
+  color: #e36209;
+}
+.light .hljs-comment,
+.light .hljs-code,
+.light .hljs-formula {
+  color: #6a737d;
+}
+.light .hljs-name,
+.light .hljs-quote,
+.light .hljs-selector-tag,
+.light .hljs-selector-pseudo {
+  color: #22863a;
+}
+.light .hljs-subst {
+  color: #24292e;
+}
+.light .hljs-section {
+  color: #005cc5;
+  font-weight: bold;
+}
+.light .hljs-bullet {
+  color: #735c0f;
+}
+.light .hljs-emphasis {
+  color: #24292e;
+  font-style: italic;
+}
+.light .hljs-strong {
+  color: #24292e;
+  font-weight: bold;
+}
+.light .hljs-addition {
+  color: #22863a;
+  background-color: #f0fff4;
+}
+.light .hljs-deletion {
+  color: #b31d28;
+  background-color: #ffeef0;
 }
