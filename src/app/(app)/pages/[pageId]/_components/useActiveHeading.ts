@@ -1,0 +1,42 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+// IntersectionObserver 로 viewport 상단 30% 영역 안에 들어온 heading 중 ids 순서가 가장 앞선 것을 active 로 반환.
+// rootMargin 의 bottom -70% 가 active 후보 영역을 좁혀 잦은 갱신을 회피한다. 첫 heading 이 viewport 위로 사라져도 다음 heading 이 들어오기 전에는 마지막 active 유지.
+export function useActiveHeading(ids: ReadonlyArray<string>): string | null {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  // ids array 의 identity 가 매 렌더마다 새로 만들어져도 content equality 로 effect 재실행을 막는다.
+  // heading id 가 toc-N 형식이라 "," 충돌 없음.
+  const idsKey = ids.join(",");
+
+  useEffect(() => {
+    if (ids.length === 0) return;
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const elements = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (elements.length === 0) return;
+
+    const visible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = entry.target.id;
+          if (entry.isIntersecting) visible.add(id);
+          else visible.delete(id);
+        }
+        const first = ids.find((id) => visible.has(id));
+        setActiveId(first ?? null);
+      },
+      { rootMargin: "0px 0px -70% 0px" },
+    );
+
+    for (const el of elements) observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ids identity 대신 content equality 로 비교.
+  }, [idsKey]);
+
+  return activeId;
+}
