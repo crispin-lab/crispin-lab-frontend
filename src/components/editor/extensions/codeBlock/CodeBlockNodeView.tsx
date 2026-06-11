@@ -52,10 +52,7 @@ export function CodeBlockNodeView({ node, updateAttributes, editor }: NodeViewPr
     >
       <div className="text-muted-foreground flex items-center justify-between px-3 py-1.5 text-xs">
         {editor.isEditable ? (
-          <Select
-            value={language}
-            onValueChange={(value) => updateAttributes({ language: value })}
-          >
+          <Select value={language} onValueChange={(value) => updateAttributes({ language: value })}>
             <SelectTrigger
               size="sm"
               aria-label="코드 블록 언어"
@@ -76,13 +73,7 @@ export function CodeBlockNodeView({ node, updateAttributes, editor }: NodeViewPr
             {SUPPORTED_LANGUAGES.find((lang) => lang.value === language)?.label ?? "Plain text"}
           </span>
         )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          onClick={handleCopy}
-          aria-label="코드 복사"
-        >
+        <Button type="button" variant="ghost" size="xs" onClick={handleCopy} aria-label="코드 복사">
           {copied ? <CheckIcon /> : <CopyIcon />}
           {copied ? "복사됨" : "복사"}
         </Button>

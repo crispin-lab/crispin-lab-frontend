@@ -32,8 +32,8 @@ describe("CodeBlockCopyMounter", () => {
         <div
           dangerouslySetInnerHTML={{
             __html:
-              "<pre><code class=\"hljs language-typescript\">const a = 1;</code></pre>" +
-              "<pre><code class=\"hljs language-bash\">echo hi</code></pre>",
+              '<pre><code class="hljs language-typescript">const a = 1;</code></pre>' +
+              '<pre><code class="hljs language-bash">echo hi</code></pre>',
           }}
         />
       </CodeBlockCopyMounter>,
@@ -52,7 +52,7 @@ describe("CodeBlockCopyMounter", () => {
         <div
           dangerouslySetInnerHTML={{
             __html:
-              "<pre><code class=\"hljs language-typescript\">const greeting = \"hi\";</code></pre>",
+              '<pre><code class="hljs language-typescript">const greeting = "hi";</code></pre>',
           }}
         />
       </CodeBlockCopyMounter>,
