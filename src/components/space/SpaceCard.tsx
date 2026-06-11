@@ -12,9 +12,18 @@ type Props = {
 export function SpaceCard({ space, className }: Props) {
   const description = space.description.trim();
   const updatedAtLabel = formatUpdatedAtKR(space.updatedAt);
+  // PUBLIC 은 시각적 우선 — subtle violet border 로 공개 콘텐츠를 노출.
+  // INTERNAL 은 조용히 — neutral border 유지.
+  const visibilityBorder = space.visibility === "PUBLIC" ? "border-accent/30" : "border-border";
 
   return (
-    <Card className={cn("h-full", className)}>
+    <Card
+      className={cn(
+        "hover:shadow-accent-glow h-full transition-shadow duration-200 ease-out",
+        visibilityBorder,
+        className,
+      )}
+    >
       <CardHeader>
         <CardTitle>{space.name}</CardTitle>
       </CardHeader>

@@ -11,10 +11,13 @@ export default function PageErrorBoundary({
 }) {
   void error;
   return (
-    <main className="mx-auto max-w-2xl px-6 py-20 text-center">
-      <h1 className="text-2xl font-semibold">페이지를 불러오지 못했습니다.</h1>
-      <p className="text-muted-foreground mt-3 text-sm">잠시 후 다시 시도해 주세요.</p>
-      <Button type="button" variant="outline" onClick={reset} className="mt-6">
+    <main className="mx-auto flex w-full max-w-2xl flex-col items-start gap-6 px-6 py-20">
+      <p className="text-muted-foreground text-xs tracking-wider uppercase">오류</p>
+      <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
+        페이지를 불러오지 못했습니다.
+      </h1>
+      <p className="text-muted-foreground leading-7">잠시 후 다시 시도해 주세요.</p>
+      <Button type="button" variant="outline" onClick={reset}>
         다시 시도
       </Button>
     </main>

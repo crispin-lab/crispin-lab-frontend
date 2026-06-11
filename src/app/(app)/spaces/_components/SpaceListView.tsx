@@ -22,7 +22,9 @@ export function SpaceListView() {
   return (
     <section className="space-y-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">내가 속한 스페이스</h1>
+        <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
+          내가 속한 스페이스
+        </h1>
         {hasItems && (
           <Button
             nativeButton={false}

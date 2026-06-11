@@ -43,7 +43,9 @@ export function LoginForm() {
         <hr className="border-border" />
       </div>
 
-      <h1 className="text-3xl font-semibold tracking-tight">로그인</h1>
+      <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
+        로그인
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-2">

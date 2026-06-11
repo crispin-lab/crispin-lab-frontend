@@ -43,9 +43,10 @@ export function PageTreeNode({ node, activePageId, defaultExpandedIds, level }: 
       <div
         onKeyDown={handleRowKeyDown}
         className={cn(
-          "flex items-center gap-0.5 rounded-md text-sm",
+          "relative flex items-center gap-0.5 rounded-md text-sm transition-colors duration-150 ease-out",
           "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          isActive && "bg-accent text-accent-foreground hover:bg-accent",
+          isActive &&
+            "bg-sidebar-accent text-foreground hover:bg-sidebar-accent before:bg-accent before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full",
         )}
         // depth 가 동적이라 Tailwind 사다리 (pl-0/pl-3/...) 로 풀리지 않음 — inline style 의도된 트레이드오프.
         style={{ paddingLeft: `${level * 0.75}rem` }}

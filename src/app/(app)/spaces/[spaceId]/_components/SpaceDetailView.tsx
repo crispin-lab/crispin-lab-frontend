@@ -62,7 +62,10 @@ function SpaceMetaSection({ query }: { query: UseQueryResult<Space, ApiError> })
 
   return (
     <header aria-labelledby="space-meta-heading" className="space-y-3">
-      <h1 id="space-meta-heading" className="text-3xl font-semibold tracking-tight">
+      <h1
+        id="space-meta-heading"
+        className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent"
+      >
         {space.name}
       </h1>
       {description !== "" && <p className="text-muted-foreground leading-7">{description}</p>}
@@ -127,7 +130,7 @@ function PageListSection({
               <li key={page.pageId}>
                 <Link
                   href={`/pages/${page.pageId}`}
-                  className="hover:bg-muted/60 focus-visible:bg-muted/60 block px-4 py-3 focus-visible:outline-none"
+                  className="hover:bg-muted/60 hover:shadow-accent-glow focus-visible:bg-muted/60 block px-4 py-3 transition-shadow duration-200 ease-out focus-visible:outline-none"
                 >
                   <p className="font-medium">{page.title}</p>
                   <p className="text-muted-foreground mt-1 text-xs">

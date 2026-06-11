@@ -49,7 +49,9 @@ export function SignupForm() {
         <hr className="border-border" />
       </div>
 
-      <h1 className="text-3xl font-semibold tracking-tight">회원가입</h1>
+      <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
+        회원가입
+      </h1>
 
       <Form {...form}>
         <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

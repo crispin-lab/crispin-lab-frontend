@@ -46,13 +46,15 @@ function SearchHeader({
   totalElements: number | undefined;
 }) {
   return (
-    <h1 className="text-2xl font-semibold tracking-tight">
-      {query === undefined ? "검색" : <span>&ldquo;{query}&rdquo;</span>}
+    <header className="space-y-1">
+      <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
+        {query === undefined ? "검색" : <>&ldquo;{query}&rdquo;</>}
+      </h1>
       {totalElements !== undefined && (
-        <span className="text-muted-foreground ml-2 text-base font-normal">
+        <p className="text-muted-foreground text-sm">
           결과 {totalElements.toLocaleString("ko-KR")}건
-        </span>
+        </p>
       )}
-    </h1>
+    </header>
   );
 }
