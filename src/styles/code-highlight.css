@@ -93,7 +93,7 @@
   right: 0.25rem;
   bottom: 1px;
   height: 1.5px;
-  background: currentColor;
+  background: currentcolor;
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.2s ease-out;

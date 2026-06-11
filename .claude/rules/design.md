@@ -54,8 +54,8 @@
 | `--secondary` / `--secondary-foreground` | 보조 액션 | Button secondary |
 | `--muted` / `--muted-foreground` | 약한 표면·부가 정보 (메타·인디케이터·placeholder) | meta 텍스트, 비활성 |
 | `--accent` / `--accent-foreground` | **violet 강조** — 현재 페이지 / `[[페이지명]]` chip / primary 가 아닌 CTA | active nav, 위키 링크 (PageLink 노드 시각은 `editor.md` 의 *렌더링* 절 참조) |
-| `--accent-secondary` / `--accent-secondary-foreground` | **보조 cyan** — *gradient 의 한 stop* 으로만 등장. 별도 액션 토큰 아님 | h1 gradient 끝점 |
-| `--accent-glow` | hover box-shadow alpha — 인터랙티브 leaf 한정 | button hover, card hover (인터랙티브 변형 도입 시) |
+| `--accent-secondary` / `--accent-secondary-foreground` | **보조 cyan** — (1) h1 gradient 의 한 stop, (2) 메타 한 줄 같은 *짧은 단독 텍스트 한 포인트* 강조. 큰 surface · 본문 강조 · button / nav 색에는 쓰지 않는다 | h1 gradient 끝점, author handle |
+| `--accent-glow` | (1) hover box-shadow alpha — 인터랙티브 leaf, (2) inline 정적 노드의 *subtle* 윤곽선 (border) — 본문 시각 위계 표현. 정적 surface (article body, sidebar) 의 shadow / glow 로는 적용 X | button hover, 인터랙티브 card hover, inline `<code>` border |
 | `--destructive` | 파괴적 액션 (삭제·영구 제거) | confirm dialog |
 | `--border` / `--input` / `--ring` | 분리선·입력 outline·focus ring | 모든 입력 요소 |
 | `--surface-elevated` | Level 1 surface alias (`= var(--card)`) — `bg-surface-elevated` utility 로 노출 | 표면이 본문보다 한 단계 떠야 하는 곳 |
@@ -90,8 +90,8 @@
 
 - `primary` 는 neutral (거의 흰색). 가장 흔한 액션이라 진폭이 강하지 않게.
 - `accent` 는 violet (≈ 293°). 현재 페이지 / `[[페이지명]]` chip / 보조 CTA.
-- `accent-secondary` 는 cyan (≈ 215°). **gradient 의 한 stop** 으로만 등장 — 별도 액션 토큰 아니다. button / nav 의 색으로 쓰지 않는다.
-- 한 화면 accent 한도는 기존 **1~2 곳** 유지. cyan 이 추가되어도 한도는 그대로 — gradient 한 군데가 곧 한 곳의 accent.
+- `accent-secondary` 는 cyan (≈ 215°). 1차 용도는 **gradient 의 한 stop** (예: h1). 2차 허용 용도는 **메타 한 줄 같은 짧은 단독 텍스트 한 포인트** (예: author handle) — 본문 강조 / button / nav 색에는 쓰지 않는다.
+- 한 화면 accent 한도는 기존 **1~2 곳** 유지. cyan 이 추가되어도 한도는 그대로 — gradient 한 군데가 곧 한 곳의 accent. 메타 한 줄의 cyan 포인트는 본문 위계 밖이라 한도 카운트에 포함하지 않는다.
 
 ## heading 강조 — h1 subtle gradient, h2 이하 무채색
 
@@ -107,7 +107,7 @@ elevation 두 단계만. 단계가 늘면 위계가 흐려진다.
 - **Level 1**: `--card` 또는 `--surface-elevated` (alias). sidebar / muted surface / inline card.
 - **Level 2**: `--popover`. dropdown / dialog / tooltip.
 - border 는 `--border` (alpha 10%) — surface 차이를 색이 아니라 *border* 로 한 번 더 표현.
-- **hover accent-glow** (인터랙티브 leaf 한정): `shadow-accent-glow` utility (`0 0 0 1px var(--border), 0 8px 24px -8px var(--accent-glow)`). button hover, 인터랙티브 card hover 에 적용. 정적 surface (article body, sidebar) 에는 적용하지 않는다.
+- **hover accent-glow** (인터랙티브 leaf 한정): `shadow-accent-glow` utility (`0 0 0 1px var(--border), 0 8px 24px -8px var(--accent-glow)`). button hover, 인터랙티브 card hover 에 적용. 정적 surface (article body, sidebar) 에는 적용하지 않는다. 본 절은 *shadow utility* 만 다룬다 — 토큰 자체 (`--accent-glow`) 의 *border alpha* 사용 (inline 정적 노드의 subtle 윤곽선) 은 토큰 표 참조, 별개 정책.
 
 ## motion — CSS transition 만
 
@@ -268,5 +268,5 @@ function PublicPage() {
 - **`font-family` 직접 선언** — `style={{ fontFamily: 'Geist' }}` / CSS 의 `font-family: 'Geist'` 는 토큰 우회. `font-sans` / `font-mono` 유틸만.
 - **와이어프레임 단계에서 primitive 인라인 모킹** — 같은 위젯이 두 번째 화면에 등장한 *후* shadcn add.
 - **`dark:` 분기를 컴포넌트에 박음** — dark 가 base 다. `dark:bg-...` 는 base 와 동의어가 되어 의미가 없다. 의미 변수 (`bg-background`) 로 풀고, 정말 mode-specific 가 필요한 곳은 `light:` 분기.
-- **accent-glow 를 정적 surface 에 적용** — `shadow-accent-glow` 는 인터랙티브 leaf (button hover, 인터랙티브 card hover) 한정. 정적 article body / sidebar 에 박으면 화면이 *광고* 처럼 읽힌다.
+- **accent-glow 를 정적 surface 의 shadow / glow 로 적용** — `shadow-accent-glow` utility 는 인터랙티브 leaf (button hover, 인터랙티브 card hover) 한정. 정적 article body / sidebar 에 박으면 화면이 *광고* 처럼 읽힌다. inline 정적 노드의 *subtle border alpha* (예: inline code 윤곽선) 는 별개 — 토큰 표의 `--accent-glow` 행 참조.
 - **TOC 를 모든 화면에 박음** — 본문 길이·heading 개수가 일정 이상일 때만. 짧은 페이지에 TOC 가 등장하면 reading 의 시각 무게가 흐려진다.
