@@ -16,7 +16,7 @@ export function EditorBubbleMenu({ editor }: Props) {
   return (
     <TiptapBubbleMenu
       editor={editor}
-      className="border-border bg-popover text-popover-foreground flex items-center gap-1 rounded-md border p-1 shadow-md"
+      className="border-border bg-surface-elevated text-popover-foreground shadow-accent-glow flex items-center gap-1 rounded-md border p-1"
     >
       <BubbleButton
         ariaLabel="굵게"

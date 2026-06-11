@@ -1,19 +1,26 @@
 /*
- * highlight.js GitHub Dark / GitHub Light 테마 (BSD-3-Clause). dark-first: base 가 GitHub Dark, .light 스코프가 옵션.
+ * 두 가지를 한 파일에 두는 이유: 둘 다 *viewer 정적 HTML* 의 prose-page 노드 톤을 담당한다.
+ *   1) highlight.js GitHub Dark / GitHub Light 테마 (BSD-3-Clause). dark-first.
+ *   2) prose-page 의 viewer 노드 시각 (코드 블록 컨테이너 / inline code / blockquote / hr / PageLink chip).
  *
- * `.prose-page pre` 만 컨테이너 스타일을 잡는 이유: editor 의 NodeView (CodeBlockNodeView) 는 자체 wrapper / pre 에
- * Tailwind 유틸로 동일 스타일을 직접 부착한다. 본 CSS 는 viewer (RSC static-renderer) 의 정적 HTML 만 책임진다.
+ * editor 의 NodeView (CodeBlockNodeView) 는 자체 wrapper / pre 에 Tailwind 유틸로 동일 톤을 직접 부착한다.
+ * 본 CSS 는 viewer (RSC static-renderer) 의 정적 HTML 만 책임진다.
  */
 
 /* CodeBlockCopyMounter 의 button 이 position: absolute 로 뜨려면 부모 pre 가 relative 여야 한다. */
 .prose-page pre {
   position: relative;
-  background: var(--color-muted);
+  background: var(--color-surface-elevated);
   color: var(--color-foreground);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 1rem;
   overflow-x: auto;
   margin: 0.75rem 0;
+  transition: box-shadow 0.2s ease-out;
+}
+.prose-page pre:hover {
+  box-shadow: var(--shadow-accent-glow);
 }
 .prose-page pre code {
   background: transparent;
@@ -25,9 +32,75 @@
 .prose-page :not(pre) > code,
 .prose-editor :not(pre) > code {
   background: var(--color-muted);
+  border: 1px solid var(--accent-glow);
   border-radius: calc(var(--radius) * 0.4);
   padding: 0.125rem 0.25rem;
   font-size: 0.875rem;
+}
+
+.prose-page blockquote,
+.prose-editor blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  background: var(--color-surface-elevated);
+  border-left: 4px solid var(--color-accent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-style: italic;
+  color: var(--color-foreground);
+}
+/* 중첩 blockquote 는 두 단계 시각 깊이 — 좌측 bar 는 cyan secondary, 배경은 살짝 한 단계 더 차오름. */
+.prose-page blockquote blockquote,
+.prose-editor blockquote blockquote {
+  background: color-mix(in oklch, var(--color-surface-elevated), var(--color-accent) 6%);
+  border-left-color: var(--color-accent-secondary);
+}
+
+/* 좌우 fade + 중앙 accent dot — 단순 라인의 시각 무게 완화 + reading-first 톤 정합. */
+.prose-page hr,
+.prose-editor hr {
+  position: relative;
+  margin: 2rem auto;
+  height: 1px;
+  border: 0;
+  background: linear-gradient(to right, transparent, var(--color-border), transparent);
+}
+.prose-page hr::after,
+.prose-editor hr::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transform: translate(-50%, -50%);
+}
+
+/*
+ * PageLink chip — hover 시 underline 좌→우 그려짐. atom 노드 (display: inline-block) 라 ::after 위치 안정적.
+ * editor / viewer 양쪽이 같은 .page-link-chip class 를 공유하므로 본 셀렉터 한 곳이 두 mode 를 모두 담당.
+ */
+.page-link-chip {
+  position: relative;
+  display: inline-block;
+  transition: background-color 0.15s ease-out;
+}
+.page-link-chip::after {
+  content: "";
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  bottom: 1px;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease-out;
+}
+.page-link-chip:hover::after,
+.page-link-chip:focus-visible::after {
+  transform: scaleX(1);
 }
 
 /* CodeBlockCopyMounter 가 동적으로 부착 — Tailwind JIT 가 동적 className 을 못 잡아 plain CSS. */

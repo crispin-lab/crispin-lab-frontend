@@ -53,7 +53,7 @@ export function CodeBlockNodeView({ node, updateAttributes, editor }: NodeViewPr
   return (
     <NodeViewWrapper
       data-language={language}
-      className="code-block-wrapper bg-muted relative my-3 overflow-hidden rounded-md"
+      className="code-block-wrapper bg-surface-elevated border-border hover:shadow-accent-glow relative my-3 overflow-hidden rounded-md border transition-shadow duration-200 ease-out"
     >
       <div className="text-muted-foreground flex items-center justify-between px-3 py-1.5 text-xs">
         {editor.isEditable ? (

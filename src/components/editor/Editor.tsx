@@ -34,16 +34,17 @@ export function Editor({
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        // inline-code 스타일은 code-highlight.css 의 `.prose-editor :not(pre) > code` 에서 담당.
+        // inline-code / blockquote / hr 스타일은 code-highlight.css 의 `.prose-editor ...` 셀렉터에서 담당 (reading 과 공유).
         class: cn(
-          "prose-editor min-h-64 leading-7 outline-none",
-          "[&_h1]:mt-6 [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-semibold",
-          "[&_h2]:mt-5 [&_h2]:mb-2 [&_h2]:text-2xl [&_h2]:font-semibold",
-          "[&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold",
-          "[&_p]:my-2",
-          "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6",
-          "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6",
-          "[&_a]:text-accent [&_a]:underline",
+          "prose-editor min-h-64 leading-8 outline-none",
+          "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:bg-gradient-to-r [&_h1]:from-(--heading-gradient-start) [&_h1]:to-(--heading-gradient-end) [&_h1]:bg-clip-text [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-transparent",
+          "[&_h2]:mt-7 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-semibold",
+          "[&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold",
+          "[&_p]:my-3",
+          "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
+          "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6",
+          "[&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-1 [&_a]:transition-all [&_a]:duration-200 [&_a]:ease-out",
+          "[&_a:hover]:underline-offset-4 [&_a:hover]:decoration-2",
         ),
         "aria-label": placeholder ?? "본문",
         "data-placeholder": placeholder ?? "",
@@ -55,7 +56,13 @@ export function Editor({
   });
 
   return (
-    <div className={cn("w-full", className)}>
+    <div
+      className={cn(
+        "w-full rounded-md transition-shadow duration-150 ease-out",
+        "focus-within:shadow-[inset_0_0_0_1px_var(--color-ring)]",
+        className,
+      )}
+    >
       <EditorBubbleMenu editor={editor} />
       <EditorContent editor={editor} />
     </div>

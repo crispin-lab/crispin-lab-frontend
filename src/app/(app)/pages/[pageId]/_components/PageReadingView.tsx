@@ -10,14 +10,13 @@ import { cn } from "@/lib/utils";
 
 import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
 import { PageLinkChipNavigator } from "./PageLinkChipNavigator";
+import { Toc, type TocItem } from "./Toc";
 
 type Props = {
   page: Page;
   isAuthenticated: boolean;
   className?: string;
 };
-
-type TocItem = { id: string; level: 1 | 2 | 3; text: string };
 
 const TOC_MIN_HEADINGS = 3;
 
@@ -47,7 +46,7 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
               {page.title}
             </h1>
             <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-              <span>@{page.authorId}</span>
+              <span className="text-accent-secondary">@{page.authorId}</span>
               <span aria-hidden>·</span>
               <time dateTime={page.createdAt}>{formatDate(page.createdAt)}</time>
               {showUpdatedAt && (
@@ -88,7 +87,8 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
                     "[&_p]:my-3",
                     "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
                     "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6",
-                    "[&_a]:text-accent [&_a]:underline",
+                    "[&_a]:text-accent [&_a]:underline [&_a]:decoration-1 [&_a]:underline-offset-2 [&_a]:transition-all [&_a]:duration-200 [&_a]:ease-out",
+                    "[&_a:hover]:decoration-2 [&_a:hover]:underline-offset-4",
                   )}
                   dangerouslySetInnerHTML={{ __html: html }}
                 />
@@ -101,33 +101,6 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
       </div>
     </div>
   );
-}
-
-function Toc({ items }: { items: TocItem[] }) {
-  return (
-    <aside className="hidden lg:block">
-      <nav aria-label="목차" className="sticky top-20">
-        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-          목차
-        </p>
-        <ul className="space-y-1.5 text-sm">
-          {items.map((item) => (
-            <li key={item.id} className={tocIndentClass(item.level)}>
-              <Link href={`#${item.id}`} className="text-muted-foreground hover:text-foreground">
-                {item.text}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </aside>
-  );
-}
-
-function tocIndentClass(level: 1 | 2 | 3): string {
-  if (level === 1) return "pl-0";
-  if (level === 2) return "pl-3";
-  return "pl-6";
 }
 
 function buildTocAndAssignIds(doc: JSONContent): TocItem[] {
