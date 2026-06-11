@@ -7,13 +7,15 @@ import { server } from "@/mocks/server";
 import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
-const { routerPush, urlSearchParams } = vi.hoisted(() => ({
+const { routerPush, urlSearchParams, pathname } = vi.hoisted(() => ({
   routerPush: vi.fn(),
   urlSearchParams: { current: new URLSearchParams() },
+  pathname: { current: "/" },
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPush }),
   useSearchParams: () => urlSearchParams.current,
+  usePathname: () => pathname.current,
 }));
 
 const { redirectToLoginMock, navigateAfterLogoutMock } = vi.hoisted(() => ({
@@ -39,6 +41,7 @@ function resetAllSpies() {
   redirectToLoginMock.mockReset();
   navigateAfterLogoutMock.mockReset();
   urlSearchParams.current = new URLSearchParams();
+  pathname.current = "/";
   window.history.replaceState({}, "", "/");
 }
 
@@ -239,5 +242,35 @@ describe("AppHeader — 검색 input", () => {
     expect(routerPush).toHaveBeenCalledWith(
       "/search?query=%EB%A7%81%ED%81%AC&space=s_1&sort=RELEVANCE",
     );
+  });
+});
+
+describe("AppHeader — 활성 nav accent", () => {
+  beforeEach(() => {
+    resetAllSpies();
+    server.use(
+      http.get("/api/v1/users/me", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+  });
+
+  it("/ 에서는 로고 link 가 현재 페이지로 표시된다", async () => {
+    pathname.current = "/";
+    renderHeader();
+
+    const logo = await screen.findByRole("link", { name: "crispin-lab" });
+    expect(logo).toHaveAttribute("aria-current", "page");
+  });
+
+  it("/ 가 아닌 곳에서는 로고 link 가 현재 페이지 표시를 가지지 않는다", async () => {
+    pathname.current = "/search";
+    renderHeader();
+
+    const logo = await screen.findByRole("link", { name: "crispin-lab" });
+    expect(logo).not.toHaveAttribute("aria-current");
   });
 });

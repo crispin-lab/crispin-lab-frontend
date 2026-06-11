@@ -54,6 +54,8 @@ export function SearchFilters({ current, className }: Props) {
   const spaceValue = current.spaceId ?? ALL_SPACES;
   const sortValue = current.sort ?? DEFAULT_SORT;
   const spaceLabel = resolveSpaceLabel(current.spaceId, spaceListQuery);
+  const isSpaceActive = current.spaceId !== undefined;
+  const isSortActive = sortValue !== DEFAULT_SORT;
 
   return (
     <div
@@ -66,7 +68,10 @@ export function SearchFilters({ current, className }: Props) {
         onValueChange={handleSpaceChange}
         disabled={spaceListQuery.isPending}
       >
-        <SelectTrigger aria-label="스페이스 필터" className="min-w-36">
+        <SelectTrigger
+          aria-label="스페이스 필터"
+          className={cn("min-w-36", isSpaceActive && "border-accent")}
+        >
           <SelectValue>{spaceLabel}</SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -80,7 +85,10 @@ export function SearchFilters({ current, className }: Props) {
       </Select>
 
       <Select value={sortValue} onValueChange={handleSortChange}>
-        <SelectTrigger aria-label="정렬" className="min-w-32">
+        <SelectTrigger
+          aria-label="정렬"
+          className={cn("min-w-32", isSortActive && "border-accent")}
+        >
           <SelectValue>{SORT_LABELS[sortValue]}</SelectValue>
         </SelectTrigger>
         <SelectContent>

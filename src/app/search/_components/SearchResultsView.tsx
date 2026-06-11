@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 
+import { PageHeading } from "@/components/PageHeading";
 import { usePageList } from "@/hooks/usePage";
 import { parseSearchParams } from "@/lib/search/searchParams";
 import { cn } from "@/lib/utils";
@@ -46,13 +47,13 @@ function SearchHeader({
   totalElements: number | undefined;
 }) {
   return (
-    <h1 className="text-2xl font-semibold tracking-tight">
-      {query === undefined ? "검색" : <span>&ldquo;{query}&rdquo;</span>}
+    <header className="space-y-1">
+      <PageHeading>{query === undefined ? "검색" : <>&ldquo;{query}&rdquo;</>}</PageHeading>
       {totalElements !== undefined && (
-        <span className="text-muted-foreground ml-2 text-base font-normal">
+        <p className="text-muted-foreground text-sm">
           결과 {totalElements.toLocaleString("ko-KR")}건
-        </span>
+        </p>
       )}
-    </h1>
+    </header>
   );
 }

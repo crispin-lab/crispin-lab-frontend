@@ -36,7 +36,12 @@ export function PageTreeSidebar({ spaceId, activePageId, className }: Props) {
   const isTruncated = query.data?.hasNext === true;
 
   return (
-    <aside className={cn("bg-sidebar text-sidebar-foreground rounded-lg p-3", className)}>
+    <aside
+      className={cn(
+        "bg-sidebar text-sidebar-foreground border-border rounded-lg border p-3",
+        className,
+      )}
+    >
       {query.isPending && <PageTreeSkeleton />}
 
       {query.isError && (
@@ -60,6 +65,14 @@ export function PageTreeSidebar({ spaceId, activePageId, className }: Props) {
 
       {query.data !== undefined && query.data.items.length > 0 && (
         <>
+          <div className="mb-3 px-1">
+            <Button
+              size="sm"
+              className="w-full"
+              nativeButton={false}
+              render={<Link href={newPageHref}>새 페이지 만들기</Link>}
+            />
+          </div>
           {/* activePageId 가 바뀌면 트리 전체를 리셋해 새 active 의 조상 체인이 자동 펼쳐지게.
               사용자가 수동 접은 노드도 함께 리셋되는 trade-off — 정교한 lift+reducer 는 별도 티켓. */}
           <ul key={activePageId} aria-label="페이지 트리" className="space-y-0.5">

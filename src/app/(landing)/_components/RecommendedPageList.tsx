@@ -82,7 +82,7 @@ function RecommendedPageRow({ page }: { page: PageSummary }) {
   return (
     <Link
       href={`/pages/${encodeURIComponent(page.pageId)}`}
-      className="hover:bg-muted/40 focus-visible:ring-ring flex items-center justify-between gap-4 px-2 py-3 text-sm focus-visible:ring-2 focus-visible:outline-none"
+      className="hover:bg-muted/40 hover:shadow-accent-glow focus-visible:ring-ring flex items-center justify-between gap-4 rounded-md px-2 py-3 text-sm transition-shadow duration-200 ease-out focus-visible:ring-2 focus-visible:outline-none"
     >
       <span className="truncate">{page.title}</span>
       <time dateTime={page.updatedAt} className="text-muted-foreground shrink-0 text-xs">

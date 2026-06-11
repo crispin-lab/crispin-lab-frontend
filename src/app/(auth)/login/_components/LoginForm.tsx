@@ -7,6 +7,7 @@ import { AuthFooterNav } from "@/app/(auth)/_components/AuthFooterNav";
 import { CtaLink } from "@/app/(auth)/_components/CtaLink";
 import { EditorialInput } from "@/app/(auth)/_components/EditorialInput";
 import { EDITORIAL_LABEL_CLASS } from "@/app/(auth)/_lib/labelClass";
+import { PageHeading } from "@/components/PageHeading";
 import { Label } from "@/components/ui/label";
 import { useLogin } from "@/hooks/useAuth";
 import { safeRedirectTarget } from "@/lib/auth/redirect";
@@ -43,7 +44,7 @@ export function LoginForm() {
         <hr className="border-border" />
       </div>
 
-      <h1 className="text-3xl font-semibold tracking-tight">로그인</h1>
+      <PageHeading>로그인</PageHeading>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-2">

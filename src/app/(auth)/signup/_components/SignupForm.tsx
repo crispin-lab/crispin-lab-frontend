@@ -8,6 +8,7 @@ import { AuthFooterNav } from "@/app/(auth)/_components/AuthFooterNav";
 import { CtaLink } from "@/app/(auth)/_components/CtaLink";
 import { EditorialInput } from "@/app/(auth)/_components/EditorialInput";
 import { EDITORIAL_LABEL_CLASS } from "@/app/(auth)/_lib/labelClass";
+import { PageHeading } from "@/components/PageHeading";
 import {
   Form,
   FormControl,
@@ -49,7 +50,7 @@ export function SignupForm() {
         <hr className="border-border" />
       </div>
 
-      <h1 className="text-3xl font-semibold tracking-tight">회원가입</h1>
+      <PageHeading>회원가입</PageHeading>
 
       <Form {...form}>
         <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

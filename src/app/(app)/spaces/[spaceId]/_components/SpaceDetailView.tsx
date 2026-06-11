@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { type UseQueryResult } from "@tanstack/react-query";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { PageHeading } from "@/components/PageHeading";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,9 +63,7 @@ function SpaceMetaSection({ query }: { query: UseQueryResult<Space, ApiError> })
 
   return (
     <header aria-labelledby="space-meta-heading" className="space-y-3">
-      <h1 id="space-meta-heading" className="text-3xl font-semibold tracking-tight">
-        {space.name}
-      </h1>
+      <PageHeading id="space-meta-heading">{space.name}</PageHeading>
       {description !== "" && <p className="text-muted-foreground leading-7">{description}</p>}
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <VisibilityBadge visibility={space.visibility} />
@@ -127,7 +126,7 @@ function PageListSection({
               <li key={page.pageId}>
                 <Link
                   href={`/pages/${page.pageId}`}
-                  className="hover:bg-muted/60 focus-visible:bg-muted/60 block px-4 py-3 focus-visible:outline-none"
+                  className="hover:bg-muted/60 hover:shadow-accent-glow focus-visible:bg-muted/60 block px-4 py-3 transition-shadow duration-200 ease-out focus-visible:outline-none"
                 >
                   <p className="font-medium">{page.title}</p>
                   <p className="text-muted-foreground mt-1 text-xs">

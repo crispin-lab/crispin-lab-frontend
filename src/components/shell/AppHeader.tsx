@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 import { useMe } from "@/hooks/useAuth";
@@ -18,6 +18,10 @@ type Props = {
 };
 
 export function AppHeader({ className, variant = "full" }: Props) {
+  const pathname = usePathname();
+  const isHomeActive = pathname === "/";
+  const isSearchActive = pathname === "/search";
+
   return (
     <header
       className={cn(
@@ -26,12 +30,19 @@ export function AppHeader({ className, variant = "full" }: Props) {
         className,
       )}
     >
-      <Link href="/" className="text-sm font-semibold tracking-tight">
+      <Link
+        href="/"
+        aria-current={isHomeActive ? "page" : undefined}
+        className={cn(
+          "text-sm font-semibold tracking-tight transition-colors duration-150 ease-out",
+          isHomeActive ? "text-accent" : "text-foreground hover:text-accent",
+        )}
+      >
         crispin-lab
       </Link>
       {variant === "full" ? (
         <Suspense fallback={<div aria-hidden className="flex-1" />}>
-          <SearchInput />
+          <SearchInput isActive={isSearchActive} />
         </Suspense>
       ) : (
         <div aria-hidden className="flex-1" />
@@ -41,13 +52,13 @@ export function AppHeader({ className, variant = "full" }: Props) {
   );
 }
 
-function SearchInput() {
+function SearchInput({ isActive }: { isActive: boolean }) {
   // key remount 로 URL 변경 시 initialValue 를 새로 흘림 — props→state useEffect 동기화 회피.
   const urlQuery = useSearchParams().get("query") ?? "";
-  return <SearchInputInner key={urlQuery} initialValue={urlQuery} />;
+  return <SearchInputInner key={urlQuery} initialValue={urlQuery} isActive={isActive} />;
 }
 
-function SearchInputInner({ initialValue }: { initialValue: string }) {
+function SearchInputInner({ initialValue, isActive }: { initialValue: string; isActive: boolean }) {
   const submitSearch = useSearchSubmit();
   const [value, setValue] = useState(initialValue);
 
@@ -65,7 +76,10 @@ function SearchInputInner({ initialValue }: { initialValue: string }) {
         placeholder="검색"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        className="border-input bg-muted/40 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full max-w-md rounded-md border px-3 text-sm outline-none focus-visible:ring-3"
+        className={cn(
+          "bg-muted/40 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full max-w-md rounded-md border px-3 text-sm outline-none focus-visible:ring-3",
+          isActive ? "border-accent" : "border-input",
+        )}
       />
     </form>
   );
