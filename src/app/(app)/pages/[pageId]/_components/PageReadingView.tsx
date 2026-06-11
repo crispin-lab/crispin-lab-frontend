@@ -43,7 +43,7 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
       >
         <article className="min-w-0">
           <header className="mb-8">
-            <h1 className="bg-gradient-to-r from-[var(--heading-gradient-start)] to-[var(--heading-gradient-end)] bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
+            <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
               {page.title}
             </h1>
             <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -82,7 +82,7 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
                 <div
                   className={cn(
                     "prose-page leading-8",
-                    "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:bg-gradient-to-r [&_h1]:from-[var(--heading-gradient-start)] [&_h1]:to-[var(--heading-gradient-end)] [&_h1]:bg-clip-text [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-transparent",
+                    "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:bg-gradient-to-r [&_h1]:from-(--heading-gradient-start) [&_h1]:to-(--heading-gradient-end) [&_h1]:bg-clip-text [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-transparent",
                     "[&_h2]:mt-7 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-semibold",
                     "[&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold",
                     "[&_p]:my-3",
