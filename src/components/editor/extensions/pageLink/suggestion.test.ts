@@ -6,7 +6,16 @@ import type { PageSearchResult, PageSummary } from "@/lib/api/types";
 import { createDebouncedSearch } from "./suggestion";
 
 function summary(pageId: string, title: string): PageSummary {
-  return { pageId, title, spaceId: "s_1", updatedAt: "2026-01-01T00:00:00Z", displayOrder: 0 };
+  return {
+    pageId,
+    title,
+    spaceId: "s_1",
+    updatedAt: "2026-01-01T00:00:00Z",
+    displayOrder: 0,
+    authorHandle: "author",
+    authorId: "u_1",
+    visibility: "PUBLIC",
+  };
 }
 
 function searchResult(items: PageSummary[]): PageSearchResult {

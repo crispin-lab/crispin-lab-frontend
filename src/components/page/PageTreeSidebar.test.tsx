@@ -23,6 +23,9 @@ function summary(input: {
     updatedAt: "2026-01-01T00:00:00Z",
     displayOrder: input.displayOrder ?? 0,
     parentPageId: input.parentPageId ?? null,
+    authorHandle: "author",
+    authorId: "u_1",
+    visibility: "PUBLIC",
   };
 }
 

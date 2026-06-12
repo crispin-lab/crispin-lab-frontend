@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { handleMutationError, handleQueryError } from "@/lib/api/queryErrorHandlers";
 import { queryDefaultOptions } from "@/lib/queryClient";
 
@@ -21,7 +22,7 @@ export function Providers({ children }: { children: React.ReactNode }): React.JS
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <TooltipProvider delay={300}>{children}</TooltipProvider>
       <Toaster richColors closeButton position="top-right" />
       {process.env.NODE_ENV !== "production" && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>

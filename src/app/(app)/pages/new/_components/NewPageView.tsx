@@ -102,7 +102,7 @@ export function NewPageView({ spaceId }: Props) {
         />
       </div>
 
-      <Editor spaceId={spaceId} onChange={setContent} />
+      <Editor spaceId={spaceId} onChange={setContent} sourceVisibility={visibility} />
 
       <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
         <Button type="submit" disabled={!canSubmit}>

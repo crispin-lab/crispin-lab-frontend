@@ -26,3 +26,19 @@ export function visibilityDescription(value: Visibility): string {
 export function isVisibility(value: string): value is Visibility {
   return (VISIBILITY_VALUES as readonly string[]).includes(value);
 }
+
+const VISIBILITY_RANK: Record<Visibility, number> = {
+  DRAFT: 0,
+  INTERNAL: 1,
+  PUBLIC: 2,
+};
+
+export function isVisibilityNarrowerThan(target: Visibility, source: Visibility): boolean {
+  return VISIBILITY_RANK[target] < VISIBILITY_RANK[source];
+}
+
+// 백엔드 PageLink displayText 마스킹 라벨과 정확히 일치해야 한다 — backend schema 의
+// `PageGetResponse.content` 설명이 동일 문구 ('비공개 페이지') 를 약속한다.
+export function buildNarrowerVisibilityWarning(target: Visibility, source: Visibility): string {
+  return `이 페이지는 ${visibilityLabel(target)} 페이지입니다. ${visibilityLabel(source)} 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.`;
+}

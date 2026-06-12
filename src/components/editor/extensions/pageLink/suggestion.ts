@@ -4,6 +4,7 @@ import { MentionList, type MentionListHandle, type PageLinkSelection } from "../
 import type { SpaceId } from "@/lib/api/ids";
 import { searchPages } from "@/lib/api/page";
 import type { PageSummary } from "@/lib/api/types";
+import type { Visibility } from "@/lib/page/visibility";
 
 export const DEBOUNCE_MS = 150;
 export const SUGGESTION_SIZE = 8;
@@ -80,8 +81,27 @@ function positionPopover(popoverEl: HTMLDivElement | null, clientRect: ClientRec
   popoverEl.style.left = `${rect.left + window.scrollX}px`;
 }
 
-export function createPageLinkSuggestion(spaceId: SpaceId) {
+type SuggestionDeps = {
+  spaceId: SpaceId;
+  getSourceVisibility?: () => Visibility;
+};
+
+type MentionListRenderProps = {
+  items: PageSummary[];
+  command: SuggestionProps["command"];
+  sourceVisibility: Visibility | null;
+};
+
+export function createPageLinkSuggestion({ spaceId, getSourceVisibility }: SuggestionDeps) {
   const debouncedSearch = createDebouncedSearch(spaceId, { search: searchPages });
+
+  function toMentionListProps(props: SuggestionProps): MentionListRenderProps {
+    return {
+      items: props.items,
+      command: props.command,
+      sourceVisibility: getSourceVisibility?.() ?? null,
+    };
+  }
 
   return {
     char: "[[",
@@ -133,7 +153,10 @@ export function createPageLinkSuggestion(spaceId: SpaceId) {
 
       return {
         onStart: (props: SuggestionProps) => {
-          component = new ReactRenderer(MentionList, { props, editor: props.editor });
+          component = new ReactRenderer(MentionList, {
+            props: toMentionListProps(props),
+            editor: props.editor,
+          });
           if (!component.element) return;
 
           popoverEl = document.createElement("div");
@@ -150,7 +173,7 @@ export function createPageLinkSuggestion(spaceId: SpaceId) {
         },
 
         onUpdate: (props: SuggestionProps) => {
-          component?.updateProps(props);
+          component?.updateProps(toMentionListProps(props));
           currentRect = props.clientRect;
           reposition();
         },

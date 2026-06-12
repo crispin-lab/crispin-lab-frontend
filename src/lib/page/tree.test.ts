@@ -19,6 +19,9 @@ function page(input: {
     updatedAt: input.updatedAt ?? "2026-06-01T00:00:00Z",
     parentPageId: input.parentPageId,
     displayOrder: input.displayOrder ?? 0,
+    authorHandle: "author",
+    authorId: "u_1",
+    visibility: "PUBLIC",
   };
 }
 

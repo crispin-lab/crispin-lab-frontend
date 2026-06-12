@@ -16,6 +16,9 @@ function summary(input: { pageId: string; title: string }): PageSummary {
     updatedAt: "2026-01-01T00:00:00Z",
     displayOrder: 0,
     parentPageId: null,
+    authorHandle: "author",
+    authorId: "u_1",
+    visibility: "PUBLIC",
   };
 }
 
