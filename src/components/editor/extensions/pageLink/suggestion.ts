@@ -84,6 +84,8 @@ function positionPopover(popoverEl: HTMLDivElement | null, clientRect: ClientRec
 type SuggestionDeps = {
   spaceId: SpaceId;
   getSourceVisibility?: () => Visibility;
+  // popup 이 열려 있는 동안 외부에서 (예: visibility 토글) MentionList props 를 강제 갱신할 수 있게 등록 콜백을 받는다.
+  onRefreshAvailable?: (refresh: () => void) => void;
 };
 
 type MentionListRenderProps = {
@@ -92,7 +94,11 @@ type MentionListRenderProps = {
   sourceVisibility: Visibility | null;
 };
 
-export function createPageLinkSuggestion({ spaceId, getSourceVisibility }: SuggestionDeps) {
+export function createPageLinkSuggestion({
+  spaceId,
+  getSourceVisibility,
+  onRefreshAvailable,
+}: SuggestionDeps) {
   const debouncedSearch = createDebouncedSearch(spaceId, { search: searchPages });
 
   function toMentionListProps(props: SuggestionProps): MentionListRenderProps {
@@ -136,6 +142,13 @@ export function createPageLinkSuggestion({ spaceId, getSourceVisibility }: Sugge
       let component: ReactRenderer<MentionListHandle> | null = null;
       let popoverEl: HTMLDivElement | null = null;
       let currentRect: ClientRectFn = null;
+      let lastProps: SuggestionProps | null = null;
+
+      onRefreshAvailable?.(() => {
+        if (component != null && lastProps != null) {
+          component.updateProps(toMentionListProps(lastProps));
+        }
+      });
 
       function reposition() {
         positionPopover(popoverEl, currentRect);
@@ -149,10 +162,12 @@ export function createPageLinkSuggestion({ spaceId, getSourceVisibility }: Sugge
         component?.destroy();
         component = null;
         currentRect = null;
+        lastProps = null;
       }
 
       return {
         onStart: (props: SuggestionProps) => {
+          lastProps = props;
           component = new ReactRenderer(MentionList, {
             props: toMentionListProps(props),
             editor: props.editor,
@@ -173,6 +188,7 @@ export function createPageLinkSuggestion({ spaceId, getSourceVisibility }: Sugge
         },
 
         onUpdate: (props: SuggestionProps) => {
+          lastProps = props;
           component?.updateProps(toMentionListProps(props));
           currentRect = props.clientRect;
           reposition();

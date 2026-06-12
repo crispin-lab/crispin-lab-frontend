@@ -1,12 +1,15 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { act, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { PageSummary } from "@/lib/api/types";
 import type { Visibility } from "@/lib/page/visibility";
 
-import { MentionList, NARROWER_WARNING_TRIGGER_LABEL, type MentionListHandle } from "./MentionList";
+import { MentionList, type MentionListHandle } from "./MentionList";
+
+function warningSpansOf(): HTMLElement[] {
+  return screen.queryAllByText(/일부 독자에게는/, { selector: "span" });
+}
 
 function summary(
   overrides: Partial<PageSummary> & Pick<PageSummary, "pageId" | "title">,
@@ -34,8 +37,6 @@ function makeItems(): PageSummary[] {
     summary({ pageId: "p_c", title: "독서", updatedAt: "2026-01-03T00:00:00Z", displayOrder: 2 }),
   ];
 }
-
-const WARNING_LABEL = NARROWER_WARNING_TRIGGER_LABEL;
 
 function keyEvent(key: string): { event: KeyboardEvent } {
   return { event: new KeyboardEvent("keydown", { key }) };
@@ -93,7 +94,7 @@ describe("MentionList", () => {
     expect(ref.current?.onKeyDown(keyEvent("a"))).toBe(false);
   });
 
-  it("source 보다 좁은 target 항목에는 경고 아이콘이 표시된다", () => {
+  it("source 보다 좁은 target 항목에는 sr-only 경고 메시지가 붙는다", () => {
     const items: PageSummary[] = [
       summary({ pageId: "p_pub", title: "공개", visibility: "PUBLIC" }),
       summary({ pageId: "p_int", title: "내부", visibility: "INTERNAL" }),
@@ -107,11 +108,10 @@ describe("MentionList", () => {
       />,
     );
 
-    expect(screen.getAllByLabelText(WARNING_LABEL)).toHaveLength(2);
+    expect(warningSpansOf()).toHaveLength(2);
   });
 
-  it("hover 시 source 와 target 의 visibility 가 메시지에 반영된다", async () => {
-    const user = userEvent.setup();
+  it("좁은 target 옵션은 aria-describedby 로 경고 메시지에 연결된다 (키보드 / 스크린리더 정합)", () => {
     const items: PageSummary[] = [
       summary({ pageId: "p_draft", title: "초안", visibility: "DRAFT" }),
     ];
@@ -123,15 +123,13 @@ describe("MentionList", () => {
       />,
     );
 
-    await user.hover(screen.getByLabelText(WARNING_LABEL));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          "이 페이지는 초안 페이지입니다. 비공개 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.",
-        ),
-      ).toBeInTheDocument();
-    });
+    const option = screen.getByRole("option");
+    const warningId = option.getAttribute("aria-describedby");
+    expect(warningId).not.toBeNull();
+    const warningEl = document.getElementById(warningId as string);
+    expect(warningEl?.textContent).toBe(
+      "이 페이지는 초안 페이지입니다. 비공개 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.",
+    );
   });
 
   it("source 와 같거나 더 넓은 target 에는 경고가 없다", () => {
@@ -146,7 +144,8 @@ describe("MentionList", () => {
       />,
     );
 
-    expect(screen.queryByLabelText(WARNING_LABEL)).not.toBeInTheDocument();
+    expect(warningSpansOf()).toHaveLength(0);
+    expect(screen.getByRole("option")).not.toHaveAttribute("aria-describedby");
   });
 
   it("source 와 같은 visibility 의 target 에는 경고가 없다", () => {
@@ -161,7 +160,7 @@ describe("MentionList", () => {
       />,
     );
 
-    expect(screen.queryByLabelText(WARNING_LABEL)).not.toBeInTheDocument();
+    expect(warningSpansOf()).toHaveLength(0);
   });
 
   it("sourceVisibility 가 없으면 chip 은 보이지만 경고는 없다", () => {
@@ -171,6 +170,6 @@ describe("MentionList", () => {
     render(<MentionList items={items} command={vi.fn()} />);
 
     expect(screen.getByLabelText("공개 범위: 초안")).toBeInTheDocument();
-    expect(screen.queryByLabelText(WARNING_LABEL)).not.toBeInTheDocument();
+    expect(warningSpansOf()).toHaveLength(0);
   });
 });

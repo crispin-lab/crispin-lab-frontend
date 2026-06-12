@@ -7,11 +7,16 @@ import { createPageLinkSuggestion } from "./suggestion";
 type EditorPageLinkOptions = {
   spaceId: SpaceId;
   getSourceVisibility?: () => Visibility;
+  onRefreshAvailable?: (refresh: () => void) => void;
 };
 
 // editor 측만 export. viewer 는 `./viewer` (suggestion / @tiptap/react 의존 없음) — RSC 에서 그쪽을 import.
-export function editorPageLink({ spaceId, getSourceVisibility }: EditorPageLinkOptions) {
+export function editorPageLink({
+  spaceId,
+  getSourceVisibility,
+  onRefreshAvailable,
+}: EditorPageLinkOptions) {
   return PageLinkNode.configure({
-    suggestion: createPageLinkSuggestion({ spaceId, getSourceVisibility }),
+    suggestion: createPageLinkSuggestion({ spaceId, getSourceVisibility, onRefreshAvailable }),
   });
 }

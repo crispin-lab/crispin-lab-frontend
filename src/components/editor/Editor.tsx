@@ -33,16 +33,23 @@ export function Editor({
   // useEditor 의 extensions 는 mount 시 한 번만 capture 된다. parent 의 visibility 변경이 같은 editor 인스턴스에
   // 반영되도록 ref 로 우회한다 — 재마운트 시 본문 손실 회피.
   const sourceVisibilityRef = useRef<Visibility>(sourceVisibility);
+  // popup 이 이미 열린 상태에서 visibility 가 토글되면 suggestion 라이프사이클이 트리거되지 않아 chip / tooltip 이
+  // stale 해진다. extension 이 등록한 refresh 콜백을 호출해 active MentionList 의 props 를 강제 갱신한다.
+  const refreshSuggestionRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     sourceVisibilityRef.current = sourceVisibility;
+    refreshSuggestionRef.current?.();
   }, [sourceVisibility]);
 
   const editor = useEditor({
-    // getSourceVisibility 는 suggestion 트리거 시점 (mount 이후) 에 호출되며 render 중에는 ref 가 읽히지 않는다.
+    // ref 들은 suggestion 트리거 시점 (mount 이후) 에 호출되며 render 중에는 읽히지 않는다.
     // eslint-disable-next-line react-hooks/refs
     extensions: editorExtensions({
       spaceId,
       getSourceVisibility: () => sourceVisibilityRef.current,
+      onRefreshAvailable: (refresh) => {
+        refreshSuggestionRef.current = refresh;
+      },
     }),
     content: parseEditorContent(initialContent),
     editable,

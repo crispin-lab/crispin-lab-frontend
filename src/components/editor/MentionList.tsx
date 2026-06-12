@@ -31,8 +31,6 @@ type Props = {
   sourceVisibility?: Visibility | null;
 };
 
-export const NARROWER_WARNING_TRIGGER_LABEL = "좁은 공개 범위 경고";
-
 function narrowerWarningFor(
   rawTarget: string,
   source: Visibility | null | undefined,
@@ -95,11 +93,13 @@ export const MentionList = forwardRef<MentionListHandle, Props>(function Mention
         <ul role="listbox" className="max-h-60 overflow-auto py-1">
           {items.map((item, index) => {
             const warning = narrowerWarningFor(item.visibility, sourceVisibility);
+            const warningId = warning != null ? `page-link-warning-${item.pageId}` : undefined;
             return (
               <li
                 key={item.pageId}
                 role="option"
                 aria-selected={index === selectedIndex}
+                aria-describedby={warningId}
                 className={cn(
                   "flex cursor-pointer items-center gap-2 px-2 py-1 text-sm",
                   index === selectedIndex && "bg-accent text-accent-foreground",
@@ -113,18 +113,24 @@ export const MentionList = forwardRef<MentionListHandle, Props>(function Mention
                 <span className="flex-1 truncate">{item.title}</span>
                 <VisibilityBadge visibility={item.visibility} />
                 {warning != null && (
-                  <Tooltip>
-                    {/* listbox 안의 option 에 button 자식이 들어가면 roving tabindex 모델이 깨진다 — span 으로 렌더 + tabIndex=-1. */}
-                    <TooltipTrigger
-                      render={<span />}
-                      tabIndex={-1}
-                      aria-label={NARROWER_WARNING_TRIGGER_LABEL}
-                      className="text-muted-foreground inline-flex items-center"
-                    >
-                      <EyeOffIcon className="size-4" aria-hidden="true" />
-                    </TooltipTrigger>
-                    <TooltipContent>{warning}</TooltipContent>
-                  </Tooltip>
+                  <>
+                    <Tooltip>
+                      {/* listbox option 안의 button 자식은 roving tabindex 모델을 깬다 — span + tabIndex=-1 로 렌더,
+                          AT 에는 li 의 aria-describedby 로 전달하므로 trigger 자체는 aria-hidden 처리. */}
+                      <TooltipTrigger
+                        render={<span />}
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        className="text-muted-foreground inline-flex items-center"
+                      >
+                        <EyeOffIcon className="size-4" />
+                      </TooltipTrigger>
+                      <TooltipContent>{warning}</TooltipContent>
+                    </Tooltip>
+                    <span id={warningId} className="sr-only">
+                      {warning}
+                    </span>
+                  </>
                 )}
               </li>
             );
