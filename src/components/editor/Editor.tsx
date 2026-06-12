@@ -33,8 +33,7 @@ export function Editor({
   // useEditor 의 extensions 는 mount 시 한 번만 capture 된다. parent 의 visibility 변경이 같은 editor 인스턴스에
   // 반영되도록 ref 로 우회한다 — 재마운트 시 본문 손실 회피.
   const sourceVisibilityRef = useRef<Visibility>(sourceVisibility);
-  // popup 이 이미 열린 상태에서 visibility 가 토글되면 suggestion 라이프사이클이 트리거되지 않아 chip / tooltip 이
-  // stale 해진다. extension 이 등록한 refresh 콜백을 호출해 active MentionList 의 props 를 강제 갱신한다.
+  // ref 갱신만으로는 이미 열린 popup 의 props 가 stale — suggestion 이 등록한 refresh 도 같이 호출한다.
   const refreshSuggestionRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     sourceVisibilityRef.current = sourceVisibility;

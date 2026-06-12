@@ -84,7 +84,6 @@ function positionPopover(popoverEl: HTMLDivElement | null, clientRect: ClientRec
 type SuggestionDeps = {
   spaceId: SpaceId;
   getSourceVisibility?: () => Visibility;
-  // popup 이 열려 있는 동안 외부에서 (예: visibility 토글) MentionList props 를 강제 갱신할 수 있게 등록 콜백을 받는다.
   onRefreshAvailable?: (refresh: () => void) => void;
 };
 

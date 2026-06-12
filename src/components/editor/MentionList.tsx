@@ -115,8 +115,7 @@ export const MentionList = forwardRef<MentionListHandle, Props>(function Mention
                 {warning != null && (
                   <>
                     <Tooltip>
-                      {/* listbox option 안의 button 자식은 roving tabindex 모델을 깬다 — span + tabIndex=-1 로 렌더,
-                          AT 에는 li 의 aria-describedby 로 전달하므로 trigger 자체는 aria-hidden 처리. */}
+                      {/* listbox option 의 ARIA 모델 보호 — trigger 는 span + non-focusable + AT 숨김, AT 사유는 li 의 aria-describedby 로 전달. */}
                       <TooltipTrigger
                         render={<span />}
                         tabIndex={-1}
