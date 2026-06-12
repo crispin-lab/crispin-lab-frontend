@@ -128,6 +128,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tags/popular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * across-space 인기 태그 조회
+         * @description across-space 인기 태그 조회
+         */
+        get: operations["Tag across-space \uC778\uAE30 \uD0DC\uADF8 \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/tags/{tagId}": {
         parameters: {
             query?: never;
@@ -612,13 +632,8 @@ export interface components {
             /** @description 새 역할＊ */
             role: string;
         };
-        /** SpaceRegisterResponse */
-        SpaceRegisterResponse: {
-            /** @description 생성된 스페이스 식별자＊ */
-            spaceId: string;
-        };
-        /** PageSearchResponse */
-        PageSearchResponse: {
+        /** TagPopularityListResponse */
+        TagPopularityListResponse: {
             /** @description 페이지당 항목 수＊ */
             size: number;
             /** @description 결과 비어 있음 여부＊ */
@@ -629,23 +644,57 @@ export interface components {
             hasNext: boolean;
             /** @description 현재 페이지＊ */
             page: number;
-            /** @description 검색 결과 목록＊ */
+            /** @description 인기 태그 목록 (사용 빈도 내림차순)＊ */
             items: {
-                /** @description ⎯ 소속 스페이스 식별자＊ */
-                spaceId: string;
-                /** @description ⎯ 부모 페이지 식별자 */
-                parentPageId?: string | null;
-                /** @description ⎯ 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
-                displayOrder: number;
-                /** @description ⎯ 제목＊ */
-                title: string;
-                /** @description ⎯ 페이지 식별자＊ */
-                pageId: string;
-                /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
-                updatedAt: string;
+                /** @description ⎯ 태그 이름 (cross-space 합산)＊ */
+                name: string;
+                /** @description ⎯ 페이지 사용 횟수＊ */
+                usageCount: number;
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
+        };
+        /** PageGetResponse */
+        PageGetResponse: {
+            /**
+             * @description 페이지 공개 범위＊
+             * @enum {string}
+             */
+            visibility: "DRAFT" | "INTERNAL" | "PUBLIC";
+            /** @description 부모 페이지 식별자 */
+            parentPageId?: string | null;
+            /** @description 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
+            displayOrder: number;
+            /** @description 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
+            authorHandle: string;
+            /** @description 제목＊ */
+            title: string;
+            /** @description 작성자 식별자＊ */
+            authorId: string;
+            /** @description 페이지 식별자＊ */
+            pageId: string;
+            /** @description 현재 버전＊ */
+            currentVersion: number;
+            /** @description 본문 (TipTap JSON 문자열). `{type:'pageLink', attrs:{pageId, displayText}}` 노드의 target 이 viewer 의 visibility scope 와 안 맞으면 attrs.displayText 가 `비공개 페이지` 로 마스킹된다 (pageId 는 보존).＊ */
+            content: string;
+            /** @description 생성 시각 (ISO)＊ */
+            createdAt: string;
+            /** @description 소속 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 조상 페이지 목록 — root → 직계 부모 순서＊ */
+            ancestors: {
+                /** @description ⎯ 조상 페이지 제목＊ */
+                title: string;
+                /** @description ⎯ 조상 페이지 식별자＊ */
+                pageId: string;
+            }[];
+            /** @description 최근 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
+        /** SpaceRegisterResponse */
+        SpaceRegisterResponse: {
+            /** @description 생성된 스페이스 식별자＊ */
+            spaceId: string;
         };
         /** SpaceMemberJoinResponse */
         SpaceMemberJoinResponse: {
@@ -684,37 +733,44 @@ export interface components {
             /** @description 최근 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
-        /** PageGetResponse */
-        PageGetResponse: {
-            /** @description 생성 시각 (ISO)＊ */
-            createdAt: string;
-            /** @description 소속 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 공개 범위＊ */
-            visibility: string;
-            /** @description 부모 페이지 식별자 */
-            parentPageId?: string | null;
-            /** @description 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
-            displayOrder: number;
-            /** @description 조상 페이지 목록 — root → 직계 부모 순서＊ */
-            ancestors: {
-                /** @description ⎯ 조상 페이지 제목＊ */
+        /** PageSearchResponse */
+        PageSearchResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 검색 결과 목록＊ */
+            items: {
+                /** @description ⎯ 소속 스페이스 식별자＊ */
+                spaceId: string;
+                /**
+                 * @description ⎯ 페이지 공개 범위＊
+                 * @enum {string}
+                 */
+                visibility: "DRAFT" | "INTERNAL" | "PUBLIC";
+                /** @description ⎯ 부모 페이지 식별자 */
+                parentPageId?: string | null;
+                /** @description ⎯ 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
+                displayOrder: number;
+                /** @description ⎯ 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
+                authorHandle: string;
+                /** @description ⎯ 제목＊ */
                 title: string;
-                /** @description ⎯ 조상 페이지 식별자＊ */
+                /** @description ⎯ 작성자 식별자＊ */
+                authorId: string;
+                /** @description ⎯ 페이지 식별자＊ */
                 pageId: string;
+                /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
+                updatedAt: string;
             }[];
-            /** @description 제목＊ */
-            title: string;
-            /** @description 작성자 식별자＊ */
-            authorId: string;
-            /** @description 페이지 식별자＊ */
-            pageId: string;
-            /** @description 현재 버전＊ */
-            currentVersion: number;
-            /** @description 본문＊ */
-            content: string;
-            /** @description 최근 갱신 시각 (ISO)＊ */
-            updatedAt: string;
+            /** @description 총 항목 수＊ */
+            totalElements: number;
         };
         /** SpaceRegisterRequest */
         SpaceRegisterRequest: {
@@ -1122,6 +1178,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    "Tag across-space \uC778\uAE30 \uD0DC\uADF8 \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: {
+                /** @description 페이지 */
+                page?: string;
+                /** @description 페이지당 항목 수 */
+                size?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagPopularityListResponse"];
+                };
             };
         };
     };

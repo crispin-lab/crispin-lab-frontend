@@ -20,6 +20,7 @@ function pageBody(overrides: Partial<Page> = {}): Page {
     displayOrder: 0,
     ancestors: [],
     title: "안녕",
+    authorHandle: "u_1",
     authorId: "u_1",
     pageId: "p_1",
     currentVersion: 1,
@@ -36,6 +37,9 @@ function pageSummary(overrides: Partial<PageSummary> = {}): PageSummary {
     pageId: "p_1",
     updatedAt: "2026-01-01T00:00:00Z",
     displayOrder: 0,
+    authorHandle: "u_1",
+    authorId: "u_1",
+    visibility: "PUBLIC",
     ...overrides,
   };
 }

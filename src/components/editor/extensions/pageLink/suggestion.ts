@@ -4,6 +4,7 @@ import { MentionList, type MentionListHandle, type PageLinkSelection } from "../
 import type { SpaceId } from "@/lib/api/ids";
 import { searchPages } from "@/lib/api/page";
 import type { PageSummary } from "@/lib/api/types";
+import type { Visibility } from "@/lib/page/visibility";
 
 export const DEBOUNCE_MS = 150;
 export const SUGGESTION_SIZE = 8;
@@ -80,8 +81,32 @@ function positionPopover(popoverEl: HTMLDivElement | null, clientRect: ClientRec
   popoverEl.style.left = `${rect.left + window.scrollX}px`;
 }
 
-export function createPageLinkSuggestion(spaceId: SpaceId) {
+type SuggestionDeps = {
+  spaceId: SpaceId;
+  getSourceVisibility?: () => Visibility;
+  onRefreshAvailable?: (refresh: () => void) => void;
+};
+
+type MentionListRenderProps = {
+  items: PageSummary[];
+  command: SuggestionProps["command"];
+  sourceVisibility: Visibility | null;
+};
+
+export function createPageLinkSuggestion({
+  spaceId,
+  getSourceVisibility,
+  onRefreshAvailable,
+}: SuggestionDeps) {
   const debouncedSearch = createDebouncedSearch(spaceId, { search: searchPages });
+
+  function toMentionListProps(props: SuggestionProps): MentionListRenderProps {
+    return {
+      items: props.items,
+      command: props.command,
+      sourceVisibility: getSourceVisibility?.() ?? null,
+    };
+  }
 
   return {
     char: "[[",
@@ -116,6 +141,13 @@ export function createPageLinkSuggestion(spaceId: SpaceId) {
       let component: ReactRenderer<MentionListHandle> | null = null;
       let popoverEl: HTMLDivElement | null = null;
       let currentRect: ClientRectFn = null;
+      let lastProps: SuggestionProps | null = null;
+
+      onRefreshAvailable?.(() => {
+        if (component != null && lastProps != null) {
+          component.updateProps(toMentionListProps(lastProps));
+        }
+      });
 
       function reposition() {
         positionPopover(popoverEl, currentRect);
@@ -129,11 +161,16 @@ export function createPageLinkSuggestion(spaceId: SpaceId) {
         component?.destroy();
         component = null;
         currentRect = null;
+        lastProps = null;
       }
 
       return {
         onStart: (props: SuggestionProps) => {
-          component = new ReactRenderer(MentionList, { props, editor: props.editor });
+          lastProps = props;
+          component = new ReactRenderer(MentionList, {
+            props: toMentionListProps(props),
+            editor: props.editor,
+          });
           if (!component.element) return;
 
           popoverEl = document.createElement("div");
@@ -150,7 +187,8 @@ export function createPageLinkSuggestion(spaceId: SpaceId) {
         },
 
         onUpdate: (props: SuggestionProps) => {
-          component?.updateProps(props);
+          lastProps = props;
+          component?.updateProps(toMentionListProps(props));
           currentRect = props.clientRect;
           reposition();
         },

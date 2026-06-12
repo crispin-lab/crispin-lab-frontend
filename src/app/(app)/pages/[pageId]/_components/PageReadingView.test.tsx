@@ -22,6 +22,7 @@ function makePage(overrides: Partial<Page> = {}): Page {
     displayOrder: 0,
     ancestors: [],
     title: "TipTap 위키 링크 구현 메모",
+    authorHandle: "u_crispin",
     authorId: "u_crispin",
     pageId: "p_1",
     currentVersion: 1,

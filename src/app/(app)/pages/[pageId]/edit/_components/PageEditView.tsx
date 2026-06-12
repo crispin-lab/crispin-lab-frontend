@@ -105,6 +105,7 @@ function PageEditForm({
         spaceId={spaceId}
         initialContent={initialContent}
         editable={!isPending}
+        sourceVisibility={visibility}
         onChange={(next) => {
           contentRef.current = next;
         }}

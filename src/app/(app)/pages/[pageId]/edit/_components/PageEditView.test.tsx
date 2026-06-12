@@ -49,6 +49,7 @@ function pageBody(overrides: Partial<Page> = {}): Page {
     displayOrder: 0,
     ancestors: [],
     title: "원본 제목",
+    authorHandle: "u_1",
     authorId: "u_1",
     pageId: "p_1",
     currentVersion: 3,

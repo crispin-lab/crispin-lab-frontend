@@ -3,32 +3,38 @@ import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { PageSummary } from "@/lib/api/types";
+import type { Visibility } from "@/lib/page/visibility";
 
 import { MentionList, type MentionListHandle } from "./MentionList";
 
+function warningSpansOf(): HTMLElement[] {
+  return screen.queryAllByText(/일부 독자에게는/, { selector: "span" });
+}
+
+function summary(
+  overrides: Partial<PageSummary> & Pick<PageSummary, "pageId" | "title">,
+): PageSummary {
+  return {
+    spaceId: "s_1",
+    updatedAt: "2026-01-01T00:00:00Z",
+    displayOrder: 0,
+    authorHandle: "author",
+    authorId: "u_1",
+    visibility: "PUBLIC",
+    ...overrides,
+  };
+}
+
 function makeItems(): PageSummary[] {
   return [
-    {
-      pageId: "p_a",
-      title: "회의록",
-      spaceId: "s_1",
-      updatedAt: "2026-01-01T00:00:00Z",
-      displayOrder: 0,
-    },
-    {
+    summary({ pageId: "p_a", title: "회의록" }),
+    summary({
       pageId: "p_b",
       title: "아이디어",
-      spaceId: "s_1",
       updatedAt: "2026-01-02T00:00:00Z",
       displayOrder: 1,
-    },
-    {
-      pageId: "p_c",
-      title: "독서",
-      spaceId: "s_1",
-      updatedAt: "2026-01-03T00:00:00Z",
-      displayOrder: 2,
-    },
+    }),
+    summary({ pageId: "p_c", title: "독서", updatedAt: "2026-01-03T00:00:00Z", displayOrder: 2 }),
   ];
 }
 
@@ -86,5 +92,84 @@ describe("MentionList", () => {
 
     expect(ref.current?.onKeyDown(keyEvent("Escape"))).toBe(false);
     expect(ref.current?.onKeyDown(keyEvent("a"))).toBe(false);
+  });
+
+  it("source 보다 좁은 target 항목에는 sr-only 경고 메시지가 붙는다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_pub", title: "공개", visibility: "PUBLIC" }),
+      summary({ pageId: "p_int", title: "내부", visibility: "INTERNAL" }),
+      summary({ pageId: "p_draft", title: "초안", visibility: "DRAFT" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"PUBLIC" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(2);
+  });
+
+  it("좁은 target 옵션은 aria-describedby 로 경고 메시지에 연결된다 (키보드 / 스크린리더 정합)", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_draft", title: "초안", visibility: "DRAFT" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"INTERNAL" satisfies Visibility}
+      />,
+    );
+
+    const option = screen.getByRole("option");
+    const warningId = option.getAttribute("aria-describedby");
+    expect(warningId).not.toBeNull();
+    const warningEl = document.getElementById(warningId as string);
+    expect(warningEl?.textContent).toBe(
+      "이 페이지는 초안 페이지입니다. 비공개 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.",
+    );
+  });
+
+  it("source 와 같거나 더 넓은 target 에는 경고가 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_pub", title: "공개", visibility: "PUBLIC" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"DRAFT" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(0);
+    expect(screen.getByRole("option")).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("source 와 같은 visibility 의 target 에는 경고가 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_pub", title: "공개", visibility: "PUBLIC" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"PUBLIC" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(0);
+  });
+
+  it("sourceVisibility 가 없으면 chip 은 보이지만 경고는 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_draft", title: "초안", visibility: "DRAFT" }),
+    ];
+    render(<MentionList items={items} command={vi.fn()} />);
+
+    expect(screen.getByLabelText("공개 범위: 초안")).toBeInTheDocument();
+    expect(warningSpansOf()).toHaveLength(0);
   });
 });

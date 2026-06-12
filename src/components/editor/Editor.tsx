@@ -1,9 +1,11 @@
 "use client";
 
 import { EditorContent, useEditor } from "@tiptap/react";
+import { useEffect, useRef } from "react";
 
 import type { SpaceId } from "@/lib/api/ids";
 import { parseEditorContent, serializeEditorContent } from "@/lib/editor/content";
+import type { Visibility } from "@/lib/page/visibility";
 import { cn } from "@/lib/utils";
 
 import { EditorBubbleMenu } from "./BubbleMenu";
@@ -11,6 +13,7 @@ import { editorExtensions } from "./extensions/editor";
 
 type Props = {
   spaceId: SpaceId;
+  sourceVisibility: Visibility;
   initialContent?: string;
   onChange?: (content: string) => void;
   editable?: boolean;
@@ -20,14 +23,33 @@ type Props = {
 
 export function Editor({
   spaceId,
+  sourceVisibility,
   initialContent,
   onChange,
   editable = true,
   placeholder,
   className,
 }: Props) {
+  // useEditor 의 extensions 는 mount 시 한 번만 capture 된다. parent 의 visibility 변경이 같은 editor 인스턴스에
+  // 반영되도록 ref 로 우회한다 — 재마운트 시 본문 손실 회피.
+  const sourceVisibilityRef = useRef<Visibility>(sourceVisibility);
+  // ref 갱신만으로는 이미 열린 popup 의 props 가 stale — suggestion 이 등록한 refresh 도 같이 호출한다.
+  const refreshSuggestionRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    sourceVisibilityRef.current = sourceVisibility;
+    refreshSuggestionRef.current?.();
+  }, [sourceVisibility]);
+
   const editor = useEditor({
-    extensions: editorExtensions({ spaceId }),
+    // ref 들은 suggestion 트리거 시점 (mount 이후) 에 호출되며 render 중에는 읽히지 않는다.
+    // eslint-disable-next-line react-hooks/refs
+    extensions: editorExtensions({
+      spaceId,
+      getSourceVisibility: () => sourceVisibilityRef.current,
+      onRefreshAvailable: (refresh) => {
+        refreshSuggestionRef.current = refresh;
+      },
+    }),
     content: parseEditorContent(initialContent),
     editable,
     // App Router SSR 에서 ProseMirror 초기 마운트가 hydration mismatch 를 일으키지 않도록 클라이언트 마운트 이후로 미룬다.
