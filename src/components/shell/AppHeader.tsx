@@ -1,9 +1,12 @@
 "use client";
 
+import { MoonIcon, SunIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { useTheme } from "next-themes";
+import { Suspense, useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { useMe } from "@/hooks/useAuth";
 import { useSearchSubmit } from "@/hooks/useSearchSubmit";
 import { cn } from "@/lib/utils";
@@ -47,8 +50,31 @@ export function AppHeader({ className, variant = "full" }: Props) {
       ) : (
         <div aria-hidden className="flex-1" />
       )}
+      <ThemeToggle />
       <AccountSlot />
     </header>
+  );
+}
+
+function ThemeToggle() {
+  const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- mount 감지 1회 flip (next-themes 권장 idiom).
+  useEffect(() => setMounted(true), []);
+  const { resolvedTheme, setTheme } = useTheme();
+
+  // mount 전엔 같은 자리를 채우는 placeholder — Sun/Moon 분기가 SSR / 첫 client 렌더에서 hydration mismatch 를 일으키지 않게.
+  if (!mounted) return <div aria-hidden className="size-7" />;
+
+  const isDark = resolvedTheme !== "light";
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label={isDark ? "라이트 모드로 전환" : "다크 모드로 전환"}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+    >
+      {isDark ? <SunIcon /> : <MoonIcon />}
+    </Button>
   );
 }
 

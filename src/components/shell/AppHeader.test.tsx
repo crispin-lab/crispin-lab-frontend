@@ -29,6 +29,14 @@ vi.mock("@/lib/auth/redirect", () =>
   }),
 );
 
+const { setThemeMock, themeRef } = vi.hoisted(() => ({
+  setThemeMock: vi.fn(),
+  themeRef: { resolvedTheme: "dark" as "dark" | "light" | undefined },
+}));
+vi.mock("next-themes", () => ({
+  useTheme: () => ({ resolvedTheme: themeRef.resolvedTheme, setTheme: setThemeMock }),
+}));
+
 import { AppHeader } from "./AppHeader";
 
 function renderHeader() {
@@ -40,6 +48,8 @@ function resetAllSpies() {
   routerPush.mockReset();
   redirectToLoginMock.mockReset();
   navigateAfterLogoutMock.mockReset();
+  setThemeMock.mockReset();
+  themeRef.resolvedTheme = "dark";
   urlSearchParams.current = new URLSearchParams();
   pathname.current = "/";
   window.history.replaceState({}, "", "/");
@@ -252,6 +262,67 @@ describe("AppHeader — 검색 input", () => {
     expect(routerPush).toHaveBeenCalledWith(
       "/search?query=%EB%A7%81%ED%81%AC&space=s_1&sort=RELEVANCE",
     );
+  });
+});
+
+describe("AppHeader — 테마 토글 동작", () => {
+  beforeEach(() => {
+    resetAllSpies();
+    // 토글은 인증 상태 무관 — renderHeader() 가 useMe() 를 호출하므로 최소 happy-path fixture 만 제공.
+    server.use(
+      http.get("/api/v1/users/me", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+  });
+
+  it("dark 상태에선 '라이트 모드로 전환' 버튼이 노출되고 클릭 시 setTheme('light') 호출", async () => {
+    themeRef.resolvedTheme = "dark";
+    const user = userEvent.setup();
+    renderHeader();
+
+    await user.click(await screen.findByRole("button", { name: "라이트 모드로 전환" }));
+
+    expect(setThemeMock).toHaveBeenCalledWith("light");
+  });
+
+  it("light 상태에선 '다크 모드로 전환' 버튼이 노출되고 클릭 시 setTheme('dark') 호출", async () => {
+    themeRef.resolvedTheme = "light";
+    const user = userEvent.setup();
+    renderHeader();
+
+    await user.click(await screen.findByRole("button", { name: "다크 모드로 전환" }));
+
+    expect(setThemeMock).toHaveBeenCalledWith("dark");
+  });
+});
+
+// design.md "두 사용자 그룹" — 방문자 path 에서도 모드 선택 가능해야 한다.
+describe("AppHeader — 비로그인 사용자의 토글 접근", () => {
+  beforeEach(() => {
+    resetAllSpies();
+    server.use(
+      http.get("/api/v1/users/me", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+  });
+
+  it("토글 버튼이 노출되고 클릭 시 setTheme 가 호출된다 (계정 메뉴 없이도 동작)", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+
+    await screen.findByRole("link", { name: /로그인/ });
+    expect(screen.queryByRole("button", { name: "계정 메뉴" })).not.toBeInTheDocument();
+
+    await user.click(await screen.findByRole("button", { name: "라이트 모드로 전환" }));
+    expect(setThemeMock).toHaveBeenCalledWith("light");
   });
 });
 
