@@ -1,13 +1,21 @@
 "use client";
 
-import { notFound } from "next/navigation";
+import { MoreHorizontal } from "lucide-react";
+import { notFound, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Editor } from "@/components/editor/Editor";
 import { TitleInput } from "@/components/page/TitleInput";
 import { VisibilitySelect } from "@/components/page/VisibilitySelect";
 import { Button } from "@/components/ui/button";
-import { usePage, usePageUpdate } from "@/hooks/usePage";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { usePage, usePageDelete, usePageUpdate } from "@/hooks/usePage";
 import { ApiError } from "@/lib/api/client";
 import { type PageId, type SpaceId, asSpaceId } from "@/lib/api/ids";
 import { toUserMessage } from "@/lib/api/errors";
@@ -72,39 +80,68 @@ function PageEditForm({
   currentVersion,
   updatedAt,
 }: FormProps) {
+  const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [visibility, setVisibility] = useState(initialVisibility);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   // content 는 저장 시점에만 읽히는 값이라 매 keystroke 의 re-render 비용을 피하려 ref 로 보관한다.
   const contentRef = useRef(initialContent);
   const { mutate, isPending } = usePageUpdate();
+  const { mutate: deleteMutate, isPending: isDeleting } = usePageDelete();
 
   function handleSave() {
     mutate({ pageId, body: { title, content: contentRef.current, visibility } });
   }
 
-  const canSave = title.trim() !== "" && !isPending;
+  function handleDeleteConfirm() {
+    deleteMutate(pageId, {
+      onSuccess: () => {
+        setDeleteOpen(false);
+        router.push(`/spaces/${encodeURIComponent(spaceId)}`);
+      },
+    });
+  }
+
+  const busy = isPending || isDeleting;
+  const canSave = title.trim() !== "" && !busy;
 
   return (
     <article className="mx-auto w-full max-w-3xl space-y-6 px-6 py-10">
       <header className="flex items-center justify-between gap-4">
-        <VisibilitySelect value={visibility} onValueChange={setVisibility} disabled={isPending} />
-        <span className="text-muted-foreground text-xs">
-          v{currentVersion} · {formatPageTimestamp(updatedAt)}
-        </span>
+        <VisibilitySelect value={visibility} onValueChange={setVisibility} disabled={busy} />
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-xs">
+            v{currentVersion} · {formatPageTimestamp(updatedAt)}
+          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="ghost" size="icon-sm" aria-label="더보기" disabled={busy}>
+                  <MoreHorizontal />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+                페이지 삭제
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       <TitleInput
         aria-label="제목"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
-        disabled={isPending}
+        disabled={busy}
         placeholder="제목을 입력해 주세요"
       />
 
       <Editor
         spaceId={spaceId}
         initialContent={initialContent}
-        editable={!isPending}
+        editable={!busy}
         sourceVisibility={visibility}
         onChange={(next) => {
           contentRef.current = next;
@@ -113,9 +150,18 @@ function PageEditForm({
 
       <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
         <Button type="button" onClick={handleSave} disabled={!canSave}>
-          {isPending ? "저장 중..." : "저장"}
+          {isPending ? "저장 중…" : "저장"}
         </Button>
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="페이지를 삭제할까요?"
+        description="삭제하면 되돌릴 수 없습니다."
+        isPending={isDeleting}
+        onConfirm={handleDeleteConfirm}
+      />
     </article>
   );
 }

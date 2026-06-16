@@ -27,6 +27,12 @@ export function createSpace(body: SpaceCreateRequest): Promise<SpaceCreateResult
   });
 }
 
+export function deleteSpace(spaceId: SpaceId): Promise<void> {
+  return apiFetch<void>(`/api/v1/spaces/${encodeURIComponent(spaceId)}`, {
+    method: "DELETE",
+  });
+}
+
 function buildListSpacesQuery(params: SpaceListParams): string {
   const search = new URLSearchParams();
   if (params.page !== undefined) {

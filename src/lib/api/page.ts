@@ -47,6 +47,12 @@ export function createPage(body: PageCreateRequest): Promise<PageCreateResult> {
   });
 }
 
+export function deletePage(pageId: PageId): Promise<void> {
+  return apiFetch<void>(`/api/v1/pages/${encodeURIComponent(pageId)}`, {
+    method: "DELETE",
+  });
+}
+
 export function buildSearchPagesQuery(params: PageSearchParams): string {
   const search = new URLSearchParams();
   if (params.query !== undefined && params.query !== "") {

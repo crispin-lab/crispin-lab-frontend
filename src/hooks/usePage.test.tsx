@@ -4,12 +4,13 @@ import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/lib/api/client";
 import { asPageId, asSpaceId } from "@/lib/api/ids";
+import { pageKeys } from "@/lib/api/queries/page";
 import { server } from "@/mocks/server";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
 import type { Page, PageSearchResult, PageSummary } from "@/lib/api/types";
 
-import { usePage, usePageCreate, usePageList, usePageUpdate } from "./usePage";
+import { usePage, usePageCreate, usePageDelete, usePageList, usePageUpdate } from "./usePage";
 
 function pageBody(overrides: Partial<Page> = {}): Page {
   return {
@@ -220,5 +221,78 @@ describe("usePageCreate", () => {
 
     expect(otherDetailHits).toBe(1);
     expect(result.current.otherDetail.data?.title).toBe("다른 페이지");
+  });
+});
+
+describe("usePageDelete", () => {
+  it("성공 시 list 는 refetch 되고 detail 은 stale 표시만 (active observer 의 refetch → 404 race 방지)", async () => {
+    let detailHits = 0;
+    let listHits = 0;
+    let deleted = false;
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => {
+        detailHits += 1;
+        return HttpResponse.json(pageBody());
+      }),
+      http.get("*/api/v1/pages", () => {
+        listHits += 1;
+        return HttpResponse.json(listBody([pageSummary()]));
+      }),
+      http.delete("*/api/v1/pages/p_1", () => {
+        deleted = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const { Wrapper, client } = createQueryWrapper();
+    const { result } = renderHook(
+      () => ({
+        detail: usePage(asPageId("p_1")),
+        list: usePageList({ spaceId: asSpaceId("s_1") }),
+        delete: usePageDelete(),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+    expect(detailHits).toBe(1);
+    expect(listHits).toBe(1);
+
+    result.current.delete.mutate(asPageId("p_1"));
+
+    await waitFor(() => expect(deleted).toBe(true));
+    await waitFor(() => expect(listHits).toBe(2));
+    expect(detailHits).toBe(1);
+    const detailState = client.getQueryState(pageKeys.detail(asPageId("p_1")));
+    expect(detailState?.isInvalidated).toBe(true);
+  });
+
+  it("실패 시 ApiError 가 error 로 노출되고 cache 는 그대로다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.delete("*/api/v1/pages/p_1", () =>
+        HttpResponse.json({ code: "FORBIDDEN", message: "삭제 권한이 없습니다." }, { status: 403 }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const { result } = renderHook(
+      () => ({
+        detail: usePage(asPageId("p_1")),
+        delete: usePageDelete(),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+
+    result.current.delete.mutate(asPageId("p_1"));
+
+    await waitFor(() => expect(result.current.delete.isError).toBe(true));
+    expect(result.current.delete.error).toBeInstanceOf(ApiError);
+    expect(result.current.delete.error?.code).toBe("FORBIDDEN");
+    expect(result.current.delete.error?.message).toBe("삭제 권한이 없습니다.");
+    expect(result.current.detail.data?.title).toBe("안녕");
   });
 });

@@ -10,6 +10,11 @@
 #   GitHub Actions (`.github/workflows/ci.yml`) 의 `pnpm lint` step 이 이미 강제하고 있어
 #   CodeRabbit 의 추가 ESLint 가 잡아주는 가치는 0 에 가깝다.
 # - 자연어 리뷰·요약 기능은 ESLint 와 무관해 그대로 활성 유지.
+#
+# Docstring coverage 를 끄는 이유:
+# - `.claude/rules/comments.md` 가 함수 헤더 JSDoc 을 명시적으로 금지 ("쓰지 않는 것" 목록 — `@author`/`@since`/`@param`/`@returns` 류).
+# - 시그니처·이름으로 표현 가능한 것은 주석 없이 가는 게 본 프로젝트의 정신.
+# - CodeRabbit 의 기본 80% 임계값과 정면 충돌해 매 PR 마다 거짓 경고가 뜬다.
 
 language: ko-KR
 
@@ -17,3 +22,6 @@ reviews:
   tools:
     eslint:
       enabled: false
+  pre_merge_checks:
+    docstrings:
+      mode: off

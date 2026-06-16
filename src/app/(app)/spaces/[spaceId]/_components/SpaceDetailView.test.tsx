@@ -8,10 +8,21 @@ import type { Space } from "@/lib/api/types";
 import { server } from "@/mocks/server";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
+const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
+vi.mock("sonner", () => ({
+  toast: { error: toastError },
+}));
+
 // 실제 notFound() 는 throw 하지만, 테스트는 호출 사실만 검증하고 fall-through 렌더는
 // 무시한다 (jsdom 에 ErrorBoundary 가 없어 throw 시 unhandled).
-const { notFoundMock } = vi.hoisted(() => ({ notFoundMock: vi.fn() }));
-vi.mock("next/navigation", () => ({ notFound: notFoundMock }));
+const { notFoundMock, routerPush } = vi.hoisted(() => ({
+  notFoundMock: vi.fn(),
+  routerPush: vi.fn(),
+}));
+vi.mock("next/navigation", () => ({
+  notFound: notFoundMock,
+  useRouter: () => ({ push: routerPush }),
+}));
 
 import { SpaceDetailView } from "./SpaceDetailView";
 
@@ -44,6 +55,8 @@ function pageListBody(items: Array<{ pageId: string; title: string; updatedAt: s
 
 beforeEach(() => {
   notFoundMock.mockClear();
+  routerPush.mockReset();
+  toastError.mockReset();
 });
 
 describe("SpaceDetailView", () => {
@@ -187,5 +200,76 @@ describe("SpaceDetailView", () => {
 
     expect(await screen.findByRole("heading", { name: "공개 위키" })).toBeInTheDocument();
     expect(screen.getByText("페이지 목록을 불러오지 못했습니다.")).toBeInTheDocument();
+  });
+
+  it("⋯ → 스페이스 삭제 → 확인 시 DELETE 호출 + /spaces 로 이동", async () => {
+    let deleted = false;
+    server.use(
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+      http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      http.delete(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => {
+        deleted = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+
+    await screen.findByRole("heading", { name: "공개 위키" });
+    await user.click(screen.getByRole("button", { name: "더보기" }));
+    await user.click(await screen.findByRole("menuitem", { name: "스페이스 삭제" }));
+    await user.click(await screen.findByRole("button", { name: "삭제" }));
+
+    await waitFor(() => expect(deleted).toBe(true));
+    await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/spaces"));
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("삭제 dialog 의 취소를 누르면 DELETE 가 호출되지 않는다", async () => {
+    let hits = 0;
+    server.use(
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+      http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      http.delete(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => {
+        hits += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+
+    await screen.findByRole("heading", { name: "공개 위키" });
+    await user.click(screen.getByRole("button", { name: "더보기" }));
+    await user.click(await screen.findByRole("menuitem", { name: "스페이스 삭제" }));
+    await user.click(await screen.findByRole("button", { name: "취소" }));
+
+    expect(hits).toBe(0);
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("스페이스 삭제 실패 시 toast 가 백엔드 message 로 노출된다", async () => {
+    server.use(
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+      http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      http.delete(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+        HttpResponse.json({ code: "FORBIDDEN", message: "삭제 권한이 없습니다." }, { status: 403 }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+
+    await screen.findByRole("heading", { name: "공개 위키" });
+    await user.click(screen.getByRole("button", { name: "더보기" }));
+    await user.click(await screen.findByRole("menuitem", { name: "스페이스 삭제" }));
+    await user.click(await screen.findByRole("button", { name: "삭제" }));
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("삭제 권한이 없습니다."));
+    expect(routerPush).not.toHaveBeenCalled();
   });
 });
