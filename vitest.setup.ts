@@ -5,7 +5,8 @@ import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { server } from "@/mocks/server";
 
-// sonner 가 prefers-reduced-motion 검사용으로 matchMedia 를 호출 — jsdom 에 없어 polyfill.
+// sonner / next-themes 가 prefers-color-scheme / prefers-reduced-motion 검사용으로 matchMedia 를 호출 — jsdom 에 없어 polyfill.
+// next-themes 0.4.6 은 deprecated `addListener` / `removeListener` 도 호출하므로 legacy 메서드도 함께 노출 (상위 버전 업그레이드 시 재검토).
 if (typeof window !== "undefined" && typeof window.matchMedia === "undefined") {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
@@ -13,6 +14,8 @@ if (typeof window !== "undefined" && typeof window.matchMedia === "undefined") {
       matches: false,
       media: query,
       onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
