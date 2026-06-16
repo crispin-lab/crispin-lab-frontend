@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit (자동 PR 리뷰) 설정.
+#
+# ESLint 도구를 끄는 이유:
+# - CodeRabbit sandbox 는 PR 마다 새 컨테이너에서 `pnpm install` 을 돌린다.
+#   본 레포는 base-ui / tiptap / msw / next 등 dev deps 가 무거워 (~800 패키지)
+#   sandbox 의 install 타임아웃을 자주 넘기고, ESLint 분석이 "install timed out" 으로 실패.
+# - 동일 분석은 husky pre-commit (lint-staged), pre-push, 그리고
+#   GitHub Actions (`.github/workflows/ci.yml`) 의 `pnpm lint` step 이 이미 강제하고 있어
+#   CodeRabbit 의 추가 ESLint 가 잡아주는 가치는 0 에 가깝다.
+# - 자연어 리뷰·요약 기능은 ESLint 와 무관해 그대로 활성 유지.
+
+language: ko-KR
+
+reviews:
+  tools:
+    eslint:
+      enabled: false
