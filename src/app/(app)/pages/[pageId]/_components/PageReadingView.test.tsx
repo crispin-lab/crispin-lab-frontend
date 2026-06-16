@@ -22,8 +22,8 @@ function makePage(overrides: Partial<Page> = {}): Page {
     displayOrder: 0,
     ancestors: [],
     title: "TipTap 위키 링크 구현 메모",
-    authorHandle: "u_crispin",
-    authorId: "u_crispin",
+    authorHandle: "crispin",
+    authorId: "u_01HX9Z8E0SECRET",
     pageId: "p_1",
     currentVersion: 1,
     content: makeDoc([{ type: "paragraph", content: [{ type: "text", text: "본문" }] }]),
@@ -39,9 +39,25 @@ describe("PageReadingView", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "TipTap 위키 링크 구현 메모" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("@u_crispin")).toBeInTheDocument();
+    expect(screen.getByText("@crispin")).toBeInTheDocument();
     expect(screen.getByText("2026. 05. 22.")).toBeInTheDocument();
     expect(screen.getByLabelText(/공개 범위/)).toBeInTheDocument();
+  });
+
+  it("authorId (raw UserId) 는 어디에도 노출되지 않는다", () => {
+    const page = makePage();
+    render(<PageReadingView page={page} isAuthenticated={false} />);
+
+    // 본문·attr·aria-label 어디로도 새지 않는지 한 번에 가드 — fixture 의 authorId 가 바뀌어도 따라간다.
+    expect(document.body.innerHTML).not.toContain(page.authorId);
+  });
+
+  it("authorHandle 이 빈 문자열이면 '@' 없이 '삭제된 사용자' 라벨이 노출된다", () => {
+    render(<PageReadingView page={makePage({ authorHandle: "" })} isAuthenticated={false} />);
+
+    const label = screen.getByText("삭제된 사용자");
+    expect(label).toBeInTheDocument();
+    expect(label.textContent).not.toMatch(/^@/);
   });
 
   it("비로그인 상태에서는 '편집' link 가 노출되지 않는다", () => {
