@@ -1,10 +1,13 @@
 "use client";
 
+import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLinkItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLogout } from "@/hooks/useAuth";
@@ -27,6 +30,7 @@ export function AccountMenu({ me }: Props) {
         }
       />
       <DropdownMenuContent align="end">
+        <DropdownMenuLinkItem render={<Link href="/spaces">스페이스</Link>} />
         <DropdownMenuItem disabled={isPending} onClick={() => doLogout()}>
           로그아웃
         </DropdownMenuItem>

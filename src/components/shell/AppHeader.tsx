@@ -34,8 +34,8 @@ export function AppHeader({ className, variant = "full" }: Props) {
         href="/"
         aria-current={isHomeActive ? "page" : undefined}
         className={cn(
-          "text-sm font-semibold tracking-tight transition-colors duration-150 ease-out",
-          isHomeActive ? "text-accent" : "text-foreground hover:text-accent",
+          "text-accent text-sm font-semibold tracking-tight transition-colors duration-150 ease-out",
+          isHomeActive && "font-bold underline decoration-2 underline-offset-4",
         )}
       >
         crispin-lab
