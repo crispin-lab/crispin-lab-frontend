@@ -102,6 +102,16 @@ describe("AppHeader — 로그인", () => {
     expect(screen.queryByRole("link", { name: /로그인/ })).not.toBeInTheDocument();
   });
 
+  it("계정 메뉴 열면 스페이스 link 가 /spaces 로 노출된다", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+
+    await user.click(await screen.findByRole("button", { name: "계정 메뉴" }));
+    const spacesItem = await screen.findByRole("menuitem", { name: "스페이스" });
+    expect(spacesItem.tagName).toBe("A");
+    expect(spacesItem).toHaveAttribute("href", "/spaces");
+  });
+
   it("로그아웃 항목 클릭 시 BFF POST → 캐시 clear → navigateAfterLogout 호출", async () => {
     server.use(http.post("/api/auth/logout", () => HttpResponse.json({ ok: true })));
     const user = userEvent.setup();
