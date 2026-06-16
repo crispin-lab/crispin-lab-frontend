@@ -46,7 +46,12 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
               {page.title}
             </h1>
             <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-              <span className="text-accent-secondary">@{page.authorId}</span>
+              {/* schema 의 authorHandle description: 삭제된 사용자의 경우 빈 문자열. falsy 도 같이 흡수해 `@undefined` 회귀를 막는다. */}
+              {!page.authorHandle ? (
+                <span className="text-muted-foreground italic">삭제된 사용자</span>
+              ) : (
+                <span className="text-accent-secondary">@{page.authorHandle}</span>
+              )}
               <span aria-hidden>·</span>
               <time dateTime={page.createdAt}>{formatDate(page.createdAt)}</time>
               {showUpdatedAt && (

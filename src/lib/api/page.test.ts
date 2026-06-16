@@ -16,6 +16,7 @@ describe("fetchPage", () => {
           visibility: "PUBLIC",
           parentPageId: null,
           title: "안녕",
+          authorHandle: "crispin",
           authorId: "u_1",
           pageId: "p_1",
           currentVersion: 1,
