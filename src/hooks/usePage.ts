@@ -9,7 +9,7 @@ import {
 
 import { type ApiError } from "@/lib/api/client";
 import type { PageId } from "@/lib/api/ids";
-import { createPage, type PageSearchParams, updatePage } from "@/lib/api/page";
+import { createPage, deletePage, type PageSearchParams, updatePage } from "@/lib/api/page";
 import { pageDetailOptions, pageKeys, pageListOptions } from "@/lib/api/queries/page";
 import type {
   Page,
@@ -61,6 +61,18 @@ export function usePageCreate(): UseMutationResult<PageCreateResult, ApiError, P
   return useMutation({
     mutationFn: (body) => createPage(body),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pageKeys.lists() });
+    },
+  });
+}
+
+export function usePageDelete(): UseMutationResult<void, ApiError, PageId> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (pageId) => deletePage(pageId),
+    onSuccess: (_result, pageId) => {
+      // active observer (편집 화면) 의 refetch → 404 race 를 피하려고 refetchType: 'none'. 다음 mount 에서 stale 로 인식돼 다시 fetch 된다.
+      queryClient.invalidateQueries({ queryKey: pageKeys.detail(pageId), refetchType: "none" });
       queryClient.invalidateQueries({ queryKey: pageKeys.lists() });
     },
   });

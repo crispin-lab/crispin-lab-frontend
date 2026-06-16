@@ -18,8 +18,14 @@ const { redirectToLoginMock } = vi.hoisted(() => ({ redirectToLoginMock: vi.fn()
 vi.mock("@/lib/auth/redirect", () => redirectModuleMock(redirectToLoginMock));
 
 // 실제 notFound() 는 throw 하지만, 테스트는 호출 사실만 검증하고 fall-through 렌더는 무시한다 (jsdom 에 ErrorBoundary 가 없어 throw 시 unhandled).
-const { notFoundMock } = vi.hoisted(() => ({ notFoundMock: vi.fn() }));
-vi.mock("next/navigation", () => ({ notFound: notFoundMock }));
+const { notFoundMock, routerPush } = vi.hoisted(() => ({
+  notFoundMock: vi.fn(),
+  routerPush: vi.fn(),
+}));
+vi.mock("next/navigation", () => ({
+  notFound: notFoundMock,
+  useRouter: () => ({ push: routerPush }),
+}));
 
 // Editor 는 TipTap 기반이라 jsdom 에서 무겁다. 화면 회귀의 본질 (저장 흐름) 만 검증하면 되므로 가벼운 텍스트 영역으로 대체.
 vi.mock("@/components/editor/Editor", () => ({
@@ -63,6 +69,7 @@ beforeEach(() => {
   toastError.mockReset();
   redirectToLoginMock.mockReset();
   notFoundMock.mockClear();
+  routerPush.mockReset();
 });
 
 describe("PageEditView", () => {
@@ -272,5 +279,73 @@ describe("PageEditView", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("서버 오류입니다.");
     expect(notFoundMock).not.toHaveBeenCalled();
+  });
+
+  it("⋯ → 페이지 삭제 → 확인 시 DELETE 호출 + 소속 스페이스로 이동", async () => {
+    let deleted = false;
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ spaceId: "s_42" }))),
+      http.delete("*/api/v1/pages/p_1", () => {
+        deleted = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: "더보기" }));
+    await user.click(await screen.findByRole("menuitem", { name: "페이지 삭제" }));
+    await user.click(await screen.findByRole("button", { name: "삭제" }));
+
+    await waitFor(() => expect(deleted).toBe(true));
+    await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/spaces/s_42"));
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("삭제 dialog 의 취소를 누르면 DELETE 가 호출되지 않는다", async () => {
+    let hits = 0;
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.delete("*/api/v1/pages/p_1", () => {
+        hits += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: "더보기" }));
+    await user.click(await screen.findByRole("menuitem", { name: "페이지 삭제" }));
+    await user.click(await screen.findByRole("button", { name: "취소" }));
+
+    expect(hits).toBe(0);
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("삭제 실패 시 toast 가 백엔드 message 로 노출되고 redirect 는 일어나지 않는다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.delete("*/api/v1/pages/p_1", () =>
+        HttpResponse.json({ code: "FORBIDDEN", message: "삭제 권한이 없습니다." }, { status: 403 }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: "더보기" }));
+    await user.click(await screen.findByRole("menuitem", { name: "페이지 삭제" }));
+    await user.click(await screen.findByRole("button", { name: "삭제" }));
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("삭제 권한이 없습니다."));
+    expect(routerPush).not.toHaveBeenCalled();
   });
 });

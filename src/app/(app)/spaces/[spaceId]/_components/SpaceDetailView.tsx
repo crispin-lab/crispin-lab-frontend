@@ -1,15 +1,24 @@
 "use client";
 
+import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
+import { useState } from "react";
 import { type UseQueryResult } from "@tanstack/react-query";
 
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
 import { PageHeading } from "@/components/PageHeading";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useSpaceDetail } from "@/hooks/useSpace";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useSpaceDelete, useSpaceDetail } from "@/hooks/useSpace";
 import { usePageList } from "@/hooks/usePage";
 import { ApiError } from "@/lib/api/client";
 import { toUserMessage } from "@/lib/api/errors";
@@ -22,8 +31,11 @@ type Props = {
 };
 
 export function SpaceDetailView({ spaceId }: Props) {
+  const router = useRouter();
   const spaceQuery = useSpaceDetail(spaceId, { refetchOnMount: "always" });
   const pageListQuery = usePageList({ spaceId }, { refetchOnMount: "always" });
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const { mutate: deleteMutate, isPending: isDeleting } = useSpaceDelete();
 
   if (
     spaceQuery.isError &&
@@ -35,15 +47,44 @@ export function SpaceDetailView({ spaceId }: Props) {
 
   const newPageHref = `/pages/new?spaceId=${encodeURIComponent(spaceId)}`;
 
+  function handleDeleteConfirm() {
+    deleteMutate(spaceId, {
+      onSuccess: () => {
+        setDeleteOpen(false);
+        router.push("/spaces");
+      },
+    });
+  }
+
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 px-6 py-10">
-      <SpaceMetaSection query={spaceQuery} />
+      <SpaceMetaSection
+        query={spaceQuery}
+        isDeleting={isDeleting}
+        onDeleteRequest={() => setDeleteOpen(true)}
+      />
       <PageListSection query={pageListQuery} newPageHref={newPageHref} />
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="스페이스를 삭제할까요?"
+        description="스페이스가 삭제됩니다. 되돌릴 수 없습니다."
+        isPending={isDeleting}
+        onConfirm={handleDeleteConfirm}
+      />
     </main>
   );
 }
 
-function SpaceMetaSection({ query }: { query: UseQueryResult<Space, ApiError> }) {
+function SpaceMetaSection({
+  query,
+  isDeleting,
+  onDeleteRequest,
+}: {
+  query: UseQueryResult<Space, ApiError>;
+  isDeleting: boolean;
+  onDeleteRequest: () => void;
+}) {
   if (query.isPending) {
     return <SpaceMetaSkeleton />;
   }
@@ -63,7 +104,23 @@ function SpaceMetaSection({ query }: { query: UseQueryResult<Space, ApiError> })
 
   return (
     <header aria-labelledby="space-meta-heading" className="space-y-3">
-      <PageHeading id="space-meta-heading">{space.name}</PageHeading>
+      <div className="flex items-start justify-between gap-4">
+        <PageHeading id="space-meta-heading">{space.name}</PageHeading>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon-sm" aria-label="더보기" disabled={isDeleting}>
+                <MoreHorizontal />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem variant="destructive" onClick={onDeleteRequest}>
+              스페이스 삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       {description !== "" && <p className="text-muted-foreground leading-7">{description}</p>}
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <VisibilityBadge visibility={space.visibility} />
