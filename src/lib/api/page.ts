@@ -26,7 +26,7 @@ export type PageInboundLinkParams = {
   size?: number;
 };
 
-// 인바운드 섹션 default size. pagination UI 가 없는 현재는 상한 역할 — 늘리려면 무한 스크롤 정책 (LAB-114 비범위) 과 함께.
+// pagination UI 가 없어 사용자에게 보이는 상한 역할 — 무한 스크롤 정책이 정해지기 전엔 늘리지 않는다.
 export const INBOUND_LIST_SIZE = 20;
 
 export function fetchPage(pageId: PageId, signal?: AbortSignal): Promise<Page> {

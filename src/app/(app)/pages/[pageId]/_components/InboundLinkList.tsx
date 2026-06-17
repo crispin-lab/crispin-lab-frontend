@@ -16,8 +16,8 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   pageId: PageId;
-  // /v1/spaces 는 인증 필요 endpoint — 비로그인 진입에서 호출하면 401 → 글로벌 redirect 가 공개 reading 흐름을 깬다.
-  // 비로그인이면 spaceList fetch 를 건너뛰고 row 가 spaceName 없이 노출되도록 게이트.
+  // /v1/spaces 는 인증 endpoint — 비로그인 진입에서 호출하면 401 → 글로벌 redirect 로 공개 reading 흐름이 깨진다.
+  // 게이트가 false 면 spaceName 없이 row 만 노출.
   isAuthenticated: boolean;
   className?: string;
 };
@@ -25,15 +25,14 @@ type Props = {
 export function InboundLinkList({ pageId, isAuthenticated, className }: Props) {
   const query = usePageInboundLinks(pageId, { size: INBOUND_LIST_SIZE });
   const spaceListQuery = useSpaceList({ size: SPACE_LIST_SIZE }, { enabled: isAuthenticated });
-  // spaceList 가 에러로 끝나면 빈 Map → row 는 spaceName 없이 노출 (graceful degradation).
-  // 인바운드 본 정보 (title / author / 날짜) 는 그대로 보이므로 섹션 전체를 error 로 떨어뜨리지 않는다.
+  // spaceList 가 에러/disabled 면 빈 Map → row 는 spaceName 없이 그대로 노출 (graceful degradation).
+  // 인바운드 본 정보 (title / author / 날짜) 는 영향 없어 섹션 전체를 error 로 떨어뜨리지 않는다.
   const spaceNameById = useMemo(
     () => new Map(spaceListQuery.data?.items.map((space) => [space.spaceId, space.name]) ?? []),
     [spaceListQuery.data],
   );
 
-  // isLoading 은 actively-fetching 만 true — disabled (비로그인 의 spaceListQuery) 는 false 라
-  // 비로그인 사용자가 skeleton 에 갇히지 않는다. spaceListQuery 가 에러로 끝났을 때도 false → success 로 진입해 degradation path.
+  // isLoading 은 actively-fetching 만 true — disabled (비로그인) 과 error 는 둘 다 success path 로 자연히 떨어진다.
   if (query.isLoading || spaceListQuery.isLoading) {
     return <InboundLinkListSkeleton className={className} />;
   }

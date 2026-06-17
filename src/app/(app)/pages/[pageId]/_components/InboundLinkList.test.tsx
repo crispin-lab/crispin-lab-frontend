@@ -69,7 +69,6 @@ describe("InboundLinkList", () => {
       { wrapper: Wrapper },
     );
 
-    // pending skeleton 의 status 와 heading 이 사라지고 컴포넌트가 null 로 떨어지는지 가드.
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
@@ -110,10 +109,9 @@ describe("InboundLinkList", () => {
       wrapper: Wrapper,
     });
 
-    // 섹션 heading 노출 = success 진입 신호.
+    // heading 은 success 분기에서만 렌더 — skeleton 과 구분되는 안정 신호.
     const heading = await screen.findByRole("heading", { name: "이 페이지로 들어오는 링크" });
     expect(heading).toBeInTheDocument();
-    // skeleton 의 status list 가 사라진 후 본 list 만 남는다.
     await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
     const list = screen.getByRole("list");
 
@@ -151,7 +149,6 @@ describe("InboundLinkList", () => {
 
     await screen.findByRole("heading", { name: "이 페이지로 들어오는 링크" });
     expect(screen.getByText("이전 회고")).toBeInTheDocument();
-    // 공유 가능 reading 화면이라 비로그인이 spaceList 401 로 튕기지 않는 게 핵심.
     expect(spacesCalled).toBe(false);
     expect(screen.queryByText("공개 위키")).not.toBeInTheDocument();
   });
