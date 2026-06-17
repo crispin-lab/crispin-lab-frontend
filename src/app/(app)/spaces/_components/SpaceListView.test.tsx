@@ -34,7 +34,7 @@ describe("SpaceListView", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<SpaceListView />, { wrapper: Wrapper });
+    render(<SpaceListView isAuthenticated={true} />, { wrapper: Wrapper });
 
     expect(await screen.findByText("공개 스페이스")).toBeInTheDocument();
     expect(screen.getByText("설명")).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("SpaceListView", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<SpaceListView />, { wrapper: Wrapper });
+    render(<SpaceListView isAuthenticated={true} />, { wrapper: Wrapper });
 
     expect(await screen.findByText("아직 스페이스가 없습니다.")).toBeInTheDocument();
     // base-ui Button + render={<Link/>} 은 <a role="button"> 로 렌더 — accessible role 은 button.
@@ -97,12 +97,65 @@ describe("SpaceListView", () => {
 
     const { Wrapper } = createQueryWrapper();
     const user = userEvent.setup();
-    render(<SpaceListView />, { wrapper: Wrapper });
+    render(<SpaceListView isAuthenticated={true} />, { wrapper: Wrapper });
 
     expect(await screen.findByText("잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "다시 시도" }));
 
     await waitFor(() => expect(screen.getByText("아직 스페이스가 없습니다.")).toBeInTheDocument());
+  });
+
+  it("비로그인이면 '새 스페이스 만들기' CTA 가 숨고 헤딩이 '공개 스페이스' 로 바뀐다", async () => {
+    server.use(
+      http.get("*/api/v1/spaces", () =>
+        HttpResponse.json({
+          size: 20,
+          isEmpty: false,
+          totalPages: 1,
+          hasNext: false,
+          page: 0,
+          totalElements: 1,
+          items: [
+            {
+              createdAt: "2026-01-01T00:00:00Z",
+              spaceId: "s_1",
+              visibility: "PUBLIC",
+              name: "공개 스페이스",
+              description: "설명",
+              updatedAt: "2026-06-01T00:00:00Z",
+            },
+          ],
+        }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<SpaceListView isAuthenticated={false} />, { wrapper: Wrapper });
+
+    expect(await screen.findByRole("heading", { name: "공개 스페이스" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "새 스페이스 만들기" })).not.toBeInTheDocument();
+  });
+
+  it("비로그인 + 빈 결과면 카피가 '공개된 스페이스가 없습니다' 로 바뀌고 CTA 가 안 나온다", async () => {
+    server.use(
+      http.get("*/api/v1/spaces", () =>
+        HttpResponse.json({
+          size: 20,
+          isEmpty: true,
+          totalPages: 0,
+          hasNext: false,
+          page: 0,
+          totalElements: 0,
+          items: [],
+        }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<SpaceListView isAuthenticated={false} />, { wrapper: Wrapper });
+
+    expect(await screen.findByText("아직 공개된 스페이스가 없습니다.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "첫 스페이스 만들기" })).not.toBeInTheDocument();
   });
 });

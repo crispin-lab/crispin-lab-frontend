@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { asPageId } from "@/lib/api/ids";
-import type { Page } from "@/lib/api/types";
+import type { Page, Space } from "@/lib/api/types";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -39,12 +39,33 @@ function makePage(overrides: Partial<Page> = {}): Page {
   };
 }
 
-function renderView({ page, isAuthenticated }: { page?: Page; isAuthenticated: boolean }) {
+function makeSpace(overrides: Partial<Space> = {}): Space {
+  return {
+    createdAt: "2026-01-01T00:00:00Z",
+    spaceId: "s_1",
+    visibility: "PUBLIC",
+    name: "공개 위키",
+    description: "공개 위키 설명",
+    updatedAt: "2026-06-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function renderView({
+  page,
+  space,
+  isAuthenticated,
+}: {
+  page?: Page;
+  space?: Space;
+  isAuthenticated: boolean;
+}) {
   const value = page ?? makePage();
   return render(
     <PageReadingView
       page={value}
       pageId={asPageId(value.pageId)}
+      space={space ?? makeSpace()}
       isAuthenticated={isAuthenticated}
     />,
   );
@@ -170,5 +191,52 @@ describe("PageReadingView", () => {
     expect(screen.getByText("본문이 비어 있습니다.")).toBeInTheDocument();
     // PageLinkChipNavigator 의 click 위임 컨테이너도 본문 자리에서 사라진다.
     expect(document.querySelector("[data-page-link]")).toBeNull();
+  });
+
+  it("스페이스 chip 이 메타에 노출되며 /spaces/{id} 로 link 된다", () => {
+    renderView({
+      space: makeSpace({ spaceId: "s_42", name: "Engineering" }),
+      isAuthenticated: false,
+    });
+
+    const chip = screen.getByRole("link", { name: "스페이스: Engineering" });
+    expect(chip).toHaveAttribute("href", "/spaces/s_42");
+  });
+
+  it("스페이스 name 이 빈 문자열이면 chip 에 fallback 라벨이 노출된다", () => {
+    renderView({ space: makeSpace({ name: "" }), isAuthenticated: false });
+
+    expect(screen.getByRole("link", { name: "스페이스: 이름 없는 스페이스" })).toBeInTheDocument();
+  });
+
+  it("ancestors 가 비어 있으면 breadcrumb 가 노출되지 않는다", () => {
+    renderView({ isAuthenticated: false });
+
+    expect(screen.queryByRole("navigation", { name: "현재 페이지 경로" })).not.toBeInTheDocument();
+  });
+
+  it("ancestors 가 있으면 breadcrumb 에 스페이스 + 조상 link + 현재 페이지가 순서대로 노출된다", () => {
+    const page = makePage({
+      title: "현재 페이지",
+      ancestors: [
+        { pageId: "p_root", title: "루트 페이지" },
+        { pageId: "p_parent", title: "직계 부모" },
+      ],
+    });
+    renderView({
+      page,
+      space: makeSpace({ spaceId: "s_42", name: "Engineering" }),
+      isAuthenticated: false,
+    });
+
+    const nav = screen.getByRole("navigation", { name: "현재 페이지 경로" });
+    const current = within(nav).getByText("현재 페이지");
+    expect(current).toHaveAttribute("aria-current", "page");
+    const links = within(nav).getAllByRole("link");
+    expect(links).toHaveLength(3);
+    expect(links[0]).toHaveAttribute("href", "/spaces/s_42");
+    expect(links[0].textContent).toBe("Engineering");
+    expect(links[1]).toHaveAttribute("href", "/pages/p_root");
+    expect(links[2]).toHaveAttribute("href", "/pages/p_parent");
   });
 });

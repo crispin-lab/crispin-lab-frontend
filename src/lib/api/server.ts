@@ -45,10 +45,12 @@ export async function apiFetchServer<T>(path: string, options: ApiServerOptions 
 
   let response = await doFetch(true);
 
+  // GET 외 method 의 retry 는 mutation 을 *권한 다른 컨텍스트로* 한 번 더 던지는 회귀 위험 — 명시적으로 차단.
   if (
     !response.ok &&
     response.status === 401 &&
     options.allowAnonymousFallback === true &&
+    method === "GET" &&
     sessionToken
   ) {
     response = await doFetch(false);

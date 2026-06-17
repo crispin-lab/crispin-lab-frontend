@@ -174,6 +174,31 @@ describe("apiFetchServer", () => {
     });
   });
 
+  it("allowAnonymousFallback=true 라도 GET 외 method 는 retry 하지 않는다 — mutation 회귀 방지", async () => {
+    getCookieMock.mockImplementation((name: string) =>
+      name === SESSION_COOKIE_NAME ? { value: "sess_expired" } : undefined,
+    );
+    let calls = 0;
+    server.use(
+      http.post("https://backend.test/v1/pages", () => {
+        calls += 1;
+        return HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        );
+      }),
+    );
+
+    await expect(
+      apiFetchServer("/v1/pages", {
+        method: "POST",
+        body: { title: "x" },
+        allowAnonymousFallback: true,
+      }),
+    ).rejects.toMatchObject({ status: 401 });
+    expect(calls).toBe(1);
+  });
+
   it("BACKEND_URL 미설정 시 즉시 던진다", async () => {
     vi.stubEnv("BACKEND_URL", "");
 

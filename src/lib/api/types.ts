@@ -23,6 +23,9 @@ export type SpaceSummary = SpaceListResult["items"][number];
 export type SpaceCreateRequest = PageSchemas["SpaceRegisterRequest"];
 export type SpaceCreateResult = PageSchemas["SpaceRegisterResponse"];
 
+export type PopularTagListResult = PageSchemas["TagPopularityListResponse"];
+export type PopularTag = PopularTagListResult["items"][number];
+
 export type LoginInput = UserSchemas["AuthLoginRequest"];
 
 export type Role = "USER" | "ADMIN";

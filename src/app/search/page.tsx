@@ -30,12 +30,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   );
 }
 
-// tag 처럼 원래 array 인 키가 추가되면 이 변환도 같이 수정 — 그러지 않으면 둘째 이후 값이 silently drop.
+// `?tag=A&tag=B` 처럼 같은 키가 반복되는 케이스를 보존해 array 값을 silently drop 하지 않는다.
 function toURLSearchParams(raw: Record<string, string | string[] | undefined>): URLSearchParams {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(raw)) {
     if (typeof value === "string") search.set(key, value);
-    else if (Array.isArray(value) && value.length > 0) search.set(key, value[0]);
+    else if (Array.isArray(value)) {
+      for (const item of value) search.append(key, item);
+    }
   }
   return search;
 }

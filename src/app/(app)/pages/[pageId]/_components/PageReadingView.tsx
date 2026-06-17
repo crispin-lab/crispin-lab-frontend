@@ -3,14 +3,16 @@ import { renderToHTMLString } from "@tiptap/static-renderer/pm/html-string";
 import Link from "next/link";
 
 import { viewerExtensions } from "@/components/editor/extensions/viewer";
+import { SpaceChip } from "@/components/page/SpaceChip";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import type { PageId } from "@/lib/api/ids";
-import type { Page } from "@/lib/api/types";
+import type { Page, Space } from "@/lib/api/types";
 import { parseEditorContent } from "@/lib/editor/content";
 import { cn } from "@/lib/utils";
 
 import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
 import { InboundLinkList } from "./InboundLinkList";
+import { PageBreadcrumb } from "./PageBreadcrumb";
 import { PageLinkChipNavigator } from "./PageLinkChipNavigator";
 import { Toc, type TocItem } from "./Toc";
 
@@ -18,13 +20,14 @@ type Props = {
   page: Page;
   // 라우트가 이미 lift 한 PageId 를 그대로 받는다 — 본 컴포넌트 안에서 다시 `asPageId(page.pageId)` 하지 않는다.
   pageId: PageId;
+  space: Space;
   isAuthenticated: boolean;
   className?: string;
 };
 
 const TOC_MIN_HEADINGS = 3;
 
-export function PageReadingView({ page, pageId, isAuthenticated, className }: Props) {
+export function PageReadingView({ page, pageId, space, isAuthenticated, className }: Props) {
   const doc = parseEditorContent(page.content);
   // walking 한 번에 (a) TOC items 수집 + (b) heading 노드 attrs.id 부여. renderer 가 같은 doc 을 받아 id 를 그대로 출력.
   const headings = buildTocAndAssignHeadingIds(doc);
@@ -46,10 +49,18 @@ export function PageReadingView({ page, pageId, isAuthenticated, className }: Pr
       >
         <article className="min-w-0">
           <header className="mb-8">
+            <PageBreadcrumb
+              space={space}
+              ancestors={page.ancestors}
+              currentTitle={page.title}
+              className="mb-3"
+            />
             <h1 className="bg-gradient-to-r from-(--heading-gradient-start) to-(--heading-gradient-end) bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
               {page.title}
             </h1>
             <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <SpaceChip space={space} />
+              <span aria-hidden>·</span>
               {page.authorHandle === "" ? (
                 <span className="text-muted-foreground italic">삭제된 사용자</span>
               ) : (
