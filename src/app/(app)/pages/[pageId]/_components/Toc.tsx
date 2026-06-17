@@ -27,8 +27,10 @@ export function Toc({ items }: Props) {
             const isActive = item.id === activeId;
             return (
               <li key={item.id}>
+                {/* data-active 는 토큰 (border-accent) 과 분리된 시맨틱 신호 — 테스트가 class 형태 변경에 끌려가지 않게. */}
                 <Link
                   href={`#${item.id}`}
+                  data-active={isActive ? "true" : undefined}
                   className={cn(
                     "block border-l-2 transition-colors duration-150 ease-out",
                     tocLinkPadding(item.level),
