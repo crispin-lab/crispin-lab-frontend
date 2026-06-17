@@ -122,4 +122,19 @@ describe("useActiveHeading", () => {
     expect(first.disconnect).toHaveBeenCalledTimes(1);
     expect(lastIntersectionObserver().targets.size).toBe(2);
   });
+
+  it("ids 의 identity 가 새로 만들어져도 내용이 같으면 observer 가 재사용된다", () => {
+    // idsKey content-equality 의 *부정* 경로 — deps 가 [ids] 로 되돌아가는 회귀 시 observer churn 을 잡는다.
+    mountHeading("toc-0");
+    const { rerender } = renderHook(({ ids }) => useActiveHeading(ids), {
+      initialProps: { ids: ["toc-0"] as ReadonlyArray<string> },
+    });
+    const first = lastIntersectionObserver();
+    expect(MockIntersectionObserver.instances).toHaveLength(1);
+
+    rerender({ ids: ["toc-0"] });
+
+    expect(MockIntersectionObserver.instances).toHaveLength(1);
+    expect(first.disconnect).not.toHaveBeenCalled();
+  });
 });
