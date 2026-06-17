@@ -7,6 +7,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
+// InboundLinkList 는 별도 컴포넌트로 자체 테스트 (InboundLinkList.test.tsx) 가 커버.
+// PageReadingView 테스트가 QueryClient / MSW handler 의존 없이 단독 렌더되도록 stub.
+vi.mock("./InboundLinkList", () => ({
+  InboundLinkList: () => null,
+  INBOUND_LIST_SIZE: 20,
+}));
+
 import { PageReadingView } from "./PageReadingView";
 
 function makeDoc(content: unknown[]): string {

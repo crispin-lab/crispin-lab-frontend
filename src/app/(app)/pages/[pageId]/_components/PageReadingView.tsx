@@ -4,11 +4,13 @@ import Link from "next/link";
 
 import { viewerExtensions } from "@/components/editor/extensions/viewer";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
+import { asPageId } from "@/lib/api/ids";
 import type { Page } from "@/lib/api/types";
 import { parseEditorContent } from "@/lib/editor/content";
 import { cn } from "@/lib/utils";
 
 import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
+import { InboundLinkList } from "./InboundLinkList";
 import { PageLinkChipNavigator } from "./PageLinkChipNavigator";
 import { Toc, type TocItem } from "./Toc";
 
@@ -100,6 +102,8 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
               </CodeBlockCopyMounter>
             </PageLinkChipNavigator>
           )}
+
+          <InboundLinkList pageId={asPageId(page.pageId)} className="mt-12" />
         </article>
 
         {showToc && <Toc items={headings} />}

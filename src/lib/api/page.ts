@@ -4,6 +4,7 @@ import type {
   Page,
   PageCreateRequest,
   PageCreateResult,
+  PageInboundLinkList,
   PageSearchResult,
   PageUpdateRequest,
   PageUpdateResult,
@@ -20,8 +21,33 @@ export type PageSearchParams = {
   size?: number;
 };
 
+export type PageInboundLinkParams = {
+  page?: number;
+  size?: number;
+};
+
 export function fetchPage(pageId: PageId, signal?: AbortSignal): Promise<Page> {
   return apiFetch<Page>(`/api/v1/pages/${encodeURIComponent(pageId)}`, { signal });
+}
+
+export function fetchInboundLinks(
+  pageId: PageId,
+  params: PageInboundLinkParams = {},
+  signal?: AbortSignal,
+): Promise<PageInboundLinkList> {
+  const search = new URLSearchParams();
+  if (params.page !== undefined) {
+    search.append("page", String(params.page));
+  }
+  if (params.size !== undefined) {
+    search.append("size", String(params.size));
+  }
+  const qs = search.toString();
+  const path =
+    qs === ""
+      ? `/api/v1/pages/${encodeURIComponent(pageId)}/inbound`
+      : `/api/v1/pages/${encodeURIComponent(pageId)}/inbound?${qs}`;
+  return apiFetch<PageInboundLinkList>(path, { signal });
 }
 
 export function searchPages(

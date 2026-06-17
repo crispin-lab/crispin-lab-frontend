@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/mocks/server";
 
 import { asPageId, asSpaceId } from "./ids";
-import { createPage, fetchPage, searchPages, updatePage } from "./page";
+import { createPage, fetchInboundLinks, fetchPage, searchPages, updatePage } from "./page";
 
 describe("fetchPage", () => {
   it("GET /api/v1/pages/{pageId} 를 호출하고 응답을 그대로 반환한다", async () => {
@@ -150,6 +150,95 @@ describe("updatePage", () => {
 
     expect(receivedBody).toEqual({ title: "수정됨", content: "새 본문" });
     expect(result.version).toBe(2);
+  });
+});
+
+describe("fetchInboundLinks", () => {
+  const emptyBody = {
+    size: 20,
+    isEmpty: true,
+    totalPages: 0,
+    hasNext: false,
+    page: 0,
+    items: [],
+    totalElements: 0,
+  };
+
+  it("page/size 미지정 시 query string 없이 호출한다", async () => {
+    let capturedUrl: URL | undefined;
+    server.use(
+      http.get("*/api/v1/pages/p_1/inbound", ({ request }) => {
+        capturedUrl = new URL(request.url);
+        return HttpResponse.json(emptyBody);
+      }),
+    );
+
+    await fetchInboundLinks(asPageId("p_1"));
+
+    expect(capturedUrl?.search).toBe("");
+  });
+
+  it("page/size 를 URL query 로 직렬화한다", async () => {
+    let capturedUrl: URL | undefined;
+    server.use(
+      http.get("*/api/v1/pages/p_1/inbound", ({ request }) => {
+        capturedUrl = new URL(request.url);
+        return HttpResponse.json(emptyBody);
+      }),
+    );
+
+    await fetchInboundLinks(asPageId("p_1"), { page: 0, size: 20 });
+
+    expect(capturedUrl?.searchParams.get("page")).toBe("0");
+    expect(capturedUrl?.searchParams.get("size")).toBe("20");
+  });
+
+  it("응답을 그대로 패스스루한다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1/inbound", () =>
+        HttpResponse.json({
+          ...emptyBody,
+          isEmpty: false,
+          totalPages: 1,
+          totalElements: 1,
+          items: [
+            {
+              pageId: "p_src",
+              spaceId: "s_1",
+              parentPageId: null,
+              authorId: "u_1",
+              authorHandle: "alice",
+              title: "이전 회고",
+              visibility: "PUBLIC",
+              displayOrder: 0,
+              updatedAt: "2025-01-01T00:00:00Z",
+            },
+          ],
+        }),
+      ),
+    );
+
+    const result = await fetchInboundLinks(asPageId("p_1"), { size: 20 });
+
+    expect(result.items.length).toBe(1);
+    expect(result.items[0].pageId).toBe("p_src");
+    expect(result.items[0].title).toBe("이전 회고");
+  });
+
+  it("404 응답을 ApiError 로 lift 한다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_missing/inbound", () =>
+        HttpResponse.json(
+          { code: "PAGE_NOT_FOUND", message: "페이지를 찾을 수 없습니다." },
+          { status: 404 },
+        ),
+      ),
+    );
+
+    await expect(fetchInboundLinks(asPageId("p_missing"))).rejects.toMatchObject({
+      status: 404,
+      code: "PAGE_NOT_FOUND",
+    });
   });
 });
 

@@ -14,6 +14,8 @@ export type PageCreateRequest = PageSchemas["PageRegisterRequest"];
 export type PageCreateResult = PageSchemas["PageRegisterResponse"];
 export type PageUpdateRequest = PageSchemas["PageEditRequest"];
 export type PageUpdateResult = PageSchemas["PageEditResponse"];
+export type PageInboundLinkList = PageSchemas["PageInboundLinkListResponse"];
+export type PageInboundLink = PageInboundLinkList["items"][number];
 
 export type Space = PageSchemas["SpaceGetResponse"];
 export type SpaceListResult = PageSchemas["SpaceListResponse"];
