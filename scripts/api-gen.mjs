@@ -3,7 +3,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
-const base = process.env.LAB_BACKEND_PATH ?? "../crispin-lab-backend";
+// 빈 문자열도 fallback 으로 흡수 — `??` 는 nullish 만 잡아 `LAB_BACKEND_PATH=""` 가 root 경로로 풀려 silent skip 되는 회귀를 막는다.
+const base = process.env.LAB_BACKEND_PATH || "../crispin-lab-backend";
 const cli = resolve("node_modules/.bin/openapi-typescript");
 
 const targets = [

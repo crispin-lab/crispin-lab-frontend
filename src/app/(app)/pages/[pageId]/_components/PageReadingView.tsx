@@ -27,7 +27,7 @@ const TOC_MIN_HEADINGS = 3;
 export function PageReadingView({ page, pageId, isAuthenticated, className }: Props) {
   const doc = parseEditorContent(page.content);
   // walking 한 번에 (a) TOC items 수집 + (b) heading 노드 attrs.id 부여. renderer 가 같은 doc 을 받아 id 를 그대로 출력.
-  const headings = buildTocAndAssignIds(doc);
+  const headings = buildTocAndAssignHeadingIds(doc);
   const isBodyEmpty = !hasAnyText(doc);
   // `@tiptap/react` 의 generateHTML 은 document.implementation 의존이라 RSC 에서 throw — static-renderer 가 SSR 안전 대안.
   const html = isBodyEmpty
@@ -69,7 +69,7 @@ export function PageReadingView({ page, pageId, isAuthenticated, className }: Pr
                 <>
                   <span aria-hidden>·</span>
                   <Link
-                    href={`/pages/${pageId}/edit`}
+                    href={`/pages/${encodeURIComponent(pageId)}/edit`}
                     className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
                   >
                     편집
@@ -104,7 +104,7 @@ export function PageReadingView({ page, pageId, isAuthenticated, className }: Pr
             </PageLinkChipNavigator>
           )}
 
-          <InboundLinkList pageId={pageId} className="mt-12" />
+          <InboundLinkList pageId={pageId} isAuthenticated={isAuthenticated} className="mt-12" />
         </article>
 
         {showToc && <Toc items={headings} />}
@@ -113,7 +113,7 @@ export function PageReadingView({ page, pageId, isAuthenticated, className }: Pr
   );
 }
 
-function buildTocAndAssignIds(doc: JSONContent): TocItem[] {
+function buildTocAndAssignHeadingIds(doc: JSONContent): TocItem[] {
   const items: TocItem[] = [];
   const visit = (node: JSONContent) => {
     if (node.type === "heading") {

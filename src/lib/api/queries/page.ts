@@ -44,7 +44,5 @@ export function pageInboundLinksOptions(pageId: PageId, params: PageInboundLinkP
   return queryOptions<PageInboundLinkListResult, ApiError>({
     queryKey: pageKeys.inbound(pageId, params),
     queryFn: ({ signal }) => fetchInboundLinks(pageId, params, signal),
-    // 인바운드 그래프는 자주 보지만 자주 변하지 않음 — api-client.md staleTime 표 정합.
-    staleTime: 30_000,
   });
 }

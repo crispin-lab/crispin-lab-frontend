@@ -64,9 +64,10 @@ describe("InboundLinkList", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    const { container } = render(<InboundLinkList pageId={asPageId("p_1")} />, {
-      wrapper: Wrapper,
-    });
+    const { container } = render(
+      <InboundLinkList pageId={asPageId("p_1")} isAuthenticated={true} />,
+      { wrapper: Wrapper },
+    );
 
     // pending skeleton 의 status 와 heading 이 사라지고 컴포넌트가 null 로 떨어지는지 가드.
     await waitFor(() => {
@@ -105,11 +106,16 @@ describe("InboundLinkList", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<InboundLinkList pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+    render(<InboundLinkList pageId={asPageId("p_1")} isAuthenticated={true} />, {
+      wrapper: Wrapper,
+    });
 
-    // success 의 <ul aria-label> 가 skeleton 의 status list 와 구분되는 안정 신호.
-    const list = await screen.findByRole("list", { name: "이 페이지로 들어오는 링크" });
-    expect(screen.getByRole("heading", { name: "이 페이지로 들어오는 링크" })).toBeInTheDocument();
+    // 섹션 heading 노출 = success 진입 신호.
+    const heading = await screen.findByRole("heading", { name: "이 페이지로 들어오는 링크" });
+    expect(heading).toBeInTheDocument();
+    // skeleton 의 status list 가 사라진 후 본 list 만 남는다.
+    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+    const list = screen.getByRole("list");
 
     const rows = within(list).getAllByRole("listitem");
     expect(rows.length).toBe(2);
@@ -126,6 +132,30 @@ describe("InboundLinkList", () => {
     expect(within(rows[1]).getByText("@bob")).toBeInTheDocument();
   });
 
+  it("비로그인 진입 (isAuthenticated=false) 이면 spaceList 를 호출하지 않고 row 가 spaceName 없이 노출된다", async () => {
+    let spacesCalled = false;
+    server.use(
+      http.get("*/api/v1/pages/p_1/inbound", () =>
+        HttpResponse.json(inboundBody([makeSource({ spaceId: "s_1", title: "이전 회고" })])),
+      ),
+      http.get("*/api/v1/spaces", () => {
+        spacesCalled = true;
+        return HttpResponse.json(spaceListBody([]));
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<InboundLinkList pageId={asPageId("p_1")} isAuthenticated={false} />, {
+      wrapper: Wrapper,
+    });
+
+    await screen.findByRole("heading", { name: "이 페이지로 들어오는 링크" });
+    expect(screen.getByText("이전 회고")).toBeInTheDocument();
+    // 공유 가능 reading 화면이라 비로그인이 spaceList 401 로 튕기지 않는 게 핵심.
+    expect(spacesCalled).toBe(false);
+    expect(screen.queryByText("공개 위키")).not.toBeInTheDocument();
+  });
+
   it("authorHandle 이 빈 문자열인 source 는 '삭제된 사용자' 라벨로 노출된다", async () => {
     server.use(
       http.get("*/api/v1/pages/p_1/inbound", () =>
@@ -137,27 +167,30 @@ describe("InboundLinkList", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<InboundLinkList pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+    render(<InboundLinkList pageId={asPageId("p_1")} isAuthenticated={true} />, {
+      wrapper: Wrapper,
+    });
 
-    await screen.findByRole("list", { name: "이 페이지로 들어오는 링크" });
+    await screen.findByRole("heading", { name: "이 페이지로 들어오는 링크" });
     expect(screen.getByText("삭제된 사용자")).toBeInTheDocument();
     expect(screen.queryByText(/^@/)).not.toBeInTheDocument();
   });
 
   it("loading 상태에서 skeleton (role=status) 이 노출된다", async () => {
-    // 응답을 보내지 않아 pending 으로 멈춤. unhandled 경고 회피 위해 핸들러는 등록.
+    // request.signal 에 abort 리스너를 걸어 컴포넌트 unmount 시 promise 가 깨끗하게 reject — dangling promise 회피.
     server.use(
-      http.get("*/api/v1/pages/p_1/inbound", async () => {
-        await new Promise(() => {
-          /* never resolves within test */
+      http.get("*/api/v1/pages/p_1/inbound", ({ request }) => {
+        return new Promise((_, reject) => {
+          request.signal.addEventListener("abort", () => reject(new Error("aborted")));
         });
-        return HttpResponse.json(inboundBody([]));
       }),
       http.get("*/api/v1/spaces", () => HttpResponse.json(spaceListBody([]))),
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<InboundLinkList pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+    render(<InboundLinkList pageId={asPageId("p_1")} isAuthenticated={true} />, {
+      wrapper: Wrapper,
+    });
 
     expect(await screen.findByRole("status", { name: /불러오는 중/ })).toBeInTheDocument();
   });
@@ -177,7 +210,9 @@ describe("InboundLinkList", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<InboundLinkList pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+    render(<InboundLinkList pageId={asPageId("p_1")} isAuthenticated={true} />, {
+      wrapper: Wrapper,
+    });
 
     expect(await screen.findByText("잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
     const retry = screen.getByRole("button", { name: /다시 시도/ });

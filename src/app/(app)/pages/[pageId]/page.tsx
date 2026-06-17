@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/api/client";
 import { asPageId, asSpaceId } from "@/lib/api/ids";
 import { INBOUND_LIST_SIZE } from "@/lib/api/page";
 import { fetchInboundLinksServer } from "@/lib/api/page.server";
-import { pageKeys } from "@/lib/api/queries/page";
+import { pageInboundLinksOptions } from "@/lib/api/queries/page";
 import { apiFetchServer } from "@/lib/api/server";
 import type { Page } from "@/lib/api/types";
 import { loginRedirectUrl } from "@/lib/auth/redirect";
@@ -44,19 +44,15 @@ export default async function PageReadingRoute({
   const cookieStore = await cookies();
   const isAuthenticated = cookieStore.get(SESSION_COOKIE_NAME) != null;
 
-  // 인바운드 link 는 reading 화면 본문 외 정보라, fetch 실패가 본 페이지 reading 자체를 막아서는 안 된다.
+  // 인바운드 link 는 reading 화면 본문 외 정보. prefetchQuery 는 throw 하지 않고 내부에서 에러를 swallow 하므로
+  // 실패해도 본 페이지 reading 은 그대로. Client 의 useQuery 가 다시 시도하거나 ErrorRetryCard 가 받는다.
   // anonymous 면 BE 가 PUBLIC source 만 반환 — visibility 분기는 BE 가 인증 컨텍스트로 처리.
   const queryClient = makeServerQueryClient();
   const inboundParams = { size: INBOUND_LIST_SIZE };
-  await queryClient
-    .prefetchQuery({
-      queryKey: pageKeys.inbound(pageId, inboundParams),
-      queryFn: () =>
-        fetchInboundLinksServer(pageId, inboundParams, { allowAnonymousFallback: true }),
-    })
-    .catch(() => {
-      /* 인바운드 prefetch 실패는 swallow — Client 의 useQuery 가 다시 시도하거나 ErrorRetryCard 가 받는다. */
-    });
+  await queryClient.prefetchQuery({
+    ...pageInboundLinksOptions(pageId, inboundParams),
+    queryFn: () => fetchInboundLinksServer(pageId, inboundParams, { allowAnonymousFallback: true }),
+  });
 
   // grid 골격은 이 라우트 한정 — layout.tsx 에 두면 [pageId]/edit 서브라우트까지 적용돼 편집 화면 폭이 깨진다.
   // sticky top 은 AppHeader 의 h-12 와 정합.
