@@ -192,6 +192,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/pages/{pageId}/inbound": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 페이지 인바운드 링크 목록 조회
+         * @description 페이지 인바운드 링크 목록 조회
+         */
+        get: operations["Page \uD398\uC774\uC9C0 \uC778\uBC14\uC6B4\uB4DC \uB9C1\uD06C \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/pages/{pageId}/revisions": {
         parameters: {
             query?: never;
@@ -781,6 +801,42 @@ export interface components {
             /** @description 스페이스 설명＊ */
             description: string;
         };
+        /** PageInboundLinkListResponse */
+        PageInboundLinkListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 인바운드 링크 source 목록＊ */
+            items: {
+                /** @description ⎯ source 페이지 소속 스페이스＊ */
+                spaceId: string;
+                /** @description ⎯ PUBLIC / INTERNAL / DRAFT＊ */
+                visibility: string;
+                /** @description ⎯ 부모 페이지 식별자 */
+                parentPageId?: string | null;
+                /** @description ⎯ 스페이스 내 정렬 순서＊ */
+                displayOrder: number;
+                /** @description ⎯ 작성자 핸들 — 알 수 없으면 빈 문자열＊ */
+                authorHandle: string;
+                /** @description ⎯ source 페이지 제목＊ */
+                title: string;
+                /** @description ⎯ 작성자 식별자＊ */
+                authorId: string;
+                /** @description ⎯ source 페이지 식별자＊ */
+                pageId: string;
+                /** @description ⎯ source 페이지 최종 수정 시각 (ISO)＊ */
+                updatedAt: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
         /** TagRegisterResponse */
         TagRegisterResponse: {
             /** @description 생성된 태그 식별자＊ */
@@ -865,12 +921,12 @@ export interface operations {
                 /** @description 페이지당 항목 수 */
                 size?: string;
             };
-            header: {
+            header?: {
                 /**
                  * @description 세션 토큰 (`Bearer {token}`)
                  * @example Bearer 100:USER
                  */
-                Authorization: string;
+                Authorization?: string;
             };
             path?: never;
             cookie?: never;
@@ -926,12 +982,12 @@ export interface operations {
                 /** @description 페이지당 항목 수 */
                 size?: string;
             };
-            header: {
+            header?: {
                 /**
                  * @description 세션 토큰 (`Bearer {token}`)
                  * @example Bearer 100:USER
                  */
-                Authorization: string;
+                Authorization?: string;
             };
             path?: never;
             cookie?: never;
@@ -1012,12 +1068,12 @@ export interface operations {
     "Page \uD398\uC774\uC9C0 \uB2E8\uAC74 \uC870\uD68C \uC874\uC7AC\uD558\uBA74 200 \uACFC \uC815\uBCF4\uB97C \uBC18\uD658\uD55C\uB2E4": {
         parameters: {
             query?: never;
-            header: {
+            header?: {
                 /**
                  * @description 세션 토큰 (`Bearer {token}`)
                  * @example Bearer 100:USER
                  */
-                Authorization: string;
+                Authorization?: string;
             };
             path: {
                 pageId: string;
@@ -1098,12 +1154,12 @@ export interface operations {
     "Space \uC2A4\uD398\uC774\uC2A4 \uB2E8\uAC74 \uC870\uD68C \uC874\uC7AC\uD558\uBA74 200 \uACFC \uC815\uBCF4\uB97C \uBC18\uD658\uD55C\uB2E4": {
         parameters: {
             query?: never;
-            header: {
+            header?: {
                 /**
                  * @description 세션 토큰 (`Bearer {token}`)
                  * @example Bearer 100:USER
                  */
-                Authorization: string;
+                Authorization?: string;
             };
             path: {
                 spaceId: string;
@@ -1189,7 +1245,13 @@ export interface operations {
                 /** @description 페이지당 항목 수 */
                 size?: string;
             };
-            header?: never;
+            header?: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1297,6 +1359,39 @@ export interface operations {
             };
         };
     };
+    "Page \uD398\uC774\uC9C0 \uC778\uBC14\uC6B4\uB4DC \uB9C1\uD06C \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: {
+                /** @description 페이지 */
+                page?: string;
+                /** @description 페이지당 항목 수 */
+                size?: string;
+            };
+            header?: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization?: string;
+            };
+            path: {
+                pageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageInboundLinkListResponse"];
+                };
+            };
+        };
+    };
     "Page \uD398\uC774\uC9C0 \uB9AC\uBE44\uC804 \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4": {
         parameters: {
             query?: {
@@ -1305,7 +1400,13 @@ export interface operations {
                 /** @description 페이지당 항목 수 */
                 size?: string;
             };
-            header?: never;
+            header?: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization?: string;
+            };
             path: {
                 pageId: string;
             };
@@ -1395,7 +1496,13 @@ export interface operations {
                 /** @description 페이지당 항목 수 */
                 size?: string;
             };
-            header?: never;
+            header?: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization?: string;
+            };
             path: {
                 spaceId: string;
             };
@@ -1571,7 +1678,13 @@ export interface operations {
     "Page \uD398\uC774\uC9C0 \uB9AC\uBE44\uC804 \uB2E8\uAC74 \uC870\uD68C \uC874\uC7AC\uD558\uBA74 200 \uACFC \uC815\uBCF4\uB97C \uBC18\uD658\uD55C\uB2E4": {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization?: string;
+            };
             path: {
                 pageId: string;
                 version: string;

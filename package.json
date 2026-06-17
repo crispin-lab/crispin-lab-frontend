@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "api:gen": "openapi-typescript ../crispin-lab-backend/lab-user/app/build/api-spec/openapi3.json -o src/lib/api/schema.user.d.ts && openapi-typescript ../crispin-lab-backend/lab-space/app/build/api-spec/openapi3.json -o src/lib/api/schema.space.d.ts",
+    "api:gen": "node scripts/api-gen.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ci": "vitest run --reporter=verbose",

@@ -4,6 +4,7 @@ import type {
   Page,
   PageCreateRequest,
   PageCreateResult,
+  PageInboundLinkListResult,
   PageSearchResult,
   PageUpdateRequest,
   PageUpdateResult,
@@ -20,8 +21,29 @@ export type PageSearchParams = {
   size?: number;
 };
 
+export type PageInboundLinkParams = {
+  page?: number;
+  size?: number;
+};
+
+// pagination UI 가 없어 사용자에게 보이는 상한 역할 — 무한 스크롤 정책이 정해지기 전엔 늘리지 않는다.
+export const INBOUND_LIST_SIZE = 20;
+
 export function fetchPage(pageId: PageId, signal?: AbortSignal): Promise<Page> {
   return apiFetch<Page>(`/api/v1/pages/${encodeURIComponent(pageId)}`, { signal });
+}
+
+export function fetchInboundLinks(
+  pageId: PageId,
+  params: PageInboundLinkParams = {},
+  signal?: AbortSignal,
+): Promise<PageInboundLinkListResult> {
+  const qs = buildInboundLinksQuery(params);
+  const path =
+    qs === ""
+      ? `/api/v1/pages/${encodeURIComponent(pageId)}/inbound`
+      : `/api/v1/pages/${encodeURIComponent(pageId)}/inbound?${qs}`;
+  return apiFetch<PageInboundLinkListResult>(path, { signal });
 }
 
 export function searchPages(
@@ -51,6 +73,17 @@ export function deletePage(pageId: PageId): Promise<void> {
   return apiFetch<void>(`/api/v1/pages/${encodeURIComponent(pageId)}`, {
     method: "DELETE",
   });
+}
+
+export function buildInboundLinksQuery(params: PageInboundLinkParams): string {
+  const search = new URLSearchParams();
+  if (params.page !== undefined) {
+    search.append("page", String(params.page));
+  }
+  if (params.size !== undefined) {
+    search.append("size", String(params.size));
+  }
+  return search.toString();
 }
 
 export function buildSearchPagesQuery(params: PageSearchParams): string {

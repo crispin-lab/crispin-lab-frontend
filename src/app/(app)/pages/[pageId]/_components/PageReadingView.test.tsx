@@ -1,10 +1,17 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { asPageId } from "@/lib/api/ids";
 import type { Page } from "@/lib/api/types";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+}));
+
+// InboundLinkList 는 별도 컴포넌트로 자체 테스트 (InboundLinkList.test.tsx) 가 커버.
+// PageReadingView 테스트가 QueryClient / MSW handler 의존 없이 단독 렌더되도록 stub.
+vi.mock("./InboundLinkList", () => ({
+  InboundLinkList: () => null,
 }));
 
 import { PageReadingView } from "./PageReadingView";
@@ -32,9 +39,20 @@ function makePage(overrides: Partial<Page> = {}): Page {
   };
 }
 
+function renderView({ page, isAuthenticated }: { page?: Page; isAuthenticated: boolean }) {
+  const value = page ?? makePage();
+  return render(
+    <PageReadingView
+      page={value}
+      pageId={asPageId(value.pageId)}
+      isAuthenticated={isAuthenticated}
+    />,
+  );
+}
+
 describe("PageReadingView", () => {
   it("제목 / 저자 / 작성일 / visibility 가 메타 줄에 노출된다", () => {
-    render(<PageReadingView page={makePage()} isAuthenticated={false} />);
+    renderView({ isAuthenticated: false });
 
     expect(
       screen.getByRole("heading", { level: 1, name: "TipTap 위키 링크 구현 메모" }),
@@ -46,14 +64,14 @@ describe("PageReadingView", () => {
 
   it("authorId (raw UserId) 는 어디에도 노출되지 않는다", () => {
     const page = makePage();
-    render(<PageReadingView page={page} isAuthenticated={false} />);
+    renderView({ page, isAuthenticated: false });
 
     // 본문·attr·aria-label 어디로도 새지 않는지 한 번에 가드 — fixture 의 authorId 가 바뀌어도 따라간다.
     expect(document.body.innerHTML).not.toContain(page.authorId);
   });
 
   it("authorHandle 이 빈 문자열이면 '@' 없이 '삭제된 사용자' 라벨이 노출된다", () => {
-    render(<PageReadingView page={makePage({ authorHandle: "" })} isAuthenticated={false} />);
+    renderView({ page: makePage({ authorHandle: "" }), isAuthenticated: false });
 
     const label = screen.getByText("삭제된 사용자");
     expect(label).toBeInTheDocument();
@@ -61,13 +79,13 @@ describe("PageReadingView", () => {
   });
 
   it("비로그인 상태에서는 '편집' link 가 노출되지 않는다", () => {
-    render(<PageReadingView page={makePage()} isAuthenticated={false} />);
+    renderView({ isAuthenticated: false });
 
     expect(screen.queryByRole("link", { name: "편집" })).not.toBeInTheDocument();
   });
 
   it("로그인 상태에서는 '편집' link 가 /pages/{id}/edit 로 노출된다", () => {
-    render(<PageReadingView page={makePage()} isAuthenticated={true} />);
+    renderView({ isAuthenticated: true });
 
     const editLink = screen.getByRole("link", { name: "편집" });
     expect(editLink).toHaveAttribute("href", "/pages/p_1/edit");
@@ -87,7 +105,7 @@ describe("PageReadingView", () => {
       ]),
     });
 
-    const { container } = render(<PageReadingView page={page} isAuthenticated={false} />);
+    const { container } = renderView({ page, isAuthenticated: false });
     const chip = container.querySelector("[data-page-link]");
 
     expect(chip).not.toBeNull();
@@ -106,7 +124,7 @@ describe("PageReadingView", () => {
       ]),
     });
 
-    const { container } = render(<PageReadingView page={page} isAuthenticated={false} />);
+    const { container } = renderView({ page, isAuthenticated: false });
     const toc = screen.getByRole("navigation", { name: "목차" });
 
     const links = within(toc).getAllByRole("link");
@@ -126,30 +144,28 @@ describe("PageReadingView", () => {
       ]),
     });
 
-    render(<PageReadingView page={page} isAuthenticated={false} />);
+    renderView({ page, isAuthenticated: false });
 
     expect(screen.queryByRole("navigation", { name: "목차" })).not.toBeInTheDocument();
   });
 
   it("updatedAt 이 createdAt 과 다르면 '수정' 줄이 메타에 노출된다", () => {
-    render(
-      <PageReadingView
-        page={makePage({ updatedAt: "2026-05-30T10:00:00Z" })}
-        isAuthenticated={false}
-      />,
-    );
+    renderView({
+      page: makePage({ updatedAt: "2026-05-30T10:00:00Z" }),
+      isAuthenticated: false,
+    });
 
     expect(screen.getByText(/수정 2026\. 05\. 30\./)).toBeInTheDocument();
   });
 
   it("updatedAt 이 createdAt 과 같으면 '수정' 줄은 노출되지 않는다", () => {
-    render(<PageReadingView page={makePage()} isAuthenticated={false} />);
+    renderView({ isAuthenticated: false });
 
     expect(screen.queryByText(/^수정 /)).not.toBeInTheDocument();
   });
 
   it("본문이 비어 있으면 안내 문구가 본문 자리에 노출된다", () => {
-    render(<PageReadingView page={makePage({ content: "" })} isAuthenticated={false} />);
+    renderView({ page: makePage({ content: "" }), isAuthenticated: false });
 
     expect(screen.getByText("본문이 비어 있습니다.")).toBeInTheDocument();
     // PageLinkChipNavigator 의 click 위임 컨테이너도 본문 자리에서 사라진다.

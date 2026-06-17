@@ -1,13 +1,18 @@
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { PageTreeSidebar } from "@/components/page/PageTreeSidebar";
 import { ApiError } from "@/lib/api/client";
 import { asPageId, asSpaceId } from "@/lib/api/ids";
+import { INBOUND_LIST_SIZE } from "@/lib/api/page";
+import { fetchInboundLinksServer } from "@/lib/api/page.server";
+import { pageInboundLinksOptions } from "@/lib/api/queries/page";
 import { apiFetchServer } from "@/lib/api/server";
 import type { Page } from "@/lib/api/types";
 import { loginRedirectUrl } from "@/lib/auth/redirect";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
+import { makeServerQueryClient } from "@/lib/queryClient";
 
 import { PageReadingView } from "./_components/PageReadingView";
 
@@ -39,20 +44,34 @@ export default async function PageReadingRoute({
   const cookieStore = await cookies();
   const isAuthenticated = cookieStore.get(SESSION_COOKIE_NAME) != null;
 
+  // prefetchQuery 는 throw 하지 않는다 — 인바운드 fetch 실패는 Client 의 useQuery 가 다시 시도하거나 ErrorRetryCard 가 받는다.
+  const queryClient = makeServerQueryClient();
+  const inboundParams = { size: INBOUND_LIST_SIZE };
+  await queryClient.prefetchQuery({
+    ...pageInboundLinksOptions(pageId, inboundParams),
+    queryFn: () => fetchInboundLinksServer(pageId, inboundParams, { allowAnonymousFallback: true }),
+  });
+
   // grid 골격은 이 라우트 한정 — layout.tsx 에 두면 [pageId]/edit 서브라우트까지 적용돼 편집 화면 폭이 깨진다.
   // sticky top 은 AppHeader 의 h-12 와 정합.
   if (isAuthenticated) {
     return (
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <PageTreeSidebar
-          spaceId={asSpaceId(page.spaceId)}
-          activePageId={pageId}
-          className="hidden px-3 py-4 lg:sticky lg:top-12 lg:block lg:self-start"
-        />
-        <PageReadingView page={page} isAuthenticated={isAuthenticated} />
-      </div>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
+          <PageTreeSidebar
+            spaceId={asSpaceId(page.spaceId)}
+            activePageId={pageId}
+            className="hidden px-3 py-4 lg:sticky lg:top-12 lg:block lg:self-start"
+          />
+          <PageReadingView page={page} pageId={pageId} isAuthenticated={isAuthenticated} />
+        </div>
+      </HydrationBoundary>
     );
   }
 
-  return <PageReadingView page={page} isAuthenticated={isAuthenticated} />;
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <PageReadingView page={page} pageId={pageId} isAuthenticated={isAuthenticated} />
+    </HydrationBoundary>
+  );
 }
