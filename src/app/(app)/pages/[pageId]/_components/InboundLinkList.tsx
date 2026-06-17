@@ -8,12 +8,10 @@ import { useSpaceList } from "@/hooks/useSpace";
 import { usePageInboundLinks } from "@/hooks/usePageInboundLinks";
 import { toUserMessage } from "@/lib/api/errors";
 import type { PageId } from "@/lib/api/ids";
+import { INBOUND_LIST_SIZE } from "@/lib/api/page";
 import type { PageInboundLink } from "@/lib/api/types";
 import { formatUpdatedAtKR } from "@/lib/format/date";
 import { SPACE_LIST_SIZE } from "@/lib/search/searchParams";
-import { cn } from "@/lib/utils";
-
-export const INBOUND_LIST_SIZE = 20;
 
 type Props = {
   pageId: PageId;
@@ -28,7 +26,8 @@ export function InboundLinkList({ pageId, className }: Props) {
     [spaceListQuery.data],
   );
 
-  if (query.isPending) {
+  // spaceList 가 pending 인 동안 row 가 spaceName 없이 그려졌다가 채워지는 flash 회피.
+  if (query.isPending || spaceListQuery.isPending) {
     return <InboundLinkListSkeleton className={className} />;
   }
 
@@ -93,7 +92,6 @@ function InboundLinkRow({
             <span aria-hidden>·</span>
           </>
         )}
-        {/* schema 의 authorHandle: 삭제된 사용자의 경우 빈 문자열 — PageReadingView 메타 줄과 동일 처리. */}
         {source.authorHandle === "" ? (
           <span className="italic">삭제된 사용자</span>
         ) : (
@@ -116,7 +114,7 @@ function InboundLinkListSkeleton({ className }: { className?: string }) {
         className="divide-border mt-3 divide-y border-y"
       >
         {[0, 1, 2].map((i) => (
-          <li key={i} className={cn("flex flex-col gap-2 px-2 py-3")}>
+          <li key={i} className="flex flex-col gap-2 px-2 py-3">
             <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
             <div className="bg-muted h-3 w-1/3 animate-pulse rounded" />
           </li>

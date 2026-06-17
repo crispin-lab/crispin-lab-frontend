@@ -9,7 +9,7 @@ import {
   type PageSearchParams,
   searchPages,
 } from "../page";
-import type { Page, PageInboundLinkList, PageSearchResult } from "../types";
+import type { Page, PageInboundLinkListResult, PageSearchResult } from "../types";
 
 // list key 는 stable-hash 비교 — `undefined` 필드와 미정의 필드가 같은 key 로 매칭되므로 PageSearchParams 에
 // 새 필드가 추가돼도 기존 호출 (그 필드 생략) 의 cache 는 유효.
@@ -41,8 +41,10 @@ export function pageListOptions(params: PageSearchParams) {
 }
 
 export function pageInboundLinksOptions(pageId: PageId, params: PageInboundLinkParams = {}) {
-  return queryOptions<PageInboundLinkList, ApiError>({
+  return queryOptions<PageInboundLinkListResult, ApiError>({
     queryKey: pageKeys.inbound(pageId, params),
     queryFn: ({ signal }) => fetchInboundLinks(pageId, params, signal),
+    // 인바운드 그래프는 자주 보지만 자주 변하지 않음 — api-client.md staleTime 표 정합.
+    staleTime: 30_000,
   });
 }

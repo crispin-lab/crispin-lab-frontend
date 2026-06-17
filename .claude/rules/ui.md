@@ -118,6 +118,25 @@ function PageList({ spaceId }: { spaceId: SpaceId }) {
 - 페이지가 여러 쿼리에 의존하면 셋을 합쳐 처리 — `isPending` 이 하나라도 true 면 skeleton, 에러는 하나라도 있으면 첫 에러 노출.
 - **`isPending` vs `isFetching`** — TanStack Query v5 에서 초기 로드는 `isPending` (데이터 없음 + 로딩 중), 재요청 (refetch, polling, invalidation 후 재요청) 중은 `isFetching`. 첫 진입 skeleton 은 `isPending`, 부분 갱신 인디케이터 (목록 위 상단 progress bar 등) 가 필요할 때만 `isFetching`.
 
+## 도메인 fallback 라벨
+
+BE 스키마가 *비어 있을 수 있는 도메인 값* 을 빈 문자열 (`""`) 로 내려보내는 필드가 있다. 가장 흔한 예가 `authorHandle` — 작성자가 삭제되면 BE 가 빈 문자열로 표시.
+
+- **빈 문자열 → 한국어 fallback 라벨** 로 렌더 (`삭제된 사용자`, `이름 없는 스페이스` 등). raw `""` 또는 `@` 만 노출되는 회귀를 막는다.
+- 라벨은 `italic` (시각적으로 *대체 표시* 임이 드러나게), 평소 표기 (예: `@handle`) 의 prefix (`@`) 는 떼고 라벨 단어만.
+- 같은 fallback 분기가 두 곳 이상에 등장하면 (PageReadingView 메타 줄, 인바운드 link row 등) 본 룰을 invariant 로 인용 — 컴포넌트 안 주석으로 두지 않는다.
+
+```tsx
+// GOOD
+{source.authorHandle === "" ? (
+  <span className="italic">삭제된 사용자</span>
+) : (
+  <span className="text-accent-secondary">@{source.authorHandle}</span>
+)}
+```
+
+falsy 전체 (`null` / `undefined` 포함) 가 아니라 *빈 문자열만* 분기하는 게 핵심 — BE 가 명시적으로 "" 로 표기한다는 계약 (schema description) 에 정합. nullable 가 새로 생기면 그때 분기를 늘린다.
+
 ## button vs link
 
 - 라우팅이면 `<Link>` (next/link). 페이지를 바꾼다 = link.

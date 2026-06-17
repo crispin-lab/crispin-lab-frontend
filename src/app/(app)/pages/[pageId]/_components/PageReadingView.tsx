@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { viewerExtensions } from "@/components/editor/extensions/viewer";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
-import { asPageId } from "@/lib/api/ids";
+import type { PageId } from "@/lib/api/ids";
 import type { Page } from "@/lib/api/types";
 import { parseEditorContent } from "@/lib/editor/content";
 import { cn } from "@/lib/utils";
@@ -16,13 +16,15 @@ import { Toc, type TocItem } from "./Toc";
 
 type Props = {
   page: Page;
+  // 라우트가 이미 lift 한 PageId 를 그대로 받는다 — 본 컴포넌트 안에서 다시 `asPageId(page.pageId)` 하지 않는다.
+  pageId: PageId;
   isAuthenticated: boolean;
   className?: string;
 };
 
 const TOC_MIN_HEADINGS = 3;
 
-export function PageReadingView({ page, isAuthenticated, className }: Props) {
+export function PageReadingView({ page, pageId, isAuthenticated, className }: Props) {
   const doc = parseEditorContent(page.content);
   // walking 한 번에 (a) TOC items 수집 + (b) heading 노드 attrs.id 부여. renderer 가 같은 doc 을 받아 id 를 그대로 출력.
   const headings = buildTocAndAssignIds(doc);
@@ -48,8 +50,7 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
               {page.title}
             </h1>
             <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-              {/* schema 의 authorHandle description: 삭제된 사용자의 경우 빈 문자열. falsy 도 같이 흡수해 `@undefined` 회귀를 막는다. */}
-              {!page.authorHandle ? (
+              {page.authorHandle === "" ? (
                 <span className="text-muted-foreground italic">삭제된 사용자</span>
               ) : (
                 <span className="text-accent-secondary">@{page.authorHandle}</span>
@@ -68,7 +69,7 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
                 <>
                   <span aria-hidden>·</span>
                   <Link
-                    href={`/pages/${page.pageId}/edit`}
+                    href={`/pages/${pageId}/edit`}
                     className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
                   >
                     편집
@@ -103,7 +104,7 @@ export function PageReadingView({ page, isAuthenticated, className }: Props) {
             </PageLinkChipNavigator>
           )}
 
-          <InboundLinkList pageId={asPageId(page.pageId)} className="mt-12" />
+          <InboundLinkList pageId={pageId} className="mt-12" />
         </article>
 
         {showToc && <Toc items={headings} />}

@@ -4,7 +4,7 @@ import type {
   Page,
   PageCreateRequest,
   PageCreateResult,
-  PageInboundLinkList,
+  PageInboundLinkListResult,
   PageSearchResult,
   PageUpdateRequest,
   PageUpdateResult,
@@ -26,6 +26,9 @@ export type PageInboundLinkParams = {
   size?: number;
 };
 
+// 인바운드 섹션 default size. pagination UI 가 없는 현재는 상한 역할 — 늘리려면 무한 스크롤 정책 (LAB-114 비범위) 과 함께.
+export const INBOUND_LIST_SIZE = 20;
+
 export function fetchPage(pageId: PageId, signal?: AbortSignal): Promise<Page> {
   return apiFetch<Page>(`/api/v1/pages/${encodeURIComponent(pageId)}`, { signal });
 }
@@ -34,20 +37,13 @@ export function fetchInboundLinks(
   pageId: PageId,
   params: PageInboundLinkParams = {},
   signal?: AbortSignal,
-): Promise<PageInboundLinkList> {
-  const search = new URLSearchParams();
-  if (params.page !== undefined) {
-    search.append("page", String(params.page));
-  }
-  if (params.size !== undefined) {
-    search.append("size", String(params.size));
-  }
-  const qs = search.toString();
+): Promise<PageInboundLinkListResult> {
+  const qs = buildInboundLinksQuery(params);
   const path =
     qs === ""
       ? `/api/v1/pages/${encodeURIComponent(pageId)}/inbound`
       : `/api/v1/pages/${encodeURIComponent(pageId)}/inbound?${qs}`;
-  return apiFetch<PageInboundLinkList>(path, { signal });
+  return apiFetch<PageInboundLinkListResult>(path, { signal });
 }
 
 export function searchPages(
@@ -77,6 +73,17 @@ export function deletePage(pageId: PageId): Promise<void> {
   return apiFetch<void>(`/api/v1/pages/${encodeURIComponent(pageId)}`, {
     method: "DELETE",
   });
+}
+
+export function buildInboundLinksQuery(params: PageInboundLinkParams): string {
+  const search = new URLSearchParams();
+  if (params.page !== undefined) {
+    search.append("page", String(params.page));
+  }
+  if (params.size !== undefined) {
+    search.append("size", String(params.size));
+  }
+  return search.toString();
 }
 
 export function buildSearchPagesQuery(params: PageSearchParams): string {

@@ -1,7 +1,12 @@
 import type { PageId } from "./ids";
-import { buildSearchPagesQuery, type PageInboundLinkParams, type PageSearchParams } from "./page";
+import {
+  buildInboundLinksQuery,
+  buildSearchPagesQuery,
+  type PageInboundLinkParams,
+  type PageSearchParams,
+} from "./page";
 import { apiFetchServer, type ApiServerOptions } from "./server";
-import type { PageInboundLinkList, PageSearchResult } from "./types";
+import type { PageInboundLinkListResult, PageSearchResult } from "./types";
 
 export function searchPagesServer(
   params: PageSearchParams,
@@ -16,18 +21,11 @@ export function fetchInboundLinksServer(
   pageId: PageId,
   params: PageInboundLinkParams = {},
   options?: ApiServerOptions,
-): Promise<PageInboundLinkList> {
-  const search = new URLSearchParams();
-  if (params.page !== undefined) {
-    search.append("page", String(params.page));
-  }
-  if (params.size !== undefined) {
-    search.append("size", String(params.size));
-  }
-  const qs = search.toString();
+): Promise<PageInboundLinkListResult> {
+  const qs = buildInboundLinksQuery(params);
   const path =
     qs === ""
       ? `/v1/pages/${encodeURIComponent(pageId)}/inbound`
       : `/v1/pages/${encodeURIComponent(pageId)}/inbound?${qs}`;
-  return apiFetchServer<PageInboundLinkList>(path, options);
+  return apiFetchServer<PageInboundLinkListResult>(path, options);
 }

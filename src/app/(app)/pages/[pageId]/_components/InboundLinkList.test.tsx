@@ -4,13 +4,13 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { asPageId } from "@/lib/api/ids";
-import type { PageInboundLink, PageInboundLinkList } from "@/lib/api/types";
+import type { PageInboundLink, PageInboundLinkListResult } from "@/lib/api/types";
 import { server } from "@/mocks/server";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
 import { InboundLinkList } from "./InboundLinkList";
 
-function inboundBody(items: PageInboundLink[]): PageInboundLinkList {
+function inboundBody(items: PageInboundLink[]): PageInboundLinkListResult {
   return {
     size: 20,
     isEmpty: items.length === 0,
