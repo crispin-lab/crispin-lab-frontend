@@ -25,15 +25,16 @@ type Props = {
 export function InboundLinkList({ pageId, isAuthenticated, className }: Props) {
   const query = usePageInboundLinks(pageId, { size: INBOUND_LIST_SIZE });
   const spaceListQuery = useSpaceList({ size: SPACE_LIST_SIZE }, { enabled: isAuthenticated });
-  // spaceList 가 에러/disabled 면 빈 Map → row 는 spaceName 없이 그대로 노출 (graceful degradation).
-  // 인바운드 본 정보 (title / author / 날짜) 는 영향 없어 섹션 전체를 error 로 떨어뜨리지 않는다.
+  // spaceList 는 chip text 만 결정하는 보조 정보. loading / error / disabled 어디서든 빈 Map → row 는 spaceName 없이 그대로
+  // 노출되고, 도착 시 useMemo 가 갱신되며 chip 이 backfill 된다. 본 데이터 (title / author / 날짜) 와 분리해 게이트에 포함하지 않는다.
   const spaceNameById = useMemo(
     () => new Map(spaceListQuery.data?.items.map((space) => [space.spaceId, space.name]) ?? []),
     [spaceListQuery.data],
   );
 
-  // isLoading 은 actively-fetching 만 true — disabled (비로그인) 과 error 는 둘 다 success path 로 자연히 떨어진다.
-  if (query.isLoading || spaceListQuery.isLoading) {
+  // 인바운드는 server prefetch + HydrationBoundary 로 hydrate — hit 면 mount 시점에 query.isPending=false.
+  // 게이트를 isPending 만으로 둬 첫 paint 에 row 가 즉시 노출 (prefetch 의 SSR/UX 의도) 되도록.
+  if (query.isPending) {
     return <InboundLinkListSkeleton className={className} />;
   }
 
