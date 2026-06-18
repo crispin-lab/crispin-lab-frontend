@@ -4,6 +4,7 @@ import { type UseQueryResult } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSpaceList } from "@/hooks/useSpace";
 import { type ApiError } from "@/lib/api/client";
 import { toUserMessage } from "@/lib/api/errors";
@@ -84,8 +85,8 @@ function SearchResultListSkeleton({ className }: { className?: string }) {
     >
       {[0, 1, 2, 3, 4].map((i) => (
         <li key={i} className="flex flex-col gap-2 px-2 py-3">
-          <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
-          <div className="bg-muted h-3 w-1/3 animate-pulse rounded" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-3 w-1/3" />
         </li>
       ))}
     </ul>

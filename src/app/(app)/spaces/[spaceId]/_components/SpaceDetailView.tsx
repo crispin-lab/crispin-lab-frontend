@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSpaceDelete, useSpaceDetail } from "@/hooks/useSpace";
 import { usePageList } from "@/hooks/usePage";
 import { ApiError } from "@/lib/api/client";
@@ -136,7 +137,7 @@ function SpaceMetaSection({
           </DropdownMenu>
         )}
       </div>
-      {description !== "" && <p className="text-muted-foreground leading-7">{description}</p>}
+      {description !== "" && <p className="text-muted-foreground leading-8">{description}</p>}
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <VisibilityBadge visibility={space.visibility} />
         <time dateTime={space.updatedAt} aria-label={`마지막 수정 ${updatedAtLabel}`}>
@@ -223,9 +224,9 @@ function PageListSection({
 function SpaceMetaSkeleton() {
   return (
     <header aria-hidden="true" className="space-y-3">
-      <div className="bg-muted h-8 w-1/3 animate-pulse rounded" />
-      <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
-      <div className="bg-muted h-4 w-1/4 animate-pulse rounded" />
+      <Skeleton className="h-8 w-1/3" />
+      <Skeleton className="h-4 w-2/3" />
+      <Skeleton className="h-4 w-1/4" />
     </header>
   );
 }
@@ -235,8 +236,8 @@ function PageListSkeleton() {
     <ul aria-hidden="true" className="divide-border divide-y overflow-hidden rounded-lg border">
       {[0, 1, 2].map((i) => (
         <li key={i} className="space-y-2 px-4 py-3">
-          <div className="bg-muted h-4 w-1/2 animate-pulse rounded" />
-          <div className="bg-muted h-3 w-1/4 animate-pulse rounded" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3 w-1/4" />
         </li>
       ))}
     </ul>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useId } from "react";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toUserMessage } from "@/lib/api/errors";
 import { popularTagsOptions } from "@/lib/api/queries/tag";
 import type { PopularTag } from "@/lib/api/types";
@@ -89,7 +90,9 @@ function TagCloudSkeleton() {
   return (
     <ul role="status" aria-label="인기 태그 불러오는 중" className="flex flex-wrap gap-2">
       {[0, 1, 2, 3, 4, 5].map((i) => (
-        <li key={i} className="bg-muted h-7 w-20 animate-pulse rounded-full" />
+        <li key={i}>
+          <Skeleton className="h-7 w-20 rounded-full" />
+        </li>
       ))}
     </ul>
   );

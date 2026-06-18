@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { usePage, usePageDelete, usePageUpdate } from "@/hooks/usePage";
 import { ApiError } from "@/lib/api/client";
 import { type PageId, type SpaceId, asSpaceId } from "@/lib/api/ids";
@@ -183,12 +184,12 @@ function PageEditSkeleton() {
       aria-live="polite"
       className="mx-auto w-full max-w-3xl space-y-6 px-6 py-10"
     >
-      <div className="bg-muted h-5 w-24 animate-pulse rounded" />
-      <div className="bg-muted h-10 w-2/3 animate-pulse rounded" />
+      <Skeleton className="h-5 w-24" />
+      <Skeleton className="h-10 w-2/3" />
       <div className="space-y-3">
-        <div className="bg-muted h-4 w-full animate-pulse rounded" />
-        <div className="bg-muted h-4 w-5/6 animate-pulse rounded" />
-        <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-4 w-2/3" />
       </div>
     </div>
   );
