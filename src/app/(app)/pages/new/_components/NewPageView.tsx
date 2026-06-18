@@ -1,29 +1,19 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Editor } from "@/components/editor/Editor";
 import { TitleInput } from "@/components/page/TitleInput";
+import { VisibilitySelect } from "@/components/page/VisibilitySelect";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { usePageCreate } from "@/hooks/usePage";
 import { type SpaceId } from "@/lib/api/ids";
+import { spaceDetailOptions } from "@/lib/api/queries/space";
 import { emptyEditorContent, serializeEditorContent } from "@/lib/editor/content";
-import {
-  VISIBILITY_VALUES,
-  type Visibility,
-  isVisibility,
-  visibilityDescription,
-  visibilityLabel,
-} from "@/lib/page/visibility";
+import { type Visibility, isVisibility, visibilityDescription } from "@/lib/page/visibility";
 
 type Props = {
   spaceId: SpaceId;
@@ -34,14 +24,13 @@ const DEFAULT_VISIBILITY: Visibility = "DRAFT";
 export function NewPageView({ spaceId }: Props) {
   const router = useRouter();
   const { mutate, isPending } = usePageCreate();
+  // 미도착·에러는 cascade 미적용 — BE 가 결국 거부하므로 silently degrade.
+  const { data: space } = useQuery(spaceDetailOptions(spaceId));
+  const spaceVisibility = space != null && isVisibility(space.visibility) ? space.visibility : null;
 
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<Visibility>(DEFAULT_VISIBILITY);
   const [content, setContent] = useState(() => serializeEditorContent(emptyEditorContent()));
-
-  function handleVisibilityChange(value: string | null) {
-    if (value !== null && isVisibility(value)) setVisibility(value);
-  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,18 +62,13 @@ export function NewPageView({ spaceId }: Props) {
         >
           공개 범위
         </Label>
-        <Select value={visibility} onValueChange={handleVisibilityChange} disabled={isPending}>
-          <SelectTrigger id="new-page-visibility-trigger" aria-label="공개 범위">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {VISIBILITY_VALUES.map((value) => (
-              <SelectItem key={value} value={value}>
-                {visibilityLabel(value)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <VisibilitySelect
+          id="new-page-visibility-trigger"
+          value={visibility}
+          onValueChange={setVisibility}
+          spaceVisibility={spaceVisibility}
+          disabled={isPending}
+        />
         <p className="text-muted-foreground text-xs">{visibilityDescription(visibility)}</p>
       </div>
 

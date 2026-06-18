@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { MoreHorizontal } from "lucide-react";
 import { notFound, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -19,6 +20,7 @@ import { usePage, usePageDelete, usePageUpdate } from "@/hooks/usePage";
 import { ApiError } from "@/lib/api/client";
 import { type PageId, type SpaceId, asSpaceId } from "@/lib/api/ids";
 import { toUserMessage } from "@/lib/api/errors";
+import { spaceDetailOptions } from "@/lib/api/queries/space";
 import { type Visibility, isVisibility } from "@/lib/page/visibility";
 
 type Props = {
@@ -88,6 +90,9 @@ function PageEditForm({
   const contentRef = useRef(initialContent);
   const { mutate, isPending } = usePageUpdate();
   const { mutate: deleteMutate, isPending: isDeleting } = usePageDelete();
+  // 미도착·에러는 cascade 미적용 — BE 가 결국 거부하므로 silently degrade.
+  const { data: space } = useQuery(spaceDetailOptions(spaceId));
+  const spaceVisibility = space != null && isVisibility(space.visibility) ? space.visibility : null;
 
   function handleSave() {
     mutate({ pageId, body: { title, content: contentRef.current, visibility } });
@@ -108,7 +113,12 @@ function PageEditForm({
   return (
     <article className="mx-auto w-full max-w-3xl space-y-6 px-6 py-10">
       <header className="flex items-center justify-between gap-4">
-        <VisibilitySelect value={visibility} onValueChange={setVisibility} disabled={busy} />
+        <VisibilitySelect
+          value={visibility}
+          onValueChange={setVisibility}
+          spaceVisibility={spaceVisibility}
+          disabled={busy}
+        />
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-xs">
             v{currentVersion} · {formatPageTimestamp(updatedAt)}

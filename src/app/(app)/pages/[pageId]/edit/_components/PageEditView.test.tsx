@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { asPageId } from "@/lib/api/ids";
 import type { Page } from "@/lib/api/types";
 import { server } from "@/mocks/server";
+import { spaceBody } from "@/test/fixtures/space";
 import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
@@ -70,6 +71,8 @@ beforeEach(() => {
   redirectToLoginMock.mockReset();
   notFoundMock.mockClear();
   routerPush.mockReset();
+  // 모든 테스트의 디폴트 — PUBLIC space (cascade 미적용, 기존 회귀 보호). cascade 케이스는 각자 override.
+  server.use(http.get("*/api/v1/spaces/:spaceId", () => HttpResponse.json(spaceBody())));
 });
 
 describe("PageEditView", () => {
@@ -199,6 +202,84 @@ describe("PageEditView", () => {
     await waitFor(() => expect(captured.value).not.toBeNull());
     expect(captured.value?.visibility).toBe("MEMBER");
     expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("PUBLIC space 면 모든 visibility 옵션이 enabled 다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ visibility: "DRAFT" }))),
+      http.get("*/api/v1/spaces/:spaceId", () =>
+        HttpResponse.json(spaceBody({ visibility: "PUBLIC" })),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByLabelText("공개 범위"));
+
+    for (const name of [/^초안$/, /^비공개$/, /^멤버 공개$/, /^공개$/]) {
+      const option = await screen.findByRole("option", { name });
+      expect(option).not.toHaveAttribute("aria-disabled", "true");
+    }
+  });
+
+  it("INTERNAL space 면 MEMBER / PUBLIC 옵션이 disabled + 사유가 SR 에 노출된다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ visibility: "DRAFT" }))),
+      http.get("*/api/v1/spaces/:spaceId", () =>
+        HttpResponse.json(spaceBody({ visibility: "INTERNAL" })),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByLabelText("공개 범위"));
+
+    expect(await screen.findByRole("option", { name: /^멤버 공개/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("option", { name: /^공개/ })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("option", { name: /^초안$/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("option", { name: /^비공개/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(
+      screen.getAllByText("이 스페이스는 비공개 입니다. 페이지를 더 넓게 공개할 수 없습니다."),
+    ).toHaveLength(2);
+  });
+
+  it("MEMBER space 면 PUBLIC 만 disabled, 나머지는 enabled", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ visibility: "DRAFT" }))),
+      http.get("*/api/v1/spaces/:spaceId", () =>
+        HttpResponse.json(spaceBody({ visibility: "MEMBER" })),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByLabelText("공개 범위"));
+
+    expect(await screen.findByRole("option", { name: /^공개/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    for (const name of [/^초안$/, /^비공개$/, /^멤버 공개/]) {
+      expect(screen.getByRole("option", { name })).not.toHaveAttribute("aria-disabled", "true");
+    }
   });
 
   it("저장 시 권한 거부 (403) 는 글로벌 mutation 에러 toast 로 흡수된다", async () => {
