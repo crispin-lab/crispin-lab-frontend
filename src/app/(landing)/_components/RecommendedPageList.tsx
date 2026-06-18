@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useId } from "react";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toUserMessage } from "@/lib/api/errors";
 import { pageListOptions } from "@/lib/api/queries/page";
 import type { PageSearchResult, PageSummary } from "@/lib/api/types";
@@ -101,8 +102,8 @@ function RecommendedListSkeleton() {
     >
       {[0, 1, 2, 3, 4].map((i) => (
         <li key={i} className="flex items-center justify-between gap-4 px-2 py-3">
-          <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
-          <div className="bg-muted h-3 w-16 animate-pulse rounded" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-3 w-16" />
         </li>
       ))}
     </ul>

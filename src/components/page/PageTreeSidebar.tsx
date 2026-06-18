@@ -5,6 +5,7 @@ import { useMemo } from "react";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { usePageList } from "@/hooks/usePage";
 import { toUserMessage } from "@/lib/api/errors";
 import type { PageId, SpaceId } from "@/lib/api/ids";
@@ -103,7 +104,9 @@ function PageTreeSkeleton() {
   return (
     <ul aria-hidden="true" className="space-y-1.5">
       {widths.map((width, i) => (
-        <li key={i} className="bg-muted h-6 animate-pulse rounded" style={{ width }} />
+        <li key={i}>
+          <Skeleton className="h-6" style={{ width }} />
+        </li>
       ))}
     </ul>
   );

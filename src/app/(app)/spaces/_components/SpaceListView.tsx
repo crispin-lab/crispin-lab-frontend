@@ -7,6 +7,7 @@ import { PageHeading } from "@/components/PageHeading";
 import { SpaceCard } from "@/components/space/SpaceCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSpaceList } from "@/hooks/useSpace";
 import { toUserMessage } from "@/lib/api/errors";
 import { spaceDisplayName } from "@/lib/space/displayName";
@@ -87,13 +88,13 @@ function SpaceListSkeleton() {
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
       {[0, 1, 2].map((i) => (
         <li key={i}>
-          <Card className="h-full animate-pulse">
+          <Card className="h-full">
             <CardHeader>
-              <div className="bg-muted h-4 w-1/2 rounded" />
+              <Skeleton className="h-4 w-1/2" />
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="bg-muted h-3 w-3/4 rounded" />
-              <div className="bg-muted h-3 w-1/3 rounded" />
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-3 w-1/3" />
             </CardContent>
           </Card>
         </li>
