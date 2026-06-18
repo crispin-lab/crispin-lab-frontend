@@ -34,7 +34,10 @@ export function parseSearchParams(raw: SearchParamsLike): SearchUrlParams {
   const space = raw.get("space");
   if (space !== null && space !== "") result.spaceId = asSpaceId(space);
 
-  const tags = raw.getAll("tag").filter((value) => value !== "");
+  const tags = raw
+    .getAll("tag")
+    .map((value) => value.trim())
+    .filter((value) => value !== "");
   if (tags.length > 0) result.tag = tags;
 
   const sort = raw.get("sort");
@@ -73,7 +76,10 @@ export function buildSearchUrl(current: SearchUrlParams, patch: Partial<SearchUr
   if (next.query !== undefined) search.set("query", next.query);
   if (next.spaceId !== undefined) search.set("space", next.spaceId);
   if (next.tag !== undefined) {
-    for (const value of next.tag) search.append("tag", value);
+    for (const value of next.tag) {
+      const trimmed = value.trim();
+      if (trimmed !== "") search.append("tag", trimmed);
+    }
   }
   if (next.sort !== undefined) search.set("sort", next.sort);
   if (next.page !== undefined) search.set("page", String(next.page));

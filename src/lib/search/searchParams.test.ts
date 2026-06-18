@@ -101,6 +101,17 @@ describe("parseSearchParams", () => {
   it("모든 tag 값이 빈 문자열이면 tag 키 자체가 누락된다", () => {
     expect(parseSearchParams(searchParamsFrom({ tag: "" }))).toEqual({});
   });
+
+  it("공백만 있는 tag 값은 trim 후 빈 값으로 떨궈진다", () => {
+    expect(
+      parseSearchParams(
+        searchParamsFromList([
+          ["tag", "   "],
+          ["tag", "  wiki  "],
+        ]),
+      ),
+    ).toEqual({ tag: ["wiki"] });
+  });
 });
 
 describe("buildSearchUrl", () => {
@@ -152,5 +163,11 @@ describe("buildSearchUrl", () => {
 
   it("tag 변경 시 page 는 리셋된다", () => {
     expect(buildSearchUrl({ tag: ["a"], page: 3 }, { tag: ["b"] })).toBe("/search?tag=b");
+  });
+
+  it("tag 의 공백은 직렬화 시 trim 되고 빈 값은 emit 되지 않는다", () => {
+    expect(buildSearchUrl({}, { tag: ["  wiki  ", "   ", "frontend"] })).toBe(
+      "/search?tag=wiki&tag=frontend",
+    );
   });
 });
