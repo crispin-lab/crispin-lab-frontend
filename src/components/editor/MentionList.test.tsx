@@ -119,7 +119,7 @@ describe("MentionList", () => {
       <MentionList
         items={items}
         command={vi.fn()}
-        sourceVisibility={"INTERNAL" satisfies Visibility}
+        sourceVisibility={"PUBLIC" satisfies Visibility}
       />,
     );
 
@@ -128,7 +128,7 @@ describe("MentionList", () => {
     expect(warningId).not.toBeNull();
     const warningEl = document.getElementById(warningId as string);
     expect(warningEl?.textContent).toBe(
-      "이 페이지는 초안 페이지입니다. 비공개 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.",
+      "이 페이지는 초안 페이지입니다. 공개 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.",
     );
   });
 
@@ -170,6 +170,103 @@ describe("MentionList", () => {
     render(<MentionList items={items} command={vi.fn()} />);
 
     expect(screen.getByLabelText("공개 범위: 초안")).toBeInTheDocument();
+    expect(warningSpansOf()).toHaveLength(0);
+  });
+
+  it("PUBLIC source + MEMBER target 은 멤버 비공개 누설 경고를 띄운다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_mem", title: "멤버 페이지", visibility: "MEMBER" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"PUBLIC" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(1);
+    const option = screen.getByRole("option");
+    const warningId = option.getAttribute("aria-describedby");
+    const warningEl = warningId ? document.getElementById(warningId) : null;
+    expect(warningEl?.textContent).toBe(
+      "이 페이지는 멤버 공개 페이지입니다. 공개 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.",
+    );
+  });
+
+  it("MEMBER source 는 INTERNAL / DRAFT target 모두에 경고를 띄운다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_int", title: "내부", visibility: "INTERNAL" }),
+      summary({ pageId: "p_draft", title: "초안", visibility: "DRAFT" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"MEMBER" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(2);
+  });
+
+  it("MEMBER source + PUBLIC target (위계 상승) 에는 경고가 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_pub", title: "공개", visibility: "PUBLIC" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"MEMBER" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(0);
+  });
+
+  it("MEMBER source + MEMBER target (동일) 에는 경고가 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_mem", title: "멤버 페이지", visibility: "MEMBER" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"MEMBER" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(0);
+  });
+
+  it("INTERNAL source + DRAFT target (audience 동일) 에는 경고가 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_draft", title: "초안", visibility: "DRAFT" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"INTERNAL" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(0);
+  });
+
+  it("DRAFT source + INTERNAL target (audience 동일) 에는 경고가 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_int", title: "내부", visibility: "INTERNAL" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"DRAFT" satisfies Visibility}
+      />,
+    );
+
     expect(warningSpansOf()).toHaveLength(0);
   });
 });
