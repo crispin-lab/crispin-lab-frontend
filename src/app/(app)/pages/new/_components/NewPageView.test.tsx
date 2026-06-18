@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { asSpaceId } from "@/lib/api/ids";
 import { server } from "@/mocks/server";
+import { spaceBody } from "@/test/fixtures/space";
 import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
@@ -33,6 +34,8 @@ beforeEach(() => {
   toastError.mockReset();
   routerPush.mockReset();
   redirectToLoginMock.mockReset();
+  // 모든 테스트의 디폴트 — PUBLIC space (cascade 미적용, 기존 회귀 보호). cascade 케이스는 각자 override.
+  server.use(http.get("*/api/v1/spaces/:spaceId", () => HttpResponse.json(spaceBody())));
 });
 
 describe("NewPageView", () => {
@@ -115,6 +118,34 @@ describe("NewPageView", () => {
       visibility: "MEMBER",
       title: "멤버 글",
     });
+  });
+
+  it("INTERNAL space 면 MEMBER / PUBLIC 옵션이 disabled 다", async () => {
+    server.use(
+      http.get("*/api/v1/spaces/:spaceId", () =>
+        HttpResponse.json(spaceBody({ visibility: "INTERNAL" })),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
+
+    await user.click(screen.getByLabelText("공개 범위"));
+
+    expect(await screen.findByRole("option", { name: /^멤버 공개/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("option", { name: /^공개/ })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("option", { name: /^초안$/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("option", { name: /^비공개/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("INVALID_SESSION (401) 은 글로벌 가드가 처리하므로 toast 도 navigate 도 하지 않는다", async () => {

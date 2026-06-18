@@ -47,3 +47,15 @@ export function isVisibilityNarrowerThan(target: Visibility, source: Visibility)
 export function buildNarrowerVisibilityWarning(target: Visibility, source: Visibility): string {
   return `이 페이지는 ${visibilityLabel(target)} 페이지입니다. ${visibilityLabel(source)} 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.`;
 }
+
+// space ↔ page cascade — page 가 space 보다 넓으면 BE 가 거부. 작성 시점 dropdown 에서 미리 차단.
+export function isVisibilityBlockedByCascade(
+  option: Visibility,
+  spaceVisibility: Visibility,
+): boolean {
+  return isVisibilityNarrowerThan(spaceVisibility, option);
+}
+
+export function buildCascadeBlockedReason(spaceVisibility: Visibility): string {
+  return `이 스페이스는 ${visibilityLabel(spaceVisibility)} 입니다. 페이지를 더 넓게 공개할 수 없습니다.`;
+}
