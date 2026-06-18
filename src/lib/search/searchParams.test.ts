@@ -8,6 +8,12 @@ function searchParamsFrom(input: Record<string, string>): URLSearchParams {
   return new URLSearchParams(input);
 }
 
+function searchParamsFromList(pairs: Array<[string, string]>): URLSearchParams {
+  const search = new URLSearchParams();
+  for (const [key, value] of pairs) search.append(key, value);
+  return search;
+}
+
 describe("parseSearchParams", () => {
   it("모든 키 누락 시 빈 객체를 반환한다", () => {
     expect(parseSearchParams(searchParamsFrom({}))).toEqual({});
@@ -66,10 +72,45 @@ describe("parseSearchParams", () => {
     expect(parseSearchParams(searchParamsFrom({ size: "20" }))).toEqual({ size: 20 });
   });
 
-  it("tag 는 본 PR 스코프 외 — URL 에 들어와도 무시한다", () => {
-    expect(parseSearchParams(searchParamsFrom({ query: "위키", tag: "frontend" }))).toEqual({
-      query: "위키",
-    });
+  it("tag 단일 값이 array 로 lift 된다", () => {
+    expect(parseSearchParams(searchParamsFrom({ tag: "frontend" }))).toEqual({ tag: ["frontend"] });
+  });
+
+  it("tag 가 반복되면 모든 값이 array 로 보존된다", () => {
+    expect(
+      parseSearchParams(
+        searchParamsFromList([
+          ["tag", "frontend"],
+          ["tag", "wiki"],
+        ]),
+      ),
+    ).toEqual({ tag: ["frontend", "wiki"] });
+  });
+
+  it("tag 값이 빈 문자열이면 결과 array 에서 제외된다", () => {
+    expect(
+      parseSearchParams(
+        searchParamsFromList([
+          ["tag", ""],
+          ["tag", "wiki"],
+        ]),
+      ),
+    ).toEqual({ tag: ["wiki"] });
+  });
+
+  it("모든 tag 값이 빈 문자열이면 tag 키 자체가 누락된다", () => {
+    expect(parseSearchParams(searchParamsFrom({ tag: "" }))).toEqual({});
+  });
+
+  it("공백만 있는 tag 값은 trim 후 빈 값으로 떨궈진다", () => {
+    expect(
+      parseSearchParams(
+        searchParamsFromList([
+          ["tag", "   "],
+          ["tag", "  wiki  "],
+        ]),
+      ),
+    ).toEqual({ tag: ["wiki"] });
   });
 });
 
@@ -110,5 +151,23 @@ describe("buildSearchUrl", () => {
 
   it("한글 query 는 URL 인코딩된다", () => {
     expect(buildSearchUrl({}, { query: "위키" })).toBe("/search?query=%EC%9C%84%ED%82%A4");
+  });
+
+  it("tag 단일 값이 URL 에 emit 된다", () => {
+    expect(buildSearchUrl({}, { tag: ["frontend"] })).toBe("/search?tag=frontend");
+  });
+
+  it("tag 여러 값이 반복 키로 emit 된다", () => {
+    expect(buildSearchUrl({}, { tag: ["frontend", "wiki"] })).toBe("/search?tag=frontend&tag=wiki");
+  });
+
+  it("tag 변경 시 page 는 리셋된다", () => {
+    expect(buildSearchUrl({ tag: ["a"], page: 3 }, { tag: ["b"] })).toBe("/search?tag=b");
+  });
+
+  it("tag 의 공백은 직렬화 시 trim 되고 빈 값은 emit 되지 않는다", () => {
+    expect(buildSearchUrl({}, { tag: ["  wiki  ", "   ", "frontend"] })).toBe(
+      "/search?tag=wiki&tag=frontend",
+    );
   });
 });

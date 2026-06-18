@@ -9,8 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useSpaceList } from "@/hooks/useSpace";
 import { toUserMessage } from "@/lib/api/errors";
+import { spaceDisplayName } from "@/lib/space/displayName";
 
-export function SpaceListView() {
+type Props = {
+  isAuthenticated: boolean;
+};
+
+export function SpaceListView({ isAuthenticated }: Props) {
   // Router Cache 가 instance 를 보존해도 fetch 가 stuck 되지 않게 mount 시 강제 refetch.
   const { data, isPending, isError, error, refetch, isFetching } = useSpaceList(
     { page: 0, size: 20 },
@@ -23,8 +28,8 @@ export function SpaceListView() {
   return (
     <section className="space-y-6">
       <header className="flex items-center justify-between">
-        <PageHeading>내가 속한 스페이스</PageHeading>
-        {hasItems && (
+        <PageHeading>{isAuthenticated ? "내가 속한 스페이스" : "공개 스페이스"}</PageHeading>
+        {hasItems && isAuthenticated && (
           <Button
             nativeButton={false}
             render={<Link href="/spaces/new">새 스페이스 만들기</Link>}
@@ -45,11 +50,15 @@ export function SpaceListView() {
       {isEmpty && (
         <Card>
           <CardContent className="flex flex-col items-start gap-3 py-10">
-            <p className="text-sm">아직 스페이스가 없습니다.</p>
-            <Button
-              nativeButton={false}
-              render={<Link href="/spaces/new">첫 스페이스 만들기</Link>}
-            />
+            <p className="text-sm">
+              {isAuthenticated ? "아직 스페이스가 없습니다." : "아직 공개된 스페이스가 없습니다."}
+            </p>
+            {isAuthenticated && (
+              <Button
+                nativeButton={false}
+                render={<Link href="/spaces/new">첫 스페이스 만들기</Link>}
+              />
+            )}
           </CardContent>
         </Card>
       )}
@@ -61,7 +70,7 @@ export function SpaceListView() {
               <Link
                 href={`/spaces/${encodeURIComponent(space.spaceId)}`}
                 className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                aria-label={`${space.name} 스페이스로 이동`}
+                aria-label={`${spaceDisplayName(space).text} 스페이스로 이동`}
               >
                 <SpaceCard space={space} />
               </Link>

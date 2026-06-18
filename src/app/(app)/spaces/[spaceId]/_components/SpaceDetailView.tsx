@@ -25,12 +25,15 @@ import { toUserMessage } from "@/lib/api/errors";
 import type { SpaceId } from "@/lib/api/ids";
 import type { PageSearchResult, Space } from "@/lib/api/types";
 import { formatUpdatedAtKR } from "@/lib/format/date";
+import { spaceDisplayName } from "@/lib/space/displayName";
+import { cn } from "@/lib/utils";
 
 type Props = {
   spaceId: SpaceId;
+  isAuthenticated: boolean;
 };
 
-export function SpaceDetailView({ spaceId }: Props) {
+export function SpaceDetailView({ spaceId, isAuthenticated }: Props) {
   const router = useRouter();
   const spaceQuery = useSpaceDetail(spaceId, { refetchOnMount: "always" });
   const pageListQuery = usePageList({ spaceId }, { refetchOnMount: "always" });
@@ -62,8 +65,13 @@ export function SpaceDetailView({ spaceId }: Props) {
         query={spaceQuery}
         isDeleting={isDeleting}
         onDeleteRequest={() => setDeleteOpen(true)}
+        isAuthenticated={isAuthenticated}
       />
-      <PageListSection query={pageListQuery} newPageHref={newPageHref} />
+      <PageListSection
+        query={pageListQuery}
+        newPageHref={newPageHref}
+        isAuthenticated={isAuthenticated}
+      />
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
@@ -80,10 +88,12 @@ function SpaceMetaSection({
   query,
   isDeleting,
   onDeleteRequest,
+  isAuthenticated,
 }: {
   query: UseQueryResult<Space, ApiError>;
   isDeleting: boolean;
   onDeleteRequest: () => void;
+  isAuthenticated: boolean;
 }) {
   if (query.isPending) {
     return <SpaceMetaSkeleton />;
@@ -101,25 +111,30 @@ function SpaceMetaSection({
   const space = query.data;
   const description = space.description.trim();
   const updatedAtLabel = formatUpdatedAtKR(space.updatedAt);
+  const name = spaceDisplayName(space);
 
   return (
     <header aria-labelledby="space-meta-heading" className="space-y-3">
       <div className="flex items-start justify-between gap-4">
-        <PageHeading id="space-meta-heading">{space.name}</PageHeading>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="icon-sm" aria-label="더보기" disabled={isDeleting}>
-                <MoreHorizontal />
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem variant="destructive" onClick={onDeleteRequest}>
-              스페이스 삭제
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <PageHeading id="space-meta-heading" className={cn(name.isFallback && "italic")}>
+          {name.text}
+        </PageHeading>
+        {isAuthenticated && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="ghost" size="icon-sm" aria-label="더보기" disabled={isDeleting}>
+                  <MoreHorizontal />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem variant="destructive" onClick={onDeleteRequest}>
+                스페이스 삭제
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       {description !== "" && <p className="text-muted-foreground leading-7">{description}</p>}
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -135,9 +150,11 @@ function SpaceMetaSection({
 function PageListSection({
   query,
   newPageHref,
+  isAuthenticated,
 }: {
   query: UseQueryResult<PageSearchResult, ApiError>;
   newPageHref: string;
+  isAuthenticated: boolean;
 }) {
   const hasItems = query.data !== undefined && query.data.items.length > 0;
   const isEmpty = query.data !== undefined && query.data.items.length === 0;
@@ -148,7 +165,7 @@ function PageListSection({
         <h2 id="page-list-heading" className="text-2xl font-semibold">
           페이지
         </h2>
-        {hasItems && (
+        {hasItems && isAuthenticated && (
           <Button nativeButton={false} render={<Link href={newPageHref}>새 페이지 만들기</Link>} />
         )}
       </header>
@@ -166,11 +183,15 @@ function PageListSection({
       {isEmpty && (
         <Card>
           <CardContent className="flex flex-col items-start gap-3 py-10">
-            <p className="text-sm">아직 페이지가 없습니다.</p>
-            <Button
-              nativeButton={false}
-              render={<Link href={newPageHref}>첫 페이지 만들기</Link>}
-            />
+            <p className="text-sm">
+              {isAuthenticated ? "아직 페이지가 없습니다." : "아직 공개된 페이지가 없습니다."}
+            </p>
+            {isAuthenticated && (
+              <Button
+                nativeButton={false}
+                render={<Link href={newPageHref}>첫 페이지 만들기</Link>}
+              />
+            )}
           </CardContent>
         </Card>
       )}
@@ -182,7 +203,7 @@ function PageListSection({
             return (
               <li key={page.pageId}>
                 <Link
-                  href={`/pages/${page.pageId}`}
+                  href={`/pages/${encodeURIComponent(page.pageId)}`}
                   className="hover:bg-muted/60 hover:shadow-accent-glow focus-visible:bg-muted/60 block px-4 py-3 transition-shadow duration-200 ease-out focus-visible:outline-none"
                 >
                   <p className="font-medium">{page.title}</p>

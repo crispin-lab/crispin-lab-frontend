@@ -74,7 +74,7 @@ describe("SpaceDetailView", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     expect(await screen.findByRole("heading", { name: "공개 위키" })).toBeInTheDocument();
     expect(screen.getByText("공개 위키 설명")).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("SpaceDetailView", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     expect(await screen.findByText("아직 페이지가 없습니다.")).toBeInTheDocument();
     // base-ui Button + render={<Link/>} 은 <a role="button"> 로 렌더 — accessible role 은 button.
@@ -115,7 +115,7 @@ describe("SpaceDetailView", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     expect(await screen.findByRole("button", { name: "새 페이지 만들기" })).toHaveAttribute(
       "href",
@@ -135,7 +135,7 @@ describe("SpaceDetailView", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     await waitFor(() => expect(notFoundMock).toHaveBeenCalled());
   });
@@ -149,7 +149,7 @@ describe("SpaceDetailView", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     await waitFor(() => expect(notFoundMock).toHaveBeenCalled());
   });
@@ -172,7 +172,7 @@ describe("SpaceDetailView", () => {
 
     const { Wrapper } = createQueryWrapper();
     const user = userEvent.setup();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     expect(await screen.findByText("잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
     expect(notFoundMock).not.toHaveBeenCalled();
@@ -196,7 +196,7 @@ describe("SpaceDetailView", () => {
     );
 
     const { Wrapper } = createQueryWrapper();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     expect(await screen.findByRole("heading", { name: "공개 위키" })).toBeInTheDocument();
     expect(screen.getByText("페이지 목록을 불러오지 못했습니다.")).toBeInTheDocument();
@@ -215,7 +215,7 @@ describe("SpaceDetailView", () => {
 
     const { Wrapper } = createQueryWrapper();
     const user = userEvent.setup();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     await screen.findByRole("heading", { name: "공개 위키" });
     await user.click(screen.getByRole("button", { name: "더보기" }));
@@ -240,7 +240,7 @@ describe("SpaceDetailView", () => {
 
     const { Wrapper } = createQueryWrapper();
     const user = userEvent.setup();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     await screen.findByRole("heading", { name: "공개 위키" });
     await user.click(screen.getByRole("button", { name: "더보기" }));
@@ -262,7 +262,7 @@ describe("SpaceDetailView", () => {
 
     const { Wrapper } = createQueryWrapper();
     const user = userEvent.setup();
-    render(<SpaceDetailView spaceId={SPACE_ID} />, { wrapper: Wrapper });
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
 
     await screen.findByRole("heading", { name: "공개 위키" });
     await user.click(screen.getByRole("button", { name: "더보기" }));
@@ -271,5 +271,36 @@ describe("SpaceDetailView", () => {
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("삭제 권한이 없습니다."));
     expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("비로그인이면 ⋯ 더보기 / 새 페이지 만들기 CTA 가 숨는다", async () => {
+    server.use(
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+      http.get("*/api/v1/pages", () =>
+        HttpResponse.json(
+          pageListBody([{ pageId: "p_1", title: "p1", updatedAt: "2026-05-01T00:00:00Z" }]),
+        ),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={false} />, { wrapper: Wrapper });
+
+    await screen.findByRole("heading", { name: "공개 위키" });
+    expect(screen.queryByRole("button", { name: "더보기" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "새 페이지 만들기" })).not.toBeInTheDocument();
+  });
+
+  it("비로그인 + 빈 페이지 목록이면 '첫 페이지 만들기' CTA 가 안 보이고 카피가 바뀐다", async () => {
+    server.use(
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+      http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={false} />, { wrapper: Wrapper });
+
+    expect(await screen.findByText("아직 공개된 페이지가 없습니다.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "첫 페이지 만들기" })).not.toBeInTheDocument();
   });
 });

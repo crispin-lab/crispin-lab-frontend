@@ -2,10 +2,11 @@ import { asSpaceId, type SpaceId } from "@/lib/api/ids";
 
 export type SearchSort = "RELEVANCE" | "CREATED_AT" | "UPDATED_AT";
 
-// PageSort 의 "TREE" 는 검색 맥락 외, PageSearchParams 의 tag 는 본 PR 스코프 외 — 의도적 제외.
+// PageSort 의 "TREE" 는 검색 맥락 외 — 의도적 제외.
 export type SearchUrlParams = {
   query?: string;
   spaceId?: SpaceId;
+  tag?: string[];
   sort?: SearchSort;
   page?: number;
   size?: number;
@@ -19,7 +20,7 @@ export function isSearchSort(value: string): value is SearchSort {
   return value === "RELEVANCE" || value === "UPDATED_AT" || value === "CREATED_AT";
 }
 
-type SearchParamsLike = Pick<URLSearchParams, "get">;
+type SearchParamsLike = Pick<URLSearchParams, "get" | "getAll">;
 
 const MIN_SIZE = 1;
 const MAX_SIZE = 100;
@@ -32,6 +33,12 @@ export function parseSearchParams(raw: SearchParamsLike): SearchUrlParams {
 
   const space = raw.get("space");
   if (space !== null && space !== "") result.spaceId = asSpaceId(space);
+
+  const tags = raw
+    .getAll("tag")
+    .map((value) => value.trim())
+    .filter((value) => value !== "");
+  if (tags.length > 0) result.tag = tags;
 
   const sort = raw.get("sort");
   if (sort !== null && isSearchSort(sort)) result.sort = sort;
@@ -52,7 +59,13 @@ export function parseSearchParams(raw: SearchParamsLike): SearchUrlParams {
 }
 
 // 이 키들이 바뀌면 page 는 리셋 — 결과량 변동으로 직전 page 가 OOB 되는 회귀 방지.
-const PAGE_RESET_KEYS: ReadonlyArray<keyof SearchUrlParams> = ["query", "spaceId", "sort", "size"];
+const PAGE_RESET_KEYS: ReadonlyArray<keyof SearchUrlParams> = [
+  "query",
+  "spaceId",
+  "tag",
+  "sort",
+  "size",
+];
 
 export function buildSearchUrl(current: SearchUrlParams, patch: Partial<SearchUrlParams>): string {
   const next: SearchUrlParams = { ...current, ...patch };
@@ -62,6 +75,12 @@ export function buildSearchUrl(current: SearchUrlParams, patch: Partial<SearchUr
   const search = new URLSearchParams();
   if (next.query !== undefined) search.set("query", next.query);
   if (next.spaceId !== undefined) search.set("space", next.spaceId);
+  if (next.tag !== undefined) {
+    for (const value of next.tag) {
+      const trimmed = value.trim();
+      if (trimmed !== "") search.append("tag", trimmed);
+    }
+  }
   if (next.sort !== undefined) search.set("sort", next.sort);
   if (next.page !== undefined) search.set("page", String(next.page));
   if (next.size !== undefined) search.set("size", String(next.size));
