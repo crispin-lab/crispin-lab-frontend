@@ -91,6 +91,32 @@ describe("NewPageView", () => {
     expect(routerPush).not.toHaveBeenCalled();
   });
 
+  it("MEMBER 옵션을 선택해 POST 하면 visibility=MEMBER 가 전송된다", async () => {
+    const captured: { value: Record<string, unknown> | null } = { value: null };
+    server.use(
+      http.post("*/api/v1/pages", async ({ request }) => {
+        captured.value = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ pageId: "p_new" }, { status: 201 });
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
+
+    await user.type(screen.getByPlaceholderText("제목을 입력해 주세요"), "멤버 글");
+    await user.click(screen.getByLabelText("공개 범위"));
+    await user.click(await screen.findByRole("option", { name: "멤버 공개" }));
+    await user.click(screen.getByRole("button", { name: "만들기" }));
+
+    await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/pages/p_new"));
+    expect(captured.value).toMatchObject({
+      spaceId: "s_1",
+      visibility: "MEMBER",
+      title: "멤버 글",
+    });
+  });
+
   it("INVALID_SESSION (401) 은 글로벌 가드가 처리하므로 toast 도 navigate 도 하지 않는다", async () => {
     server.use(
       http.post("*/api/v1/pages", () =>

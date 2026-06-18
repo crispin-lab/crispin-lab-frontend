@@ -171,6 +171,35 @@ describe("PageEditView", () => {
     expect(toastError).not.toHaveBeenCalled();
   });
 
+  it("공개 범위를 MEMBER 로 바꿔 저장하면 PUT body 의 visibility 가 MEMBER 가 된다", async () => {
+    const captured: { value: { visibility: string } | null } = { value: null };
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ visibility: "PUBLIC" }))),
+      http.put("*/api/v1/pages/p_1", async ({ request }) => {
+        const body = (await request.json()) as { visibility: string };
+        captured.value = body;
+        return HttpResponse.json({
+          title: "원본 제목",
+          pageId: "p_1",
+          version: 4,
+          updatedAt: "2026-05-27T00:00:00Z",
+        });
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByLabelText("공개 범위"));
+    await user.click(await screen.findByRole("option", { name: /멤버 공개/ }));
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(captured.value).not.toBeNull());
+    expect(captured.value?.visibility).toBe("MEMBER");
+  });
+
   it("저장 시 권한 거부 (403) 는 글로벌 mutation 에러 toast 로 흡수된다", async () => {
     server.use(
       http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
