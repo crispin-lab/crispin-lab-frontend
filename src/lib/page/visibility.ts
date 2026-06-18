@@ -30,11 +30,12 @@ export function isVisibility(value: string): value is Visibility {
   return (VISIBILITY_VALUES as readonly string[]).includes(value);
 }
 
+// rank = audience 집합 크기. DRAFT/INTERNAL 은 audience 동일 (author 한 명) → 같은 rank.
 const VISIBILITY_RANK: Record<Visibility, number> = {
   DRAFT: 0,
-  INTERNAL: 1,
-  MEMBER: 2,
-  PUBLIC: 3,
+  INTERNAL: 0,
+  MEMBER: 1,
+  PUBLIC: 2,
 };
 
 export function isVisibilityNarrowerThan(target: Visibility, source: Visibility): boolean {

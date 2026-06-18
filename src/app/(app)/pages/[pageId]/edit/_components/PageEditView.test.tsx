@@ -198,6 +198,7 @@ describe("PageEditView", () => {
 
     await waitFor(() => expect(captured.value).not.toBeNull());
     expect(captured.value?.visibility).toBe("MEMBER");
+    expect(toastError).not.toHaveBeenCalled();
   });
 
   it("저장 시 권한 거부 (403) 는 글로벌 mutation 에러 toast 로 흡수된다", async () => {

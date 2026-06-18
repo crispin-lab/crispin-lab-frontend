@@ -119,7 +119,7 @@ describe("MentionList", () => {
       <MentionList
         items={items}
         command={vi.fn()}
-        sourceVisibility={"INTERNAL" satisfies Visibility}
+        sourceVisibility={"PUBLIC" satisfies Visibility}
       />,
     );
 
@@ -128,7 +128,7 @@ describe("MentionList", () => {
     expect(warningId).not.toBeNull();
     const warningEl = document.getElementById(warningId as string);
     expect(warningEl?.textContent).toBe(
-      "이 페이지는 초안 페이지입니다. 비공개 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.",
+      "이 페이지는 초안 페이지입니다. 공개 페이지를 보는 일부 독자에게는 '비공개 페이지' 로 표시됩니다.",
     );
   });
 
@@ -234,6 +234,36 @@ describe("MentionList", () => {
         items={items}
         command={vi.fn()}
         sourceVisibility={"MEMBER" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(0);
+  });
+
+  it("INTERNAL source + DRAFT target (audience 동일) 에는 경고가 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_draft", title: "초안", visibility: "DRAFT" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"INTERNAL" satisfies Visibility}
+      />,
+    );
+
+    expect(warningSpansOf()).toHaveLength(0);
+  });
+
+  it("DRAFT source + INTERNAL target (audience 동일) 에는 경고가 없다", () => {
+    const items: PageSummary[] = [
+      summary({ pageId: "p_int", title: "내부", visibility: "INTERNAL" }),
+    ];
+    render(
+      <MentionList
+        items={items}
+        command={vi.fn()}
+        sourceVisibility={"DRAFT" satisfies Visibility}
       />,
     );
 
