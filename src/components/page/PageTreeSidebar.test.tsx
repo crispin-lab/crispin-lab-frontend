@@ -116,6 +116,84 @@ describe("PageTreeSidebar", () => {
     expect(screen.getByRole("link", { name: "루트" })).toBeInTheDocument();
   });
 
+  it("검색어를 입력하면 매칭 페이지와 그 조상만 남고, 매칭 조상이 자동으로 펼쳐진다", async () => {
+    server.use(
+      http.get("*/api/v1/pages", () =>
+        HttpResponse.json(
+          listResponse([
+            summary({ pageId: "p_root", title: "루트" }),
+            summary({ pageId: "p_auth", title: "Auth", parentPageId: "p_root" }),
+            summary({ pageId: "p_login", title: "Login flow", parentPageId: "p_auth" }),
+            summary({ pageId: "p_other", title: "다른 페이지", parentPageId: "p_root" }),
+          ]),
+        ),
+      ),
+    );
+    renderSidebar("p_other");
+
+    expect(await screen.findByRole("link", { name: "다른 페이지" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Login flow" })).not.toBeInTheDocument();
+
+    const input = screen.getByRole("searchbox", { name: "페이지 트리 검색" });
+    await userEvent.setup().type(input, "auth");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("link", { name: "다른 페이지" })).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("link", { name: "루트" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Auth" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Login flow" })).toBeInTheDocument();
+  });
+
+  it("검색어로 매칭이 없으면 안내 문구가 노출되고 트리는 비어 있다", async () => {
+    server.use(
+      http.get("*/api/v1/pages", () =>
+        HttpResponse.json(
+          listResponse([
+            summary({ pageId: "p_root", title: "루트" }),
+            summary({ pageId: "p_child", title: "자식", parentPageId: "p_root" }),
+          ]),
+        ),
+      ),
+    );
+    renderSidebar();
+
+    const input = await screen.findByRole("searchbox", { name: "페이지 트리 검색" });
+    await userEvent.setup().type(input, "없는검색어");
+
+    expect(await screen.findByText("검색 결과가 없습니다.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole("list", { name: "페이지 트리" })).not.toBeInTheDocument();
+    });
+  });
+
+  it("검색어를 비우면 트리 전체가 복원된다", async () => {
+    server.use(
+      http.get("*/api/v1/pages", () =>
+        HttpResponse.json(
+          listResponse([
+            summary({ pageId: "p_root", title: "루트" }),
+            summary({ pageId: "p_auth", title: "Auth", parentPageId: "p_root" }),
+            summary({ pageId: "p_other", title: "다른 페이지", parentPageId: "p_root" }),
+          ]),
+        ),
+      ),
+    );
+    renderSidebar("p_other");
+
+    const input = await screen.findByRole("searchbox", { name: "페이지 트리 검색" });
+    const user = userEvent.setup();
+    await user.type(input, "auth");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("link", { name: "다른 페이지" })).not.toBeInTheDocument();
+    });
+
+    await user.clear(input);
+    expect(await screen.findByRole("link", { name: "다른 페이지" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Auth" })).toBeInTheDocument();
+  });
+
   it("hasNext = true 면 잘림 안내가 노출되고, false 면 노출되지 않는다", async () => {
     server.use(
       http.get("*/api/v1/pages", () =>

@@ -3,7 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { asPageId } from "@/lib/api/ids";
 import type { PageSummary } from "@/lib/api/types";
 
-import { ancestorIdsOf, buildPageTree, type PageTreeNode } from "./tree";
+import {
+  ancestorIdsOf,
+  buildPageTree,
+  filterPageItemsByQuery,
+  matchedPageIdsOf,
+  type PageTreeNode,
+} from "./tree";
 
 function page(input: {
   pageId: string;
@@ -154,5 +160,78 @@ describe("ancestorIdsOf", () => {
 
   it("입력 목록에 없는 id 는 빈 집합을 반환한다", () => {
     expect(ancestorIdsOf([], asPageId("p_missing"))).toEqual(new Set());
+  });
+});
+
+describe("matchedPageIdsOf", () => {
+  it("빈 query 는 빈 Set 을 반환한다", () => {
+    const items = [page({ pageId: "p_a", title: "가" })];
+    expect(matchedPageIdsOf(items, "")).toEqual(new Set());
+    expect(matchedPageIdsOf(items, "   ")).toEqual(new Set());
+  });
+
+  it("title 부분 일치를 대소문자 무관으로 매칭한다", () => {
+    const items = [
+      page({ pageId: "p_a", title: "Auth flow" }),
+      page({ pageId: "p_b", title: "디자인 노트" }),
+      page({ pageId: "p_c", title: "Tokens" }),
+    ];
+    expect(matchedPageIdsOf(items, "auth")).toEqual(new Set(["p_a"]));
+    expect(matchedPageIdsOf(items, "디자인")).toEqual(new Set(["p_b"]));
+  });
+
+  it("매칭이 없으면 빈 Set", () => {
+    const items = [page({ pageId: "p_a", title: "다른 제목" })];
+    expect(matchedPageIdsOf(items, "없음")).toEqual(new Set());
+  });
+});
+
+describe("filterPageItemsByQuery", () => {
+  function setIds(items: readonly PageSummary[]): Set<string> {
+    return new Set(items.map((item) => item.pageId));
+  }
+
+  it("빈 query 는 입력 items 를 그대로 반환한다", () => {
+    const items = [page({ pageId: "p_a", title: "가" }), page({ pageId: "p_b", title: "나" })];
+    expect(filterPageItemsByQuery(items, "")).toBe(items);
+  });
+
+  it("매칭 + 조상 체인 + 매칭의 하위 전체를 남긴다 (그 외는 제거)", () => {
+    const items = [
+      page({ pageId: "p_root", title: "루트" }),
+      page({ pageId: "p_auth", title: "Auth", parentPageId: "p_root" }),
+      page({ pageId: "p_login", title: "Login flow", parentPageId: "p_auth" }),
+      page({ pageId: "p_token", title: "Tokens", parentPageId: "p_auth" }),
+      page({ pageId: "p_other", title: "다른", parentPageId: "p_root" }),
+    ];
+    const filtered = filterPageItemsByQuery(items, "auth");
+    expect(setIds(filtered)).toEqual(new Set(["p_root", "p_auth", "p_login", "p_token"]));
+  });
+
+  it("매칭이 0개면 빈 배열", () => {
+    const items = [
+      page({ pageId: "p_root", title: "루트" }),
+      page({ pageId: "p_a", title: "가", parentPageId: "p_root" }),
+    ];
+    expect(filterPageItemsByQuery(items, "없음")).toEqual([]);
+  });
+
+  it("순환 데이터에서도 무한 루프 없이 종료하고 매칭을 포함한다", () => {
+    const items = [
+      page({ pageId: "p_a", title: "Auth", parentPageId: "p_b" }),
+      page({ pageId: "p_b", title: "기타", parentPageId: "p_a" }),
+    ];
+    const filtered = filterPageItemsByQuery(items, "auth");
+    expect(setIds(filtered)).toEqual(new Set(["p_a", "p_b"]));
+  });
+
+  it("매칭이 root 이면 그 root 의 전체 하위가 남는다", () => {
+    const items = [
+      page({ pageId: "p_root", title: "Auth 루트" }),
+      page({ pageId: "p_child", title: "자식", parentPageId: "p_root" }),
+      page({ pageId: "p_other", title: "다른" }),
+    ];
+    const filtered = filterPageItemsByQuery(items, "auth");
+    expect(setIds(filtered)).toEqual(new Set(["p_root", "p_child"]));
   });
 });
