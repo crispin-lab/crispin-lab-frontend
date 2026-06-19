@@ -48,6 +48,69 @@ export function ancestorIdsOf(items: readonly PageSummary[], pageId: PageId): Re
   return ids;
 }
 
+// 빈 query 처리를 함수 안에서 흡수해 호출부의 no-op 분기를 줄인다.
+export function matchedPageIdsOf(
+  items: readonly PageSummary[],
+  query: string,
+): ReadonlySet<string> {
+  const normalized = query.trim().toLocaleLowerCase("ko-KR");
+  if (normalized === "") return new Set();
+  const matched = new Set<string>();
+  for (const item of items) {
+    if (item.title.toLocaleLowerCase("ko-KR").includes(normalized)) {
+      matched.add(item.pageId);
+    }
+  }
+  return matched;
+}
+
+// 트리 단절 방지 (조상) + 매칭에서 즉시 드릴다운 가능 (하위 전체) 의도.
+// 빈 query 는 입력 items 를 그대로 반환 — 호출부에서 추가 분기 없이 buildPageTree 에 넘길 수 있게.
+export function filterPageItemsByQuery(
+  items: readonly PageSummary[],
+  query: string,
+): readonly PageSummary[] {
+  const matched = matchedPageIdsOf(items, query);
+  if (matched.size === 0) {
+    return query.trim() === "" ? items : [];
+  }
+
+  const byId = new Map(items.map((item) => [item.pageId, item]));
+  const childrenByParent = new Map<string, string[]>();
+  for (const item of items) {
+    const parentId = item.parentPageId;
+    if (parentId == null || !byId.has(parentId)) continue;
+    const bucket = childrenByParent.get(parentId);
+    if (bucket === undefined) childrenByParent.set(parentId, [item.pageId]);
+    else bucket.push(item.pageId);
+  }
+
+  const keep = new Set<string>(matched);
+
+  for (const startId of matched) {
+    let cursor: string | null | undefined = byId.get(startId)?.parentPageId;
+    while (cursor != null && byId.has(cursor) && !keep.has(cursor)) {
+      keep.add(cursor);
+      cursor = byId.get(cursor)?.parentPageId;
+    }
+  }
+
+  const stack: string[] = Array.from(matched);
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current === undefined) break;
+    const children = childrenByParent.get(current);
+    if (children === undefined) continue;
+    for (const childId of children) {
+      if (keep.has(childId)) continue;
+      keep.add(childId);
+      stack.push(childId);
+    }
+  }
+
+  return items.filter((item) => keep.has(item.pageId));
+}
+
 // safeParentId — null 반환 시 해당 노드는 root 로. null 이 아니면 nodeById 에 반드시 존재한다 (호출부에서 ! 사용 가능).
 function safeParentId(
   selfId: string,

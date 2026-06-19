@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Suspense, useEffect, useState } from "react";
 
+import { SearchInput } from "@/components/SearchInput";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/hooks/useAuth";
 import { useSearchSubmit } from "@/hooks/useSearchSubmit";
@@ -45,7 +46,7 @@ export function AppHeader({ className, variant = "full" }: Props) {
       </Link>
       {variant === "full" ? (
         <Suspense fallback={<div aria-hidden className="flex-1" />}>
-          <SearchInput isActive={isSearchActive} />
+          <HeaderSearchSlot isActive={isSearchActive} />
         </Suspense>
       ) : (
         <div aria-hidden className="flex-1" />
@@ -78,13 +79,13 @@ function ThemeToggle() {
   );
 }
 
-function SearchInput({ isActive }: { isActive: boolean }) {
+function HeaderSearchSlot({ isActive }: { isActive: boolean }) {
   // key remount 로 URL 변경 시 initialValue 를 새로 흘림 — props→state useEffect 동기화 회피.
   const urlQuery = useSearchParams().get("query") ?? "";
-  return <SearchInputInner key={urlQuery} initialValue={urlQuery} isActive={isActive} />;
+  return <HeaderSearchForm key={urlQuery} initialValue={urlQuery} isActive={isActive} />;
 }
 
-function SearchInputInner({ initialValue, isActive }: { initialValue: string; isActive: boolean }) {
+function HeaderSearchForm({ initialValue, isActive }: { initialValue: string; isActive: boolean }) {
   const submitSearch = useSearchSubmit();
   const [value, setValue] = useState(initialValue);
 
@@ -95,17 +96,13 @@ function SearchInputInner({ initialValue, isActive }: { initialValue: string; is
 
   return (
     <form className="flex-1" role="search" onSubmit={handleSubmit}>
-      <input
-        type="search"
+      <SearchInput
         name="query"
         aria-label="검색"
         placeholder="검색"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        className={cn(
-          "bg-muted/40 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full max-w-md rounded-md border px-3 text-sm outline-none focus-visible:ring-3",
-          isActive ? "border-accent" : "border-input",
-        )}
+        className={cn("max-w-md", isActive && "border-accent")}
       />
     </form>
   );
