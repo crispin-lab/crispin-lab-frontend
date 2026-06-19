@@ -67,21 +67,32 @@ function TagCloudBody({ items, isPending, isError, error, refetch, isFetching }:
   if (items === undefined || items.length === 0) {
     return <p className="text-muted-foreground text-sm">아직 사용된 태그가 없습니다.</p>;
   }
-  // BE `/v1/pages?tag=` 가 tagId 만 받는데 `PopularTag` 스키마는 cross-space name 집계라 tagId 가 없다 — navigation 대상
-  // 자체가 BE 와 정합하지 않아 display-only 로 떨어뜨린다. BE 가 `PopularTag` 에 tagId 노출 또는 cross-space name 검색
-  // endpoint 추가하면 그 시점에 link 복원 (별도 티켓).
+  // BE LAB-126 의 `/v1/pages?tagName=` 가 cross-space 같은 이름의 모든 tagId 보유 페이지를 묶어준다 — PopularTag 의
+  // cross-space name 집계 정신과 정합. 빈 name 은 BE 가 "미매치 시 빈 결과" 라 시각적 의도 없는 link 라 떼고 display-only.
   return (
     <ul className="flex flex-wrap gap-2">
       {items.map((tag) => (
         <li key={tag.name}>
-          <TagChip
-            name={tag.name}
-            trailing={
-              <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
-                {tag.usageCount}
-              </span>
-            }
-          />
+          {tag.name === "" ? (
+            <TagChip
+              name={tag.name}
+              trailing={
+                <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
+                  {tag.usageCount}
+                </span>
+              }
+            />
+          ) : (
+            <TagChip
+              name={tag.name}
+              href={`/search?tagName=${encodeURIComponent(tag.name)}`}
+              trailing={
+                <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
+                  {tag.usageCount}
+                </span>
+              }
+            />
+          )}
         </li>
       ))}
     </ul>

@@ -112,6 +112,22 @@ describe("parseSearchParams", () => {
       ),
     ).toEqual({ tag: ["wiki"] });
   });
+
+  it("tagName 단일 값이 lift 된다 (cross-space 이름 검색, BE LAB-126)", () => {
+    expect(parseSearchParams(searchParamsFrom({ tagName: "frontend" }))).toEqual({
+      tagName: "frontend",
+    });
+  });
+
+  it("tagName 이 빈 문자열이면 누락된다", () => {
+    expect(parseSearchParams(searchParamsFrom({ tagName: "" }))).toEqual({});
+  });
+
+  it("tagName 의 공백은 trim 된다", () => {
+    expect(parseSearchParams(searchParamsFrom({ tagName: "  위키  " }))).toEqual({
+      tagName: "위키",
+    });
+  });
 });
 
 describe("buildSearchUrl", () => {
@@ -169,5 +185,21 @@ describe("buildSearchUrl", () => {
     expect(buildSearchUrl({}, { tag: ["  wiki  ", "   ", "frontend"] })).toBe(
       "/search?tag=wiki&tag=frontend",
     );
+  });
+
+  it("tagName 단일 값이 URL 에 emit 된다", () => {
+    expect(buildSearchUrl({}, { tagName: "frontend" })).toBe("/search?tagName=frontend");
+  });
+
+  it("tagName 한글 값이 URL 인코딩된다", () => {
+    expect(buildSearchUrl({}, { tagName: "위키" })).toBe("/search?tagName=%EC%9C%84%ED%82%A4");
+  });
+
+  it("tagName 변경 시 page 는 리셋된다", () => {
+    expect(buildSearchUrl({ tagName: "a", page: 3 }, { tagName: "b" })).toBe("/search?tagName=b");
+  });
+
+  it("tagName 공백만 있는 값은 emit 되지 않는다", () => {
+    expect(buildSearchUrl({}, { tagName: "   " })).toBe("/search");
   });
 });
