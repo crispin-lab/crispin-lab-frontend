@@ -3,7 +3,8 @@
 // 신호가 보이면 본 파일과 reading 화면의 prefetch (`app/(app)/pages/[pageId]/page.tsx`) 를 동시에 재검토.
 
 import type { PageId } from "./ids";
-import { buildPageTagListQuery, type PageTagListParams } from "./pageTag";
+import { buildPaginationQuery } from "./pagination";
+import { type PageTagListParams } from "./pageTag";
 import { apiFetchServer, type ApiServerOptions } from "./server";
 import type { PageTagListResult } from "./types";
 
@@ -12,7 +13,7 @@ export function fetchPageTagListServer(
   params: PageTagListParams = {},
   options?: ApiServerOptions,
 ): Promise<PageTagListResult> {
-  const search = buildPageTagListQuery(params);
+  const search = buildPaginationQuery(params);
   const base = `/v1/pages/${encodeURIComponent(pageId)}/tags`;
   const path = search === "" ? base : `${base}?${search}`;
   return apiFetchServer<PageTagListResult>(path, options);

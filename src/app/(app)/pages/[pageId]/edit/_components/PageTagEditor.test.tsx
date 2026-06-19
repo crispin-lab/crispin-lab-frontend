@@ -155,6 +155,27 @@ describe("PageTagEditor", () => {
     await waitFor(() => expect(attachBody).toHaveBeenCalledWith({ tagId: "t_new" }));
   });
 
+  it("detach 가 실패하면 alert 가 노출된다 (chip 만 다시 활성화되고 silent 되는 회귀 차단)", async () => {
+    server.use(
+      http.get(`*/api/v1/pages/${PAGE_ID}/tags`, () =>
+        HttpResponse.json(pageTagListBody([{ tagId: "t_1", name: "frontend" }])),
+      ),
+      http.delete(`*/api/v1/pages/${PAGE_ID}/tags/t_1`, () =>
+        HttpResponse.json(
+          { code: "INTERNAL_ERROR", message: "태그를 제거하지 못했습니다." },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(await screen.findByRole("button", { name: /frontend.*제거/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("태그를 제거하지 못했습니다.");
+  });
+
   it("이미 부착된 태그는 popover 의 자동완성 결과에서 제외된다", async () => {
     server.use(
       http.get(`*/api/v1/pages/${PAGE_ID}/tags`, () =>

@@ -101,6 +101,11 @@ export function PageTagEditor({ pageId, spaceId }: Props) {
           <PageTagAddPopover pageId={pageId} spaceId={spaceId} existingTagIds={existingTagIds} />
         </li>
       </ul>
+      {detach.isError && (
+        <p role="alert" className="text-destructive mt-1 text-xs">
+          {toUserMessage(detach.error)}
+        </p>
+      )}
     </section>
   );
 }
@@ -191,13 +196,8 @@ function PageTagAddPanel({
 
   function handleCreateAndAttach() {
     if (trimmedQuery === "") return;
-    // race 가드 — 클릭 결정과 실행 사이에 spaceTags 가 갱신되어 같은 이름의 태그가 늦게 등장한 경우 register 를 skip.
-    const fresh = spaceTags.data?.items ?? allItems;
-    const lateMatch = findExactMatch(fresh, normalizedQuery);
-    if (lateMatch !== undefined) {
-      handleAttachExisting(lateMatch.tagId);
-      return;
-    }
+    // 동명 태그 중복 생성 race 는 BE 의 unique 제약이 책임 — FE 가드는 closure-captured 데이터 위라 dead branch 가 되거나,
+    // queryClient.fetchQuery 로 fresh 재검사하면 추가 roundtrip 비용. BE 에러 응답은 attach.error 로 panel 하단에 노출.
     register
       .mutateAsync({ spaceId, name: trimmedQuery })
       .then((result) => attach.mutateAsync({ pageId, tagId: asTagId(result.tagId) }))

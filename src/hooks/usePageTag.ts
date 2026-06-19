@@ -62,7 +62,8 @@ export function useTagRegister(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body) => registerTag(body),
-    // spaceId 단위 캐시 무효화는 spaceLists() 로 일괄 — refetch 완료까지 await 해 후속 attach 가 fresh 한 source 위에서 결정되게.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tagKeys.spaceLists() }),
+    // 해당 spaceId 의 자동완성 source 만 invalidate — 다른 스페이스 dropdown 의 silent refetch 회피. Promise 반환으로 refetch 완료까지 대기.
+    onSuccess: (_result, { spaceId }) =>
+      queryClient.invalidateQueries({ queryKey: [...tagKeys.spaceLists(), spaceId] }),
   });
 }
