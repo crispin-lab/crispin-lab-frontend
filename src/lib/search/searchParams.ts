@@ -7,6 +7,8 @@ export type SearchUrlParams = {
   query?: string;
   spaceId?: SpaceId;
   tag?: string[];
+  /** cross-space 같은 이름의 모든 태그 중 하나 이상 보유 (BE LAB-126). landing TagCloud chip 의 navigation 값. */
+  tagName?: string;
   sort?: SearchSort;
   page?: number;
   size?: number;
@@ -40,6 +42,9 @@ export function parseSearchParams(raw: SearchParamsLike): SearchUrlParams {
     .filter((value) => value !== "");
   if (tags.length > 0) result.tag = tags;
 
+  const tagName = raw.get("tagName")?.trim();
+  if (tagName !== undefined && tagName !== "") result.tagName = tagName;
+
   const sort = raw.get("sort");
   if (sort !== null && isSearchSort(sort)) result.sort = sort;
 
@@ -63,6 +68,7 @@ const PAGE_RESET_KEYS: ReadonlyArray<keyof SearchUrlParams> = [
   "query",
   "spaceId",
   "tag",
+  "tagName",
   "sort",
   "size",
 ];
@@ -80,6 +86,10 @@ export function buildSearchUrl(current: SearchUrlParams, patch: Partial<SearchUr
       const trimmed = value.trim();
       if (trimmed !== "") search.append("tag", trimmed);
     }
+  }
+  if (next.tagName !== undefined) {
+    const trimmed = next.tagName.trim();
+    if (trimmed !== "") search.set("tagName", trimmed);
   }
   if (next.sort !== undefined) search.set("sort", next.sort);
   if (next.page !== undefined) search.set("page", String(next.page));

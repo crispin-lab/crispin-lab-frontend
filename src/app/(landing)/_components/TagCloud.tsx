@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useId } from "react";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { TagChip } from "@/components/tag/TagChip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toUserMessage } from "@/lib/api/errors";
 import { popularTagsOptions } from "@/lib/api/queries/tag";
@@ -67,19 +67,32 @@ function TagCloudBody({ items, isPending, isError, error, refetch, isFetching }:
   if (items === undefined || items.length === 0) {
     return <p className="text-muted-foreground text-sm">아직 사용된 태그가 없습니다.</p>;
   }
+  // BE LAB-126 의 `/v1/pages?tagName=` 가 cross-space 같은 이름의 모든 tagId 보유 페이지를 묶어준다 — PopularTag 의
+  // cross-space name 집계 정신과 정합. 빈 name 은 BE 가 "미매치 시 빈 결과" 라 시각적 의도 없는 link 라 떼고 display-only.
   return (
     <ul className="flex flex-wrap gap-2">
       {items.map((tag) => (
         <li key={tag.name}>
-          <Link
-            href={`/search?tag=${encodeURIComponent(tag.name)}`}
-            className="border-border bg-surface-elevated text-muted-foreground hover:text-foreground hover:shadow-accent-glow focus-visible:ring-ring inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition-shadow duration-200 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-          >
-            <span>#{tag.name}</span>
-            <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
-              {tag.usageCount}
-            </span>
-          </Link>
+          {tag.name === "" ? (
+            <TagChip
+              name={tag.name}
+              trailing={
+                <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
+                  {tag.usageCount}
+                </span>
+              }
+            />
+          ) : (
+            <TagChip
+              name={tag.name}
+              href={`/search?tagName=${encodeURIComponent(tag.name)}`}
+              trailing={
+                <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
+                  {tag.usageCount}
+                </span>
+              }
+            />
+          )}
         </li>
       ))}
     </ul>

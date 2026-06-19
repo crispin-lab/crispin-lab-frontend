@@ -26,6 +26,15 @@ export type SpaceCreateResult = PageSchemas["SpaceRegisterResponse"];
 export type PopularTagListResult = PageSchemas["TagPopularityListResponse"];
 export type PopularTag = PopularTagListResult["items"][number];
 
+export type TagListResult = PageSchemas["TagListResponse"];
+export type Tag = TagListResult["items"][number];
+export type TagRegisterRequest = PageSchemas["TagRegisterRequest"];
+export type TagRegisterResult = PageSchemas["TagRegisterResponse"];
+
+export type PageTagListResult = PageSchemas["PageTagListResponse"];
+export type PageTag = PageTagListResult["items"][number];
+export type PageTagAttachRequest = PageSchemas["PageTagAttachRequest"];
+
 export type LoginInput = UserSchemas["AuthLoginRequest"];
 
 export type Role = "USER" | "ADMIN";

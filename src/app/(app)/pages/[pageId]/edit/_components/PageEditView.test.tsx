@@ -28,6 +28,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPush }),
 }));
 
+// PageTagEditor 는 자체 테스트 (PageTagEditor.test.tsx) 가 커버 — 저장 / 권한 흐름 검증에서는 stub.
+vi.mock("./PageTagEditor", () => ({
+  PageTagEditor: () => null,
+}));
+
 // Editor 는 TipTap 기반이라 jsdom 에서 무겁다. 화면 회귀의 본질 (저장 흐름) 만 검증하면 되므로 가벼운 텍스트 영역으로 대체.
 vi.mock("@/components/editor/Editor", () => ({
   Editor: ({

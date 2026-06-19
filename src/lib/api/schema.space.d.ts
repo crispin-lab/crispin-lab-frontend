@@ -212,6 +212,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/pages/{pageId}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 페이지 순서 변경
+         * @description 페이지 순서 변경
+         */
+        put: operations["Page \uD398\uC774\uC9C0 \uC21C\uC11C \uBCC0\uACBD \uC131\uACF5\uD558\uBA74 204 \uB97C \uBC18\uD658\uD55C\uB2E4"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pages/{pageId}/parent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 페이지 부모 이동
+         * @description 페이지 부모 이동
+         */
+        put: operations["Page \uD398\uC774\uC9C0 \uBD80\uBAA8 \uC774\uB3D9 \uC131\uACF5\uD558\uBA74 204 \uB97C \uBC18\uD658\uD55C\uB2E4"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/pages/{pageId}/revisions": {
         parameters: {
             query?: never;
@@ -405,6 +445,11 @@ export interface components {
             /** @description 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
+        /** PageMoveRequest */
+        PageMoveRequest: {
+            /** @description 새 부모 페이지 식별자. null 이면 루트로 이동. */
+            parentPageId?: string | null;
+        };
         /** PageRegisterRequest */
         PageRegisterRequest: {
             /** @description 소속 스페이스 식별자＊ */
@@ -517,6 +562,11 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
+        };
+        /** PageReorderRequest */
+        PageReorderRequest: {
+            /** @description 동일한 부모 안에서의 새 표시 순서 (0 이상).＊ */
+            displayOrder: number;
         };
         /** PageRevisionListResponse */
         PageRevisionListResponse: {
@@ -914,6 +964,8 @@ export interface operations {
                 space?: string;
                 /** @description 태그 ID 필터 (다중 시 AND 매칭) */
                 tag?: string;
+                /** @description 태그 이름 필터 (cross-space 같은 이름의 모든 태그 중 하나 이상 보유, 미매치 시 빈 결과) */
+                tagName?: string;
                 /** @description 정렬 옵션 (CREATED_AT / UPDATED_AT / RELEVANCE / TREE, 기본값 UPDATED_AT) */
                 sort?: string;
                 /** @description 페이지 */
@@ -1389,6 +1441,66 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PageInboundLinkListResponse"];
                 };
+            };
+        };
+    };
+    "Page \uD398\uC774\uC9C0 \uC21C\uC11C \uBCC0\uACBD \uC131\uACF5\uD558\uBA74 204 \uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization: string;
+            };
+            path: {
+                pageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json;charset=UTF-8": components["schemas"]["PageReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description 204 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "Page \uD398\uC774\uC9C0 \uBD80\uBAA8 \uC774\uB3D9 \uC131\uACF5\uD558\uBA74 204 \uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization: string;
+            };
+            path: {
+                pageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json;charset=UTF-8": components["schemas"]["PageMoveRequest"];
+            };
+        };
+        responses: {
+            /** @description 204 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

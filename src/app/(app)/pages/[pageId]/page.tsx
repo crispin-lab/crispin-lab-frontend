@@ -6,7 +6,9 @@ import { ApiError } from "@/lib/api/client";
 import { asPageId, asSpaceId, type PageId } from "@/lib/api/ids";
 import { INBOUND_LIST_SIZE } from "@/lib/api/page";
 import { fetchInboundLinksServer } from "@/lib/api/page.server";
+import { fetchPageTagListServer } from "@/lib/api/pageTag.server";
 import { pageInboundLinksOptions } from "@/lib/api/queries/page";
+import { pageTagListOptions } from "@/lib/api/queries/pageTag";
 import { apiFetchServer } from "@/lib/api/server";
 import { fetchSpaceServer } from "@/lib/api/space.server";
 import type { Page, Space } from "@/lib/api/types";
@@ -54,6 +56,10 @@ export default async function PageReadingRoute({
         ...pageInboundLinksOptions(pageId, inboundParams),
         queryFn: () =>
           fetchInboundLinksServer(pageId, inboundParams, { allowAnonymousFallback: true }),
+      }),
+      queryClient.prefetchQuery({
+        ...pageTagListOptions(pageId),
+        queryFn: () => fetchPageTagListServer(pageId, {}, { allowAnonymousFallback: true }),
       }),
     ]);
   } catch (error) {

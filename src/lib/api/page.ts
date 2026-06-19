@@ -16,6 +16,8 @@ export type PageSearchParams = {
   query?: string;
   spaceId?: SpaceId;
   tag?: string[];
+  /** cross-space 같은 이름의 모든 태그 중 하나 이상 보유 (BE LAB-126). landing TagCloud chip 의 navigation 경로. */
+  tagName?: string;
   sort?: PageSort;
   page?: number;
   size?: number;
@@ -98,6 +100,9 @@ export function buildSearchPagesQuery(params: PageSearchParams): string {
     for (const tagId of params.tag) {
       search.append("tag", tagId);
     }
+  }
+  if (params.tagName !== undefined && params.tagName !== "") {
+    search.append("tagName", params.tagName);
   }
   if (params.sort !== undefined) {
     search.append("sort", params.sort);

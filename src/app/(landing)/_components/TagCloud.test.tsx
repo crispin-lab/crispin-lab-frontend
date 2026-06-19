@@ -21,7 +21,7 @@ function buildResponse(items: Array<{ name: string; usageCount: number }>) {
 }
 
 describe("TagCloud", () => {
-  it("결과가 있으면 각 태그가 #이름 + 사용 횟수 row 로 렌더되고 /search?tag= 로 link 된다", async () => {
+  it("결과가 있으면 각 태그가 /search?tagName= (encoded) 로 link 된다", async () => {
     server.use(
       http.get("*/api/v1/tags/popular", () =>
         HttpResponse.json(
@@ -37,10 +37,10 @@ describe("TagCloud", () => {
     render(<TagCloud />, { wrapper: Wrapper });
 
     const frontendLink = await screen.findByRole("link", { name: /#frontend/ });
-    expect(frontendLink).toHaveAttribute("href", "/search?tag=frontend");
+    expect(frontendLink).toHaveAttribute("href", "/search?tagName=frontend");
 
     const koreanLink = screen.getByRole("link", { name: /#위키/ });
-    expect(koreanLink).toHaveAttribute("href", `/search?tag=${encodeURIComponent("위키")}`);
+    expect(koreanLink).toHaveAttribute("href", `/search?tagName=${encodeURIComponent("위키")}`);
   });
 
   it("결과가 비어 있으면 안내 문구를 보여준다", async () => {
