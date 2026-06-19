@@ -24,6 +24,8 @@ import { toUserMessage } from "@/lib/api/errors";
 import { spaceDetailOptions } from "@/lib/api/queries/space";
 import { type Visibility, isVisibility } from "@/lib/page/visibility";
 
+import { PageTagEditor } from "./PageTagEditor";
+
 type Props = {
   pageId: PageId;
 };
@@ -148,6 +150,8 @@ function PageEditForm({
         disabled={busy}
         placeholder="제목을 입력해 주세요"
       />
+
+      <PageTagEditor pageId={pageId} spaceId={spaceId} />
 
       <Editor
         spaceId={spaceId}

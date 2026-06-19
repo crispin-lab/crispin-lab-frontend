@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useId } from "react";
 
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { TagChip } from "@/components/tag/TagChip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toUserMessage } from "@/lib/api/errors";
 import { popularTagsOptions } from "@/lib/api/queries/tag";
@@ -71,15 +71,15 @@ function TagCloudBody({ items, isPending, isError, error, refetch, isFetching }:
     <ul className="flex flex-wrap gap-2">
       {items.map((tag) => (
         <li key={tag.name}>
-          <Link
+          <TagChip
+            name={tag.name}
             href={`/search?tag=${encodeURIComponent(tag.name)}`}
-            className="border-border bg-surface-elevated text-muted-foreground hover:text-foreground hover:shadow-accent-glow focus-visible:ring-ring inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition-shadow duration-200 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-          >
-            <span>#{tag.name}</span>
-            <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
-              {tag.usageCount}
-            </span>
-          </Link>
+            trailing={
+              <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
+                {tag.usageCount}
+              </span>
+            }
+          />
         </li>
       ))}
     </ul>

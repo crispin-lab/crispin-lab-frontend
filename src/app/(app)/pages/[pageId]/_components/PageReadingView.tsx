@@ -14,6 +14,7 @@ import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
 import { InboundLinkList } from "./InboundLinkList";
 import { PageBreadcrumb } from "./PageBreadcrumb";
 import { PageLinkChipNavigator } from "./PageLinkChipNavigator";
+import { PageTagList } from "./PageTagList";
 import { Toc, type TocItem } from "./Toc";
 
 type Props = {
@@ -88,6 +89,7 @@ export function PageReadingView({ page, pageId, space, isAuthenticated, classNam
                 </>
               )}
             </p>
+            <PageTagList pageId={pageId} className="mt-3" />
           </header>
 
           {isBodyEmpty ? (
