@@ -21,7 +21,7 @@ function buildResponse(items: Array<{ name: string; usageCount: number }>) {
 }
 
 describe("TagCloud", () => {
-  it("결과가 있으면 각 태그가 #이름 + 사용 횟수 row 로 렌더되고 /search?tag= 로 link 된다", async () => {
+  it("결과가 있으면 각 태그가 #이름 + 사용 횟수 row 로 렌더된다 (display-only, BE tagId 미노출로 link 미부착)", async () => {
     server.use(
       http.get("*/api/v1/tags/popular", () =>
         HttpResponse.json(
@@ -36,11 +36,9 @@ describe("TagCloud", () => {
     const { Wrapper } = createQueryWrapper();
     render(<TagCloud />, { wrapper: Wrapper });
 
-    const frontendLink = await screen.findByRole("link", { name: /#frontend/ });
-    expect(frontendLink).toHaveAttribute("href", "/search?tag=frontend");
-
-    const koreanLink = screen.getByRole("link", { name: /#위키/ });
-    expect(koreanLink).toHaveAttribute("href", `/search?tag=${encodeURIComponent("위키")}`);
+    expect(await screen.findByText("#frontend")).toBeInTheDocument();
+    expect(screen.getByText("#위키")).toBeInTheDocument();
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
   });
 
   it("결과가 비어 있으면 안내 문구를 보여준다", async () => {
@@ -75,8 +73,6 @@ describe("TagCloud", () => {
 
     await user.click(screen.getByRole("button", { name: "다시 시도" }));
 
-    await waitFor(() =>
-      expect(screen.getByRole("link", { name: /#frontend/ })).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("#frontend")).toBeInTheDocument());
   });
 });

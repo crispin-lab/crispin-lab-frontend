@@ -67,13 +67,15 @@ function TagCloudBody({ items, isPending, isError, error, refetch, isFetching }:
   if (items === undefined || items.length === 0) {
     return <p className="text-muted-foreground text-sm">아직 사용된 태그가 없습니다.</p>;
   }
+  // BE `/v1/pages?tag=` 가 tagId 만 받는데 `PopularTag` 스키마는 cross-space name 집계라 tagId 가 없다 — navigation 대상
+  // 자체가 BE 와 정합하지 않아 display-only 로 떨어뜨린다. BE 가 `PopularTag` 에 tagId 노출 또는 cross-space name 검색
+  // endpoint 추가하면 그 시점에 link 복원 (별도 티켓).
   return (
     <ul className="flex flex-wrap gap-2">
       {items.map((tag) => (
         <li key={tag.name}>
           <TagChip
             name={tag.name}
-            href={`/search?tag=${encodeURIComponent(tag.name)}`}
             trailing={
               <span className="text-muted-foreground/70 text-[0.65rem]" aria-hidden>
                 {tag.usageCount}
