@@ -17,15 +17,12 @@ export function PageTagList({ pageId, className }: Props) {
   if (data.items.length === 0) return null;
   // chip 클릭은 *해당 태그로의 단순 진입* — 직전 화면의 `?tag=A&tag=B` 같은 multi-filter 는 의도적으로 reset.
   // searchParams.ts 가 string[] 을 받지만 reading 흐름에서 누적시키지 않는다.
+  // navigation 값은 `tag.tagId` — BE `/v1/pages?tag=...` 가 tagId format 을 strict 검증해 name 을 보내면 400 INVALID_REQUEST.
   return (
     <ul className={cn("flex flex-wrap gap-1.5", className)}>
       {data.items.map((tag) => (
         <li key={tag.tagId}>
-          {tag.name === "" ? (
-            <TagChip name={tag.name} />
-          ) : (
-            <TagChip name={tag.name} href={`/search?tag=${encodeURIComponent(tag.name)}`} />
-          )}
+          <TagChip name={tag.name} href={`/search?tag=${encodeURIComponent(tag.tagId)}`} />
         </li>
       ))}
     </ul>

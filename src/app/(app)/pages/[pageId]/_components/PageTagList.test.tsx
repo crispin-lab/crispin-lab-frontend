@@ -32,13 +32,14 @@ function renderList() {
 }
 
 describe("PageTagList", () => {
-  it("부착된 태그가 있으면 각 chip 이 /search?tag=name (encoded) 로 link 된다", async () => {
+  it("부착된 태그가 있으면 각 chip 이 /search?tag=tagId (encoded) 로 link 된다", async () => {
+    // BE 가 /v1/pages?tag= 에서 tagId 만 받는다 — name 으로 보내면 400 INVALID_REQUEST.
     server.use(
       http.get(`*/api/v1/pages/${PAGE_ID}/tags`, () =>
         HttpResponse.json(
           buildBody([
             { tagId: "t_1", name: "frontend" },
-            { tagId: "t_2", name: "위키" },
+            { tagId: "t_복합/위키", name: "위키" },
           ]),
         ),
       ),
@@ -47,10 +48,10 @@ describe("PageTagList", () => {
     renderList();
 
     const frontend = await screen.findByRole("link", { name: /#frontend/ });
-    expect(frontend).toHaveAttribute("href", "/search?tag=frontend");
+    expect(frontend).toHaveAttribute("href", "/search?tag=t_1");
 
     const wiki = screen.getByRole("link", { name: /#위키/ });
-    expect(wiki).toHaveAttribute("href", `/search?tag=${encodeURIComponent("위키")}`);
+    expect(wiki).toHaveAttribute("href", `/search?tag=${encodeURIComponent("t_복합/위키")}`);
   });
 
   it("항목이 없으면 아무것도 렌더하지 않는다", async () => {
