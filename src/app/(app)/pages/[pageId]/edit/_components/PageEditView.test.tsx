@@ -76,6 +76,7 @@ beforeEach(() => {
   redirectToLoginMock.mockReset();
   notFoundMock.mockClear();
   routerPush.mockReset();
+  localStorage.clear();
   // 모든 테스트의 디폴트 — PUBLIC space (cascade 미적용, 기존 회귀 보호). cascade 케이스는 각자 override.
   server.use(http.get("*/api/v1/spaces/:spaceId", () => HttpResponse.json(spaceBody())));
 });
@@ -397,7 +398,7 @@ describe("PageEditView", () => {
     expect(notFoundMock).not.toHaveBeenCalled();
   });
 
-  it("⋯ → 페이지 삭제 → 확인 시 DELETE 호출 + 소속 스페이스로 이동", async () => {
+  it("페이지 삭제 → 확인 시 DELETE 호출 + 소속 스페이스로 이동", async () => {
     let deleted = false;
     server.use(
       http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ spaceId: "s_42" }))),
@@ -412,8 +413,7 @@ describe("PageEditView", () => {
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
     await screen.findByDisplayValue("원본 제목");
-    await user.click(screen.getByRole("button", { name: "더보기" }));
-    await user.click(await screen.findByRole("menuitem", { name: "페이지 삭제" }));
+    await user.click(screen.getByRole("button", { name: "페이지 삭제" }));
     await user.click(await screen.findByRole("button", { name: "삭제" }));
 
     await waitFor(() => expect(deleted).toBe(true));
@@ -436,8 +436,7 @@ describe("PageEditView", () => {
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
     await screen.findByDisplayValue("원본 제목");
-    await user.click(screen.getByRole("button", { name: "더보기" }));
-    await user.click(await screen.findByRole("menuitem", { name: "페이지 삭제" }));
+    await user.click(screen.getByRole("button", { name: "페이지 삭제" }));
     await user.click(await screen.findByRole("button", { name: "취소" }));
 
     expect(hits).toBe(0);
@@ -457,11 +456,261 @@ describe("PageEditView", () => {
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
     await screen.findByDisplayValue("원본 제목");
-    await user.click(screen.getByRole("button", { name: "더보기" }));
-    await user.click(await screen.findByRole("menuitem", { name: "페이지 삭제" }));
+    await user.click(screen.getByRole("button", { name: "페이지 삭제" }));
     await user.click(await screen.findByRole("button", { name: "삭제" }));
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("삭제 권한이 없습니다."));
     expect(routerPush).not.toHaveBeenCalled();
+  });
+});
+
+describe("PageEditView — Cmd+S 단축키", () => {
+  it("Cmd+S 가 저장을 트리거한다", async () => {
+    const captured: { value: Record<string, unknown> | null } = { value: null };
+    server.use(
+      http.get("*/api/v1/pages/:pageId", () => HttpResponse.json(pageBody())),
+      http.put("*/api/v1/pages/:pageId", async ({ request }) => {
+        captured.value = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ pageId: "p_1", currentVersion: 4 });
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    // 입력 도중 단축키를 누르는 실 사용자 시나리오 정합 — 제목 input 에 한 글자 입력 후 Cmd+S.
+    const titleInput = await screen.findByDisplayValue("원본 제목");
+    await user.type(titleInput, " (수정)");
+    await user.keyboard("{Meta>}s{/Meta}");
+
+    await waitFor(() => expect(captured.value).toMatchObject({ title: "원본 제목 (수정)" }));
+  });
+
+  it("IME composition 중 Cmd+S 는 저장을 트리거하지 않는다", async () => {
+    const putSpy = vi.fn(() => HttpResponse.json({ pageId: "p_1", currentVersion: 4 }));
+    server.use(
+      http.get("*/api/v1/pages/:pageId", () => HttpResponse.json(pageBody())),
+      http.put("*/api/v1/pages/:pageId", putSpy),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+
+    const event = new KeyboardEvent("keydown", {
+      key: "s",
+      metaKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    Object.defineProperty(event, "isComposing", { value: true });
+    document.dispatchEvent(event);
+
+    await Promise.resolve();
+    expect(putSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("PageEditView — hero / breadcrumb", () => {
+  it("접근성용 sr-only h1 이 '페이지 편집' landmark 로 존재한다", async () => {
+    server.use(http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())));
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    const heading = await screen.findByRole("heading", { level: 1, name: "페이지 편집" });
+    expect(heading.className).toMatch(/sr-only/);
+  });
+
+  it("ancestors 가 있으면 breadcrumb 에 조상 segment 와 현재 제목이 노출된다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () =>
+        HttpResponse.json(
+          pageBody({
+            ancestors: [{ pageId: "p_root", title: "회의" }],
+          }),
+        ),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    const nav = await screen.findByRole("navigation", { name: "현재 페이지 경로" });
+    expect(nav).toHaveTextContent("회의");
+    expect(nav).toHaveTextContent("원본 제목");
+  });
+
+  it("제목 입력 즉시 breadcrumb 의 마지막 segment 가 갱신된다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () =>
+        HttpResponse.json(
+          pageBody({
+            ancestors: [{ pageId: "p_root", title: "회의" }],
+          }),
+        ),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    const titleInput = await screen.findByDisplayValue("원본 제목");
+    await user.clear(titleInput);
+    await user.type(titleInput, "수정된 제목");
+
+    const nav = await screen.findByRole("navigation", { name: "현재 페이지 경로" });
+    expect(nav).toHaveTextContent("수정된 제목");
+  });
+});
+
+describe("PageEditView — localStorage draft", () => {
+  it("미저장 draft 가 있고 version 이 같으면 banner 가 노출되되 충돌 경고는 표시되지 않는다", async () => {
+    server.use(http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())));
+    localStorage.setItem(
+      "page-edit-draft:p_1",
+      JSON.stringify({
+        title: "미저장 변경",
+        content: '{"type":"doc","content":[]}',
+        visibility: "PUBLIC",
+        savedAtVersion: 3,
+        savedAt: Date.now(),
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    expect(await screen.findByText(/저장하지 않은 변경 사항이 있어요/)).toBeInTheDocument();
+    expect(screen.queryByText(/다른 곳에서 페이지가 업데이트/)).not.toBeInTheDocument();
+  });
+
+  it("draft 의 savedAtVersion 이 BE 의 currentVersion 과 다르면 충돌 경고가 함께 표시된다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ currentVersion: 5 }))),
+    );
+    localStorage.setItem(
+      "page-edit-draft:p_1",
+      JSON.stringify({
+        title: "옛 변경",
+        content: '{"type":"doc","content":[]}',
+        visibility: "PUBLIC",
+        savedAtVersion: 3,
+        savedAt: Date.now(),
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    expect(await screen.findByText(/다른 곳에서 페이지가 업데이트/)).toBeInTheDocument();
+  });
+
+  it("'이어서 편집' 을 누르면 draft 가 폼에 복원된다", async () => {
+    server.use(http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())));
+    localStorage.setItem(
+      "page-edit-draft:p_1",
+      JSON.stringify({
+        title: "미저장 제목",
+        content: '{"type":"doc","content":[]}',
+        visibility: "PUBLIC",
+        savedAtVersion: 3,
+        savedAt: Date.now(),
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(await screen.findByRole("button", { name: "이어서 편집" }));
+
+    expect(await screen.findByDisplayValue("미저장 제목")).toBeInTheDocument();
+    expect(screen.queryByText(/저장하지 않은 변경 사항이 있어요/)).not.toBeInTheDocument();
+  });
+
+  it("'버리기' 를 누르면 localStorage 가 정리되고 원본이 유지된다", async () => {
+    server.use(http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())));
+    localStorage.setItem(
+      "page-edit-draft:p_1",
+      JSON.stringify({
+        title: "버릴 변경",
+        content: '{"type":"doc","content":[]}',
+        visibility: "PUBLIC",
+        savedAtVersion: 3,
+        savedAt: Date.now(),
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(await screen.findByRole("button", { name: "버리기" }));
+
+    expect(localStorage.getItem("page-edit-draft:p_1")).toBeNull();
+    expect(screen.getByDisplayValue("원본 제목")).toBeInTheDocument();
+    expect(screen.queryByText(/저장하지 않은 변경 사항이 있어요/)).not.toBeInTheDocument();
+  });
+
+  it("stale draft 가 떠 있는 동안 사용자가 원본 편집해도 banner 유지 + localStorage 도 그대로", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ currentVersion: 5 }))),
+    );
+    const staleDraft = JSON.stringify({
+      title: "옛 변경",
+      content: '{"type":"doc","content":[]}',
+      visibility: "PUBLIC",
+      savedAtVersion: 3,
+      savedAt: Date.now(),
+    });
+    localStorage.setItem("page-edit-draft:p_1", staleDraft);
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    // stale 안내 banner 가 떠 있는 상태에서 원본 제목을 살짝 수정.
+    expect(await screen.findByText(/다른 곳에서 페이지가 업데이트/)).toBeInTheDocument();
+    const titleInput = await screen.findByDisplayValue("원본 제목");
+    await user.type(titleInput, " (살짝 수정)");
+
+    // banner 는 그대로, autosave 보류라 localStorage 의 stale draft 도 그대로.
+    expect(screen.getByText(/다른 곳에서 페이지가 업데이트/)).toBeInTheDocument();
+    await waitFor(() => expect(localStorage.getItem("page-edit-draft:p_1")).toBe(staleDraft));
+  });
+
+  it("저장 성공 시 draft 가 정리된다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.put("*/api/v1/pages/p_1", () => HttpResponse.json({ pageId: "p_1", currentVersion: 4 })),
+    );
+    localStorage.setItem(
+      "page-edit-draft:p_1",
+      JSON.stringify({
+        title: "변경",
+        content: '{"type":"doc","content":[]}',
+        visibility: "PUBLIC",
+        savedAtVersion: 3,
+        savedAt: Date.now(),
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    const titleInput = await screen.findByDisplayValue("원본 제목");
+    await user.type(titleInput, " (수정)");
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(localStorage.getItem("page-edit-draft:p_1")).toBeNull());
   });
 });

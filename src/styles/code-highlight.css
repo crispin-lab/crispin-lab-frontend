@@ -78,6 +78,18 @@
 }
 
 /*
+ * TipTap Placeholder extension — 빈 첫 노드의 `is-empty` + `data-placeholder` 에 ::before 로 안내 문구.
+ * pointer-events: none 이라 클릭 → caret 정상 동작. 본문 입력 영역의 시각 위치를 자연스럽게 드러냄.
+ */
+.prose-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--color-muted-foreground);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/*
  * PageLink chip — hover 시 underline 좌→우 그려짐. atom 노드 (display: inline-block) 라 ::after 위치 안정적.
  * editor / viewer 양쪽이 같은 .page-link-chip class 를 공유하므로 본 셀렉터 한 곳이 두 mode 를 모두 담당.
  */
