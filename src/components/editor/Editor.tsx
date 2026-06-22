@@ -49,6 +49,7 @@ export function Editor({
       onRefreshAvailable: (refresh) => {
         refreshSuggestionRef.current = refresh;
       },
+      placeholder,
     }),
     content: parseEditorContent(initialContent),
     editable,
@@ -69,7 +70,6 @@ export function Editor({
           "[&_a:hover]:underline-offset-4 [&_a:hover]:decoration-2",
         ),
         "aria-label": placeholder ?? "본문",
-        "data-placeholder": placeholder ?? "",
       },
     },
     onUpdate: ({ editor }) => {

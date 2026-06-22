@@ -44,7 +44,9 @@ export function VisibilitySelect({
       <SelectTrigger id={id} aria-label="공개 범위" className={cn("min-w-28", className)}>
         <SelectValue>{visibilityLabel(value)}</SelectValue>
       </SelectTrigger>
-      <SelectContent>
+      {/* SelectContent 기본은 w-(--anchor-width) — trigger 가 좁으면 옵션 description 이 잘린다.
+          w-fit 으로 콘텐츠 폭, min-w-(--anchor-width) 로 최소 trigger 폭 보장. */}
+      <SelectContent className="w-fit min-w-(--anchor-width)">
         <TooltipProvider delay={0}>
           {VISIBILITY_VALUES.map((option) => {
             const isBlocked =

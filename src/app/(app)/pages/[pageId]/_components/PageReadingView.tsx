@@ -3,6 +3,7 @@ import { renderToHTMLString } from "@tiptap/static-renderer/pm/html-string";
 import Link from "next/link";
 
 import { viewerExtensions } from "@/components/editor/extensions/viewer";
+import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
 import { SpaceChip } from "@/components/page/SpaceChip";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import type { PageId } from "@/lib/api/ids";
@@ -12,7 +13,6 @@ import { cn } from "@/lib/utils";
 
 import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
 import { InboundLinkList } from "./InboundLinkList";
-import { PageBreadcrumb } from "./PageBreadcrumb";
 import { PageLinkChipNavigator } from "./PageLinkChipNavigator";
 import { PageTagList } from "./PageTagList";
 import { Toc, type TocItem } from "./Toc";
@@ -51,6 +51,7 @@ export function PageReadingView({ page, pageId, space, isAuthenticated, classNam
         <article className="min-w-0">
           <header className="mb-8">
             <PageBreadcrumb
+              mode="detail"
               space={space}
               ancestors={page.ancestors}
               currentTitle={page.title}
