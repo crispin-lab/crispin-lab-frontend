@@ -40,8 +40,9 @@ export function PageReadingView({
   canEdit,
   className,
 }: Props) {
-  const doc = parseEditorContent(page.content);
-  // walking 한 번에 (a) TOC items 수집 + (b) heading 노드 attrs.id 부여. renderer 가 같은 doc 을 받아 id 를 그대로 출력.
+  const sourceDoc = parseEditorContent(page.content);
+  // buildTocAndAssignHeadingIds 가 트리를 in-place 로 mutate — renderer 에 그대로 흘려보내야 하지만 task 저장 payload 에 toc-N id 가 새지 않게 원본은 별도 보관.
+  const doc = structuredClone(sourceDoc);
   const headings = buildTocAndAssignHeadingIds(doc);
   const isBodyEmpty = !hasAnyText(doc);
   // `@tiptap/react` 의 generateHTML 은 document.implementation 의존이라 RSC 에서 throw — static-renderer 가 SSR 안전 대안.
@@ -117,7 +118,7 @@ export function PageReadingView({
                       pageId={pageId}
                       title={page.title}
                       visibility={page.visibility}
-                      initialContent={doc}
+                      initialContent={sourceDoc}
                       enabled={canEdit}
                     >
                       {/* inline-code 스타일은 code-highlight.css 의 `.prose-page :not(pre) > code` 에서 담당. */}

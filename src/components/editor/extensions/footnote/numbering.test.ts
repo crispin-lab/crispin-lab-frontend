@@ -82,20 +82,28 @@ describe("FootnoteNumbering plugin", () => {
   });
 
   it("이미 올바른 number 라면 transaction 이 추가로 발생하지 않는다 (무한 루프 방어)", () => {
-    const editor = makeEditor({
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [{ type: "footnoteReference", attrs: { number: 1 } }],
-        },
-      ],
+    // 사용자 변경 (insertContent) 1 회당 transaction 도 1 회만 발화하는지 카운트 — plugin 이 무한 재호출하면 +1 이 누적.
+    let txCount = 0;
+    const editor = new Editor({
+      extensions: [StarterKit, ...editorFootnote()],
+      content: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "footnoteReference", attrs: { number: 1 } }],
+          },
+        ],
+      },
+      onTransaction: () => {
+        txCount += 1;
+      },
     });
 
-    // 한 번 발화시켜 안정 상태.
+    const before = txCount;
     editor.commands.insertContent(" ");
+    expect(txCount - before).toBe(1);
 
-    // 추가 변경 없이 number 가 1 유지되어야 한다.
     const numbers: number[] = [];
     editor.state.doc.descendants((node) => {
       if (node.type.name === "footnoteReference") {

@@ -57,28 +57,37 @@ describe("SlashMenuList", () => {
   });
 
   it("키보드 선택 변경 시 활성 li 의 scrollIntoView 가 호출된다", () => {
-    // jsdom 에는 scrollIntoView 가 없어 모킹. 초기 mount 1 회 + ArrowDown 마다 1 회 호출되는지 확인.
+    // vitest.setup.ts 의 no-op 위에 spy 를 얹은 뒤 finally 로 복구 — 후속 테스트에 전역 오염이 새지 않게.
     const scrollIntoView = vi.fn();
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      window.HTMLElement.prototype,
+      "scrollIntoView",
+    );
     Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
       writable: true,
       value: scrollIntoView,
     });
 
-    const ref = createRef<SlashMenuListHandle>();
-    render(<SlashMenuList ref={ref} items={SLASH_ITEMS.slice(0, 5)} onSelect={vi.fn()} />);
+    try {
+      const ref = createRef<SlashMenuListHandle>();
+      render(<SlashMenuList ref={ref} items={SLASH_ITEMS.slice(0, 5)} onSelect={vi.fn()} />);
 
-    // 초기 selectedIndex=0 에 대해 한 번 호출.
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
-    expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest" });
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest" });
 
-    act(() => {
-      ref.current?.onKeyDown(keyEvent("ArrowDown"));
-    });
-    expect(scrollIntoView).toHaveBeenCalledTimes(2);
-    act(() => {
-      ref.current?.onKeyDown(keyEvent("ArrowDown"));
-    });
-    expect(scrollIntoView).toHaveBeenCalledTimes(3);
+      act(() => {
+        ref.current?.onKeyDown(keyEvent("ArrowDown"));
+      });
+      expect(scrollIntoView).toHaveBeenCalledTimes(2);
+      act(() => {
+        ref.current?.onKeyDown(keyEvent("ArrowDown"));
+      });
+      expect(scrollIntoView).toHaveBeenCalledTimes(3);
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", originalDescriptor);
+      }
+    }
   });
 });
