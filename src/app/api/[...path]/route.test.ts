@@ -335,6 +335,60 @@ describe("BFF catch-all proxy", () => {
     errorSpy.mockRestore();
   });
 
+  it("backend 401 INVALID_SESSION + cookie 보유 시 만료 Set-Cookie 로 세션을 즉시 지운다", async () => {
+    cookieGet.mockReturnValue({ value: "sess_expired" });
+    server.use(
+      http.get(`${BACKEND_URL}/v1/pages/p_x/tags`, () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 유효하지 않습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    const request = new Request("http://localhost/api/v1/pages/p_x/tags", { method: "GET" });
+    const response = await callProxy(request, ["v1", "pages", "p_x", "tags"]);
+
+    expect(response.status).toBe(401);
+    const setCookie = response.headers.get("set-cookie") ?? "";
+    expect(setCookie).toContain("session=");
+    expect(setCookie).toContain("Max-Age=0");
+    expect(setCookie).toContain("Path=/");
+    expect(setCookie).toContain("HttpOnly");
+    // body 는 그대로 패스스루
+    await expect(response.json()).resolves.toMatchObject({ code: "INVALID_SESSION" });
+  });
+
+  it("backend 401 이지만 INVALID_SESSION 이 아니면 (다른 코드) cookie 는 지우지 않는다", async () => {
+    cookieGet.mockReturnValue({ value: "sess_ok" });
+    server.use(
+      http.get(`${BACKEND_URL}/v1/pages/p_y`, () =>
+        HttpResponse.json({ code: "FORBIDDEN", message: "..." }, { status: 401 }),
+      ),
+    );
+
+    const request = new Request("http://localhost/api/v1/pages/p_y", { method: "GET" });
+    const response = await callProxy(request, ["v1", "pages", "p_y"]);
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("session cookie 가 애초에 없으면 401 INVALID_SESSION 이어도 Set-Cookie 추가하지 않는다", async () => {
+    cookieGet.mockReturnValue(undefined);
+    server.use(
+      http.get(`${BACKEND_URL}/v1/pages/p_z/tags`, () =>
+        HttpResponse.json({ code: "INVALID_SESSION", message: "..." }, { status: 401 }),
+      ),
+    );
+
+    const request = new Request("http://localhost/api/v1/pages/p_z/tags", { method: "GET" });
+    const response = await callProxy(request, ["v1", "pages", "p_z", "tags"]);
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
   it("POST body 가 비어 있어도 정상 (empty body 가드)", async () => {
     cookieGet.mockReturnValue({ value: "sess_xxx" });
     let receivedBody: string | undefined;

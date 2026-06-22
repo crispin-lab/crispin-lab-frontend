@@ -58,4 +58,43 @@ describe("viewerCodeBlock — renderHTML", () => {
 
     expect(html).toContain('class="hljs language-text"');
   });
+
+  it("mermaid 언어는 hljs 적용 없이 raw 텍스트 + data-mermaid 마킹만 출력한다", () => {
+    const html = renderToHTMLString({
+      content: {
+        type: "doc",
+        content: [
+          {
+            type: "codeBlock",
+            attrs: { language: "mermaid" },
+            content: [{ type: "text", text: "graph TD; A-->B;" }],
+          },
+        ],
+      },
+      extensions: viewerExtensions,
+    });
+
+    expect(html).toContain('data-mermaid="true"');
+    expect(html).toContain("graph TD; A--&gt;B;");
+    expect(html).not.toContain("hljs-keyword");
+  });
+
+  it("python 코드 블록도 hljs token span 으로 색칠된다", () => {
+    const html = renderToHTMLString({
+      content: {
+        type: "doc",
+        content: [
+          {
+            type: "codeBlock",
+            attrs: { language: "python" },
+            content: [{ type: "text", text: "def hello():\n    pass" }],
+          },
+        ],
+      },
+      extensions: viewerExtensions,
+    });
+
+    expect(html).toContain('class="hljs language-python"');
+    expect(html).toMatch(/<span class="hljs-keyword">def<\/span>/);
+  });
 });

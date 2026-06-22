@@ -4,8 +4,15 @@ import StarterKit from "@tiptap/starter-kit";
 import type { SpaceId } from "@/lib/api/ids";
 import type { Visibility } from "@/lib/page/visibility";
 
+import { editorCallout } from "./callout";
 import { editorCodeBlock } from "./codeBlock";
+import { editorDetails } from "./details";
+import { editorFootnote } from "./footnote";
+import { editorMath } from "./math";
 import { editorPageLink } from "./pageLink";
+import { editorSlashMenu } from "./slashMenu";
+import { editorTable } from "./table";
+import { editorTaskList } from "./taskList";
 
 type EditorExtensionsOptions = {
   spaceId: SpaceId;
@@ -14,8 +21,8 @@ type EditorExtensionsOptions = {
   placeholder?: string;
 };
 
-// StarterKit v3 가 Link 확장을 기본 포함하므로 별도 import 하지 않는다 (중복 등록 시 `Duplicate extension names` 회귀).
-// editor 경로는 suggestion → @tiptap/react 의존 — Client Component (Editor.tsx) 에서만 import.
+// 새 확장은 반드시 viewer.ts 에도 등록 (editor.md invariant — 누락 시 같은 JSON 이 다르게 렌더).
+// StarterKit v3 가 Link 를 기본 포함 — 별도 import 시 Duplicate extension names 회귀.
 export function editorExtensions({
   spaceId,
   getSourceVisibility,
@@ -26,7 +33,14 @@ export function editorExtensions({
     StarterKit.configure({ codeBlock: false }),
     editorCodeBlock(),
     editorPageLink({ spaceId, getSourceVisibility, onRefreshAvailable }),
-    // showOnlyWhenEditable 기본 (true) — read-only viewer 와 자연 분리. 빈 문서의 첫 노드에 data-placeholder 박힘.
+    ...editorTable(),
+    ...editorTaskList(),
+    editorCallout,
+    ...editorDetails,
+    ...editorMath(),
+    ...editorFootnote(),
+    editorSlashMenu,
+    // Placeholder 는 showOnlyWhenEditable 기본 — viewer 에서는 자연 안 보임.
     ...(placeholder !== undefined ? [Placeholder.configure({ placeholder })] : []),
   ];
 }

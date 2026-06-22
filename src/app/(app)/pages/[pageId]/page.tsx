@@ -2,6 +2,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { notFound, redirect } from "next/navigation";
 
 import { PageTreeSidebar } from "@/components/page/PageTreeSidebar";
+import { fetchMeServer } from "@/lib/api/auth.server";
 import { ApiError } from "@/lib/api/client";
 import { asPageId, asSpaceId, type PageId } from "@/lib/api/ids";
 import { INBOUND_LIST_SIZE } from "@/lib/api/page";
@@ -11,9 +12,8 @@ import { pageInboundLinksOptions } from "@/lib/api/queries/page";
 import { pageTagListOptions } from "@/lib/api/queries/pageTag";
 import { apiFetchServer } from "@/lib/api/server";
 import { fetchSpaceServer } from "@/lib/api/space.server";
-import type { Page, Space } from "@/lib/api/types";
+import type { Me, Page, Space } from "@/lib/api/types";
 import { loginRedirectUrl } from "@/lib/auth/redirect";
-import { hasSessionCookie } from "@/lib/auth/session";
 import { makeServerQueryClient } from "@/lib/queryClient";
 
 import { PageReadingView } from "./_components/PageReadingView";
@@ -44,14 +44,16 @@ export default async function PageReadingRoute({
     handlePageAccessError(error, pageId);
   }
 
-  // PageGetResponse 에 spaceName 이 없어 별도 fetch — page 와 같은 visibility scope.
-  // prefetchQuery 는 throw 하지 않는다 — 인바운드 실패는 Client 의 useQuery / ErrorRetryCard 가 받는다.
+  // prefetchQuery 는 throw 하지 않는다 — 인바운드 / 태그 실패는 Client 의 useQuery / ErrorRetryCard 가 받는다.
+  // fetchMeServer 는 401 을 null 로 흡수해 비로그인 / 만료 세션에서 Promise.all 을 reject 시키지 않는다.
   const queryClient = makeServerQueryClient();
   const inboundParams = { size: INBOUND_LIST_SIZE };
   let space: Space;
+  let me: Me | null = null;
   try {
-    [space] = await Promise.all([
+    [space, me] = await Promise.all([
       fetchSpaceServer(asSpaceId(page.spaceId), { allowAnonymousFallback: true }),
+      fetchMeServer(),
       queryClient.prefetchQuery({
         ...pageInboundLinksOptions(pageId, inboundParams),
         queryFn: () =>
@@ -66,7 +68,10 @@ export default async function PageReadingRoute({
     handlePageAccessError(error, pageId);
   }
 
-  const isAuthenticated = await hasSessionCookie();
+  // isAuthenticated 는 cookie 존재가 아니라 실 유효성 (me === null 이면 만료 세션도 false).
+  // canEdit 은 author === me — 비편집 로그인 사용자도 edit UI 미노출.
+  const isAuthenticated = me !== null;
+  const canEdit = me !== null && page.authorId === me.userId;
 
   // grid 골격은 이 라우트 한정 — layout.tsx 에 두면 [pageId]/edit 서브라우트까지 적용돼 편집 화면 폭이 깨진다.
   // sticky top 은 AppHeader 의 h-12 와 정합.
@@ -84,6 +89,7 @@ export default async function PageReadingRoute({
             pageId={pageId}
             space={space}
             isAuthenticated={isAuthenticated}
+            canEdit={canEdit}
           />
         </div>
       </HydrationBoundary>
@@ -97,6 +103,7 @@ export default async function PageReadingRoute({
         pageId={pageId}
         space={space}
         isAuthenticated={isAuthenticated}
+        canEdit={canEdit}
       />
     </HydrationBoundary>
   );

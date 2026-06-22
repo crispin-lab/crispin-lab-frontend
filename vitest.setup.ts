@@ -32,6 +32,32 @@ if (typeof window !== "undefined" && typeof window.IntersectionObserver === "und
   });
 }
 
+// TipTap table NodeView (column resize) 가 ResizeObserver 를 의존 — jsdom 에 없어 no-op stub.
+if (typeof window !== "undefined" && typeof window.ResizeObserver === "undefined") {
+  class NoopResizeObserver {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+  Object.defineProperty(window, "ResizeObserver", {
+    writable: true,
+    value: NoopResizeObserver,
+  });
+}
+
+// SlashMenuList 등 키보드 nav 컴포넌트의 effect 가 scrollIntoView 의존 — jsdom 에 없어 no-op stub.
+// 호출 횟수 검증이 필요한 테스트는 vi.spyOn(HTMLElement.prototype, "scrollIntoView") 로 덮어쓴다.
+if (
+  typeof window !== "undefined" &&
+  typeof window.HTMLElement.prototype.scrollIntoView === "undefined"
+) {
+  Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
+    configurable: true,
+    writable: true,
+    value: function () {},
+  });
+}
+
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();

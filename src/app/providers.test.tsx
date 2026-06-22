@@ -53,17 +53,18 @@ describe("Providers — 글로벌 에러 처리", () => {
     vi.unstubAllEnvs();
   });
 
-  it("query 가 ApiError(401, INVALID_SESSION) 으로 실패하면 redirectToLogin 호출", async () => {
+  it("query 가 ApiError(401, INVALID_SESSION) 으로 실패해도 redirect 하지 않는다 — inline UI 가 흡수", async () => {
+    // PUBLIC 페이지 reading 중 auth-only 서브 쿼리 (예: 페이지 태그) 가 401 을 받아도 본문 reading 흐름을 끊지 않게.
+    // auth 가 필요한 라우트 자체는 SSR (apiFetchServer / cookies() 체크) 에서 redirect — mutation 은 별도 redirect 정책.
     const error = new ApiError(401, "INVALID_SESSION", "세션이 만료되었습니다.");
-    render(
+    const { getByRole } = render(
       <Providers>
         <QueryProbe error={error} />
       </Providers>,
     );
 
-    await waitFor(() => {
-      expect(redirectToLogin).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(() => expect(getByRole("status").textContent).toBe("error"));
+    expect(redirectToLogin).not.toHaveBeenCalled();
     expect(toastError).not.toHaveBeenCalled();
   });
 

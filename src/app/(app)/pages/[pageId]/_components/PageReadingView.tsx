@@ -13,8 +13,11 @@ import { cn } from "@/lib/utils";
 
 import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
 import { InboundLinkList } from "./InboundLinkList";
+import { KatexMounter } from "./KatexMounter";
+import { MermaidMounter } from "./MermaidMounter";
 import { PageLinkChipNavigator } from "./PageLinkChipNavigator";
 import { PageTagList } from "./PageTagList";
+import { TaskItemSaveMounter } from "./TaskItemSaveMounter";
 import { Toc, type TocItem } from "./Toc";
 
 type Props = {
@@ -23,14 +26,23 @@ type Props = {
   pageId: PageId;
   space: Space;
   isAuthenticated: boolean;
+  canEdit: boolean;
   className?: string;
 };
 
 const TOC_MIN_HEADINGS = 3;
 
-export function PageReadingView({ page, pageId, space, isAuthenticated, className }: Props) {
-  const doc = parseEditorContent(page.content);
-  // walking 한 번에 (a) TOC items 수집 + (b) heading 노드 attrs.id 부여. renderer 가 같은 doc 을 받아 id 를 그대로 출력.
+export function PageReadingView({
+  page,
+  pageId,
+  space,
+  isAuthenticated,
+  canEdit,
+  className,
+}: Props) {
+  const sourceDoc = parseEditorContent(page.content);
+  // buildTocAndAssignHeadingIds 가 트리를 in-place 로 mutate — renderer 에 그대로 흘려보내야 하지만 task 저장 payload 에 toc-N id 가 새지 않게 원본은 별도 보관.
+  const doc = structuredClone(sourceDoc);
   const headings = buildTocAndAssignHeadingIds(doc);
   const isBodyEmpty = !hasAnyText(doc);
   // `@tiptap/react` 의 generateHTML 은 document.implementation 의존이라 RSC 에서 throw — static-renderer 가 SSR 안전 대안.
@@ -78,7 +90,7 @@ export function PageReadingView({ page, pageId, space, isAuthenticated, classNam
               )}
               <span aria-hidden>·</span>
               <VisibilityBadge visibility={page.visibility} />
-              {isAuthenticated && (
+              {canEdit && (
                 <>
                   <span aria-hidden>·</span>
                   <Link
@@ -97,23 +109,36 @@ export function PageReadingView({ page, pageId, space, isAuthenticated, classNam
             <p className="text-muted-foreground italic">본문이 비어 있습니다.</p>
           ) : (
             <PageLinkChipNavigator>
-              {/* updatedAt 변경 시 mounter 를 remount 해 새 본문 HTML 에 복사 버튼을 다시 부착. */}
-              <CodeBlockCopyMounter key={page.updatedAt}>
-                {/* inline-code 스타일은 code-highlight.css 의 `.prose-page :not(pre) > code` 에서 담당. */}
-                <div
-                  className={cn(
-                    "prose-page leading-8",
-                    "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:bg-gradient-to-r [&_h1]:from-(--heading-gradient-start) [&_h1]:to-(--heading-gradient-end) [&_h1]:bg-clip-text [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-transparent",
-                    "[&_h2]:mt-7 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-semibold",
-                    "[&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold",
-                    "[&_p]:my-3",
-                    "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
-                    "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6",
-                    "[&_a]:text-accent [&_a]:underline [&_a]:decoration-1 [&_a]:underline-offset-2 [&_a]:transition-all [&_a]:duration-200 [&_a]:ease-out",
-                    "[&_a:hover]:decoration-2 [&_a:hover]:underline-offset-4",
-                  )}
-                  dangerouslySetInnerHTML={{ __html: html }}
-                />
+              {/* updatedAt 키로 remount — 새 본문 HTML 에 hydrator 들 다시 부착. */}
+              <CodeBlockCopyMounter key={`copy-${page.updatedAt}`}>
+                <KatexMounter key={`katex-${page.updatedAt}`}>
+                  <MermaidMounter key={`mermaid-${page.updatedAt}`}>
+                    <TaskItemSaveMounter
+                      key={`task-save-${page.updatedAt}`}
+                      pageId={pageId}
+                      title={page.title}
+                      visibility={page.visibility}
+                      initialContent={sourceDoc}
+                      enabled={canEdit}
+                    >
+                      {/* inline-code 스타일은 code-highlight.css 의 `.prose-page :not(pre) > code` 에서 담당. */}
+                      <div
+                        className={cn(
+                          "prose-page leading-8",
+                          "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:bg-gradient-to-r [&_h1]:from-(--heading-gradient-start) [&_h1]:to-(--heading-gradient-end) [&_h1]:bg-clip-text [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-transparent",
+                          "[&_h2]:mt-7 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-semibold",
+                          "[&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold",
+                          "[&_p]:my-3",
+                          "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
+                          "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6",
+                          "[&_a]:text-accent [&_a]:underline [&_a]:decoration-1 [&_a]:underline-offset-2 [&_a]:transition-all [&_a]:duration-200 [&_a]:ease-out",
+                          "[&_a:hover]:decoration-2 [&_a:hover]:underline-offset-4",
+                        )}
+                        dangerouslySetInnerHTML={{ __html: html }}
+                      />
+                    </TaskItemSaveMounter>
+                  </MermaidMounter>
+                </KatexMounter>
               </CodeBlockCopyMounter>
             </PageLinkChipNavigator>
           )}
@@ -150,9 +175,24 @@ function collectText(node: JSONContent): string {
   return (node.content ?? []).map(collectText).join("");
 }
 
+// 텍스트가 없어도 시각적 본문으로 채워지는 노드들 — "본문이 비어 있습니다" 판단에서 제외.
+const NON_TEXT_BODY_NODE_TYPES = new Set([
+  "pageLink",
+  "inlineMath",
+  "blockMath",
+  "footnoteReference",
+  "footnoteList",
+  "table",
+  "callout",
+  "details",
+  "horizontalRule",
+  "codeBlock",
+  "taskList",
+  "taskItem",
+]);
 function hasAnyText(node: JSONContent): boolean {
   if (typeof node.text === "string" && node.text !== "") return true;
-  if (node.type === "pageLink") return true;
+  if (typeof node.type === "string" && NON_TEXT_BODY_NODE_TYPES.has(node.type)) return true;
   return (node.content ?? []).some(hasAnyText);
 }
 

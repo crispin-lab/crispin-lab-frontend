@@ -1,11 +1,13 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { fetchMeServer } from "@/lib/api/auth.server";
 import { asSpaceId } from "@/lib/api/ids";
 import { loginRedirectUrl } from "@/lib/auth/redirect";
-import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
 import { NewPageView } from "./_components/NewPageView";
+
+// 사용자별 인증 결과라 prerender 의미 없음 — 빌드 시 BACKEND_URL 없는 환경에서도 통과해야 한다.
+export const dynamic = "force-dynamic";
 
 export default async function NewPageRoute({
   searchParams,
@@ -14,8 +16,9 @@ export default async function NewPageRoute({
 }) {
   const { spaceId } = await searchParams;
 
-  const cookieStore = await cookies();
-  if (!cookieStore.get(SESSION_COOKIE_NAME)) {
+  // cookie 존재만으론 만료 세션을 못 거른다 — 유효성을 한 곳에서 확정.
+  const me = await fetchMeServer();
+  if (me === null) {
     const target = spaceId
       ? `/pages/new?${new URLSearchParams({ spaceId }).toString()}`
       : "/pages/new";

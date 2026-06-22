@@ -6,6 +6,8 @@ import { geistMono, geistSans } from "./_fonts";
 import { Providers } from "./providers";
 
 import "./globals.css";
+// TipTap math (KaTeX) 가 inline / block math 노드 렌더 시 .katex 클래스에 의존 — root layout 한 곳에서 한 번만 로드해 SSR 단계의 link tag 로 박힌다.
+import "katex/dist/katex.min.css";
 
 export const metadata: Metadata = {
   title: "crispin-lab",

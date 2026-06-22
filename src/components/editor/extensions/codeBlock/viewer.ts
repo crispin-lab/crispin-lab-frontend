@@ -1,16 +1,22 @@
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 
-import { lowlight, normalizeLanguage } from "./lowlight";
+import { isRawPassthroughLanguage, lowlight, normalizeLanguage } from "./lowlight";
 
-// static-renderer 는 ProseMirror plugin 을 실행하지 않아 LowlightPlugin 의 Decoration 색칠이 viewer 에선 안 된다.
-// renderHTML 안에서 lowlight.highlight 의 hast 트리를 DOMOutputSpec 으로 직접 직렬화해야 reading 화면에 색이 나온다.
-// React 의존을 끌어오지 않도록 editor/index.ts 와 분리 (pageLink 와 동일 패턴) — RSC 에서 import.
+// static-renderer 는 ProseMirror plugin 을 안 돌려 LowlightPlugin 의 Decoration 색칠이 viewer 에선 안 된다 — renderHTML 에서 hast → DOMOutputSpec 직접 직렬화.
+// raw passthrough 언어 (mermaid) 는 hljs skip + data-mermaid 마킹만 — MermaidMounter 가 client hydrate.
 export const viewerCodeBlock = CodeBlockLowlight.extend({
   renderHTML({ node, HTMLAttributes }) {
     const language = normalizeLanguage(node.attrs.language);
     const text = node.textContent;
     const codeAttrs = { class: `hljs language-${language}` };
 
+    if (isRawPassthroughLanguage(language)) {
+      const preAttrs = {
+        ...HTMLAttributes,
+        ...(language === "mermaid" ? { "data-mermaid": "true" } : {}),
+      };
+      return ["pre", preAttrs, ["code", codeAttrs, text]];
+    }
     if (language === "text") {
       return ["pre", { ...HTMLAttributes }, ["code", codeAttrs, text]];
     }

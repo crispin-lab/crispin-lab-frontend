@@ -86,6 +86,8 @@ async function proxy(request: Request, ctx: RouteContext): Promise<Response> {
 
   // 3xx Location 이 외부 도메인을 가리키면 BFF 우회 — 안전망으로 502 강등.
   if (upstream.status >= 300 && upstream.status < 400) {
+    // body 를 consume 하지 않고 throw 하면 undici 가 connection 을 잡고 있을 수 있음 — 명시 cancel.
+    await upstream.body?.cancel();
     return Response.json(
       { code: "BFF_UPSTREAM_REDIRECT", message: "요청을 처리하지 못했습니다." },
       { status: 502 },
@@ -95,11 +97,42 @@ async function proxy(request: Request, ctx: RouteContext): Promise<Response> {
   const responseHeaders = sanitizeResponseHeaders(upstream.headers);
   const bodyAllowed = !STATUSES_WITHOUT_BODY.has(upstream.status) && request.method !== "HEAD";
 
+  // 만료 세션이면 즉시 Set-Cookie 로 증발 — body 한 번 buffer (text) 해 code 검사 (default 분기는 streaming, 본 분기만 예외).
+  if (upstream.status === 401 && sessionToken && bodyAllowed) {
+    const text = await upstream.text();
+    if (isInvalidSessionBody(text)) {
+      responseHeaders.append("Set-Cookie", buildExpiredSessionCookie());
+    }
+    return new Response(text, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: responseHeaders,
+    });
+  }
+
   return new Response(bodyAllowed ? upstream.body : null, {
     status: upstream.status,
     statusText: upstream.statusText,
     headers: responseHeaders,
   });
+}
+
+function isInvalidSessionBody(text: string): boolean {
+  if (text === "") return false;
+  try {
+    const parsed = JSON.parse(text) as { code?: unknown };
+    return parsed.code === "INVALID_SESSION";
+  } catch {
+    return false;
+  }
+}
+
+function buildExpiredSessionCookie(): string {
+  // 발급 시 attribute (Path / SameSite / HttpOnly / Secure) 와 일치해야 브라우저가 같은 cookie 로 인식해 지운다.
+  const isProd = process.env.NODE_ENV === "production";
+  const attrs = [`${SESSION_COOKIE_NAME}=`, "Path=/", "HttpOnly", "SameSite=Lax", "Max-Age=0"];
+  if (isProd) attrs.push("Secure");
+  return attrs.join("; ");
 }
 
 function hasUnsafeSegment(path: string[]): boolean {
