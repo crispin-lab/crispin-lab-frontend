@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 150;
 const RESULT_SIZE = 20;
-const LISTBOX_ID = "parent-picker-listbox";
 
 export type ParentPagePickerValue = Pick<PageSummary, "pageId" | "title">;
 
@@ -28,6 +27,8 @@ type Props = {
 };
 
 export function ParentPagePicker({ spaceId, value, onChange, disabled, id }: Props) {
+  // 같은 페이지에 두 picker 인스턴스가 렌더돼도 aria-controls / aria-activedescendant 가 충돌하지 않게.
+  const listboxId = useId();
   const [open, setOpen] = useState(false);
   const [rawQuery, setRawQuery] = useState("");
   const [query, setQuery] = useState("");
@@ -97,7 +98,7 @@ export function ParentPagePicker({ spaceId, value, onChange, disabled, id }: Pro
 
   const triggerLabel = value !== null ? value.title : "선택 안 함 (루트)";
   const activeOptionId =
-    items.length > 0 ? `parent-picker-option-${items[clampedActiveIndex].pageId}` : undefined;
+    items.length > 0 ? `${listboxId}-option-${items[clampedActiveIndex].pageId}` : undefined;
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -130,7 +131,7 @@ export function ParentPagePicker({ spaceId, value, onChange, disabled, id }: Pro
           aria-expanded={open}
           aria-haspopup="listbox"
           aria-autocomplete="list"
-          aria-controls={LISTBOX_ID}
+          aria-controls={items.length > 0 ? listboxId : undefined}
           aria-activedescendant={activeOptionId}
         />
 
@@ -159,7 +160,7 @@ export function ParentPagePicker({ spaceId, value, onChange, disabled, id }: Pro
           <p className="text-muted-foreground px-2 py-1.5 text-xs">일치하는 페이지가 없습니다.</p>
         ) : (
           <ul
-            id={LISTBOX_ID}
+            id={listboxId}
             role="listbox"
             aria-label="부모 페이지 검색 결과"
             className="flex max-h-56 flex-col overflow-y-auto"
@@ -167,7 +168,7 @@ export function ParentPagePicker({ spaceId, value, onChange, disabled, id }: Pro
             {items.map((item, index) => (
               <li
                 key={item.pageId}
-                id={`parent-picker-option-${item.pageId}`}
+                id={`${listboxId}-option-${item.pageId}`}
                 role="option"
                 aria-selected={index === clampedActiveIndex}
                 onMouseEnter={() => setActiveIndex(index)}

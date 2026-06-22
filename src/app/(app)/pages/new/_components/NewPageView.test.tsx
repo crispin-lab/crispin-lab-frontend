@@ -328,8 +328,11 @@ describe("NewPageView — 취소 / 단축키", () => {
     const user = userEvent.setup();
     render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
 
-    await user.type(screen.getByPlaceholderText("제목을 입력해 주세요"), "IME 글");
+    const titleInput = screen.getByPlaceholderText("제목을 입력해 주세요");
+    await user.type(titleInput, "IME 글");
     // dispatchEvent 로 isComposing: true 를 직접 박는다 — user.keyboard 는 이 플래그를 노출하지 않는다.
+    // input 에 직접 dispatch 해야 containerRef.contains(target) 검사를 통과해 *isComposing 가드 자체* 가 검증된다.
+    titleInput.focus();
     const event = new KeyboardEvent("keydown", {
       key: "s",
       metaKey: true,
@@ -337,7 +340,7 @@ describe("NewPageView — 취소 / 단축키", () => {
       cancelable: true,
     });
     Object.defineProperty(event, "isComposing", { value: true });
-    document.dispatchEvent(event);
+    titleInput.dispatchEvent(event);
 
     // handler 가 즉시 return 한다 — pending microtask 한 번만 flush 해도 mutation 미발화가 확정.
     await Promise.resolve();

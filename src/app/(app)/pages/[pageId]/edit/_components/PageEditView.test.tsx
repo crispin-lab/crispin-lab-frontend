@@ -497,7 +497,9 @@ describe("PageEditView — Cmd+S 단축키", () => {
     const { Wrapper } = createQueryWrapper();
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
-    await screen.findByDisplayValue("원본 제목");
+    // titleInput 에 직접 dispatch 해야 containerRef.contains(target) 검사를 통과해 *isComposing 가드 자체* 가 검증된다.
+    const titleInput = await screen.findByDisplayValue("원본 제목");
+    titleInput.focus();
 
     const event = new KeyboardEvent("keydown", {
       key: "s",
@@ -506,7 +508,7 @@ describe("PageEditView — Cmd+S 단축키", () => {
       cancelable: true,
     });
     Object.defineProperty(event, "isComposing", { value: true });
-    document.dispatchEvent(event);
+    titleInput.dispatchEvent(event);
 
     await Promise.resolve();
     expect(putSpy).not.toHaveBeenCalled();

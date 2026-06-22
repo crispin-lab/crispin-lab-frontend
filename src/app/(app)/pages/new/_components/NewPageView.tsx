@@ -140,6 +140,24 @@ export function NewPageView({ spaceId }: Props) {
     }
   }
 
+  // 취소 직전 debounce 창 안 입력이 unmount cleanup 으로 유실되는 것을 막기 위해 latest 값을 즉시 write.
+  function persistDraftNow() {
+    if (!hasUserEditedRef.current) return;
+    const hasAnyInput =
+      title !== "" ||
+      parent !== null ||
+      visibility !== DEFAULT_VISIBILITY ||
+      content !== EMPTY_EDITOR_CONTENT;
+    if (!hasAnyInput) return;
+    writePageDraft(spaceId, {
+      title,
+      content,
+      visibility,
+      parent,
+      savedAt: Date.now(),
+    });
+  }
+
   function submit() {
     if (title.trim() === "" || isPending) return;
     const parentPageId = parent?.pageId ?? null;
@@ -164,6 +182,9 @@ export function NewPageView({ spaceId }: Props) {
   // 취소 시 draft 는 유지 — 부주의한 떠남으로부터 사용자 작성 내용을 보호하는 디자인 결정. 진입 시 자동 복원.
   // *명시적으로 버리고 싶다* 면 별도 UI (예: "초안 비우기" 버튼) 가 자연 — 현재 PR 범위 밖.
   function handleCancel() {
+    // navigate 직전 debounce 창 안 미저장 입력을 flush — 정책 (draft 유지) 과 일관.
+    cancelPendingAutosave();
+    persistDraftNow();
     router.push(`/spaces/${encodeURIComponent(spaceId)}`);
   }
 
@@ -230,6 +251,7 @@ export function NewPageView({ spaceId }: Props) {
         key={editorKey}
         spaceId={spaceId}
         initialContent={initialEditorContent}
+        editable={!isPending}
         onChange={handleContentChange}
         sourceVisibility={visibility}
         placeholder="본문을 입력해 주세요. [[ 로 다른 페이지를 연결할 수 있습니다."

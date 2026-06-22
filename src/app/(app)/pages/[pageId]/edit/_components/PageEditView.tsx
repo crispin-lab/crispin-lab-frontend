@@ -96,7 +96,8 @@ function PageEditForm({
   const articleRef = useRef<HTMLElement>(null);
   // currentVersion 을 mount 시점 한 번만 캡처 — 세션 중 usePage 가 invalidate / refetch 로 currentVersion 을
   // 새 값으로 갱신해도 autosave 의 savedAtVersion 이 *진입 당시 기준값* 으로 박혀 stale 감지 신호가 유지된다.
-  const [pinnedVersion] = useState(currentVersion);
+  // 저장 성공 시점에 갱신해 *본인이 방금 저장한* draft 가 다음 세션에서 stale 로 오탐되는 것을 막는다.
+  const [pinnedVersion, setPinnedVersion] = useState(currentVersion);
 
   const [title, setTitle] = useState(initialTitle);
   const [visibility, setVisibility] = useState(initialVisibility);
@@ -168,13 +169,17 @@ function PageEditForm({
     mutate(
       { pageId, body: { title, content, visibility } },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           clearPageEditDraft(pageId);
+          setPinnedVersion(result.version);
         },
       },
     );
   }
   function handleDeleteConfirm() {
+    // handleSave 와 같은 자리에 cancel — autosave timer 가 deleteMutate.onSuccess 보다 늦게 발화해
+    // *이미 삭제된 pageId* 자리에 orphan draft 가 TTL 7 일 누적되는 race 차단.
+    cancelPendingAutosave();
     deleteMutate(pageId, {
       onSuccess: () => {
         clearPageEditDraft(pageId);
