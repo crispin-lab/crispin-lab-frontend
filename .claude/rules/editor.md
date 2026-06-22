@@ -11,7 +11,8 @@
 - `@tiptap/core`, `@tiptap/pm` — 커스텀 노드 (callout / details / footnote) 정의용
 - `@tiptap/starter-kit` — 기본 노드/마크 (paragraph, heading, bold, italic, code, list 등)
 - `@tiptap/extension-mention` — `[[...]]` 위키 참조의 베이스
-- `@tiptap/extension-code-block-lowlight` + `highlight.js` + `lowlight` — 코드 블록 + syntax highlighting (현재 16 언어 + mermaid passthrough)
+- `@tiptap/extension-code-block-lowlight` + `highlight.js` + `lowlight` — viewer (RSC, read-only) 의 코드 블록 syntax highlighting. 17 언어 + mermaid passthrough.
+- `@codemirror/{state,view,commands,language,language-data,search}` + `@lezer/highlight` — editor 측 코드 블록 NodeView (CodeMirror 6 기반). Tab/Enter indent, 멀티 커서, 언어별 indentService.
 - `@tiptap/extension-table` (+ row / header / cell) — 표
 - `@tiptap/extension-task-list` + `@tiptap/extension-task-item` — 체크리스트
 - `@tiptap/extension-mathematics` + `katex` — 수식 (inline / block)
@@ -45,7 +46,10 @@ src/components/editor/
     editor.ts             # 편집 모드 확장 레지스트리 (factory)
     viewer.ts             # 읽기 모드 확장 레지스트리 (static array, React 의존 0)
     pageLink/             # [[페이지명]] 위키 참조
-    codeBlock/            # 코드 블록 + lowlight + mermaid raw passthrough
+    codeBlock/            # 코드 블록 — editor 측 CodeMirror NodeView + viewer 측 lowlight + mermaid raw passthrough
+      CodeBlockView.tsx   # raw ProseMirror NodeView (PM ↔ CM bridge, mermaid 토글)
+      CodeBlockHeader.tsx # 헤더 React 컴포넌트 (언어 Select, 복사, mermaid toggle) — createRoot 으로 마운트
+      codemirror/         # CM extension 모듈 (setup, theme, languages, bridge, keymaps)
     table/                # 표 (table / row / header / cell)
     taskList/             # 체크리스트 (task-list + task-item)
     callout/              # info / warn / tip 박스 — custom Node
@@ -161,12 +165,30 @@ function PageEditor({ initialContent }: { initialContent: JSONContent }) {
 
 paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / code block / table / callout (info / warn / tip) / math block / mermaid / footnote / details / horizontal rule.
 
+## 코드 블록 — CodeMirror NodeView (editor) ↔ lowlight (viewer)
+
+- **editor 측**: `CodeBlockView` 가 raw ProseMirror NodeView. `contentDOM = null` 로 PM 이 텍스트 DOM 을 관리하지 않고, CodeMirror EditorView 가 single source.
+- **viewer 측**: RSC 의 `viewerCodeBlock.renderHTML` 이 lowlight 로 정적 highlight — `.hljs language-XX` 클래스 그대로. editor 와 같은 `lowlight.ts` 의 `SUPPORTED_LANGUAGES` 를 공유.
+- **저장 포맷 불변**: `codeBlock` 노드 + `language` attr + 텍스트 (NodeView 교체만, JSON 트리 동일).
+- **PM ↔ CM 양방향 동기화 (`codemirror/bridge.ts`)**:
+  - CM → PM: `EditorView.updateListener` 가 `update.changes.iterChanges` 를 PM `ReplaceStep` 으로 변환. `(toB-fromB)-(toA-fromA)` 누적 offset 으로 같은 tr 안의 prior step 효과 보정. 빈 insert 는 `tr.delete` 분기 — `schema.text("")` 가 throw.
+  - PM → CM: `NodeView.update(newNode)` 가 `newNode.textContent` 와 `cmView.state.doc.toString()` 비교, 다르면 dispatch.
+  - reentry guard 양방향: `fromPmAnnotation` (CM tx) + `FROM_CM_META` (PM tr).
+- **history**: PM 단일 출처. CM `history()` 미사용. `Mod-z`/`Mod-Shift-z`/`Mod-y` 는 CM keymap 이 PM `commands.undo/redo` 로 forward (`codemirror/keymaps.ts`).
+- **IME composition**: `compositionstart` 동안 PM dispatch 보류, `compositionend` 에 `flushTextToPm` 로 final state 단일 `ReplaceStep` — 한국어 IME 가 history 한 단위로 묶임.
+- **탈출 키**: ArrowUp(line 1) / ArrowDown(last line end) → PM 으로 focus. Backspace(빈 doc) → 노드 자체 삭제.
+- **PM hook 강제**: `stopEvent` 가 CM contentEditable 안의 이벤트를 PM 으로부터 차단, `ignoreMutations` 가 PM mutation observer 를 모두 무시. 두 개가 빠지면 Tab/Mod-z/IME 가 PM 으로 새는 클래식 버그.
+- **언어 동적 로드 (`codemirror/languages.ts`)**: `@codemirror/language-data` 의 `LanguageDescription.matchLanguageName(...).load()` 로 grammar 를 chunk 분리 + 캐시. `text` / `mermaid` 는 plaintext (extension 빈 배열).
+- **token 색 단일 출처**: `globals.css` 의 `--syntax-*` 변수 (dark + light) — editor 의 `HighlightStyle` 과 viewer 의 `.hljs-*` 룰 양쪽이 같은 변수 참조. 색 하드코딩 금지.
+- **mermaid 토글**: 미리보기 진입 시 `cmView.destroy()` + SVG 컨테이너 mount, 원본 진입 시 CM 재생성. 숨김 CM 의 measurement work 회피.
+- **헤더 React 마운트**: `CodeBlockHeader` (shadcn Select / Button) 는 raw NodeView 안에서 `createRoot()` 으로 자식 마운트. NodeView destroy 시 `root.unmount()` 를 microtask 로 — "synchronously unmount inside render" 경고 회피.
+
 ## Mermaid 렌더링
 
 - 본 프로젝트는 mermaid 를 **별도 노드가 아니라 code block 의 language="mermaid"** 로 다룬다.
 - viewer 의 `viewerCodeBlock.renderHTML` 이 mermaid 언어를 `RAW_PASSTHROUGH_LANGUAGES` 로 분기 — hljs 적용을 skip 하고 raw text + `data-mermaid="true"` 만 출력.
 - `MermaidMounter` 가 클라이언트에서 `[data-mermaid="true"] code` 를 찾아 mermaid 동적 import 후 SVG 로 치환.
-- editor 모드의 `CodeBlockNodeView` 는 mermaid 언어일 때 미리보기/원본 토글을 노출 (눈 / 연필 아이콘). 미리보기 모드도 `NodeViewContent` 는 hidden 유지 — ProseMirror 가 본문 텍스트를 잃지 않게.
+- editor 모드의 `CodeBlockView` 는 mermaid 언어일 때 미리보기/원본 토글을 노출 (눈 / 연필 아이콘). 미리보기 모드는 CM 을 destroy 하고 SVG 만 렌더 — PM 모델의 텍스트는 그대로 보존되므로 원본 모드 복귀 시 CM 재생성해도 데이터 손실 없음.
 - mermaid lib (~700KB) 은 본 페이지 초기 번들에 들어가지 않게 항상 **동적 import**.
 
 ## KaTeX (수식) 렌더링
@@ -204,6 +226,13 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 - **KaTeX CSS 를 컴포넌트별로 import** — `layout.tsx` 에서 한 번. 컴포넌트별로 박으면 같은 stylesheet 가 N 번 들어가 layout shift / 번들 낭비.
 - **footnote numbering plugin 의 `appendTransaction` 가 항상 새 transaction 반환** — `tr.steps.length` 가드 누락 시 무한 루프. desired === current 면 null 반환해야 한다.
 - **slash 메뉴 item 이 deleteRange 누락** — `/` 입력 흔적이 본문에 남아 사용자가 수동 삭제해야 한다. 모든 item.command 가 `editor.chain().focus().deleteRange(range).<action>().run()` 패턴 강제.
-- **codeBlock language 추가 시 SUPPORTED_LANGUAGES 와 lowlight.register 한쪽만 수정** — UI 에는 보이는데 색칠 안 됨 (또는 반대). 두 곳 같이 갱신, `lowlight.test.ts` 의 `lowlight.registered("...")` 단언으로 가드.
+- **codeBlock language 추가 시 SUPPORTED_LANGUAGES / lowlight.register / `codemirror/languages.ts` 의 `LANGUAGE_NAME_MAP` 중 하나만 수정** — UI 에는 보이는데 viewer/editor 한쪽이 plaintext 로 떨어진다. 세 곳 같이 갱신, `lowlight.test.ts` 의 `lowlight.registered("...")` 단언 + `codemirror/languages.test.ts` 의 `loadLanguageSupport(...)` 단언으로 양쪽 가드.
+- **token 색을 컴포넌트에 하드코딩** — editor 의 `HighlightStyle` 과 viewer 의 `.hljs-*` 가 서로 다른 색이 되어 같은 코드가 두 모드에서 다르게 보인다. `globals.css` 의 `--syntax-*` 변수가 단일 출처 — 새 토큰이 필요하면 `:root` (dark) + `.light` 양쪽에 동시 정의.
+- **CM NodeView 의 `stopEvent` / `ignoreMutation` 누락** — Tab / Mod-z / IME 가 PM 으로 새서 "CM 안의 키가 먹히지 않는" 클래식 버그. raw NodeView 의 두 hook 은 항상 구현. 메서드명이 단수 `ignoreMutation` 인 점 주의 — `ignoreMutations` (복수) 로 오타 시 PM 이 호출하지 않아 mutation observer 가 그대로 발화 (`prosemirror-view` 의 `NodeView` 인터페이스 정의).
+- **CM history extension 을 추가** — PM history 와 충돌해 undo 가 두 단계씩 가거나 sync 가 깨진다. CM 의 `history()` 는 본 NodeView 에서 절대 추가하지 않고, `Mod-z` 는 keymap 이 PM 으로 forward.
+- **IME composition 중 매 키스트로크 PM dispatch** — 한국어 입력의 자모 단위가 모두 history 에 박혀 Mod-z 한 번이 한 자모만 되돌린다. `inComposition` flag 로 dispatch 보류 + `compositionend` 에 `flushTextToPm` 단일 ReplaceStep.
+- **언어 grammar 비동기 로드의 race** — 사용자가 Select 를 빠르게 토글하면 A 가 cache miss / B 가 cache hit 일 때 A 의 load 가 *나중에* resolve 해 stale 언어가 박힌다. instance-level seq 카운터로 *마지막 요청만* dispatch 하도록 가드.
+- **mermaid render 의 in-flight overlap** — 같은 NodeView 에서 텍스트 변경이 연속이면 `mermaid.render(id, src)` 가 같은 id 로 동시 호출되어 SVG DOM cleanup race. seq 카운터 + render id 에 seq 섞기로 마지막 결과만 반영.
+- **`flushTextToPm` 의 ReplaceStep 가 PM marks 를 보존하지 않음** — 현재 `codeBlock` schema 가 marks 를 허용하지 않아 안전. 향후 코드블록 안의 mark 가 도입되면 `tr.replaceWith` 대신 fragment 기반 replace 로 재구성 필요.
 - **details 의 open 토글이 저장되지 않음** — 사용자가 native `<details>` 를 클릭해 열어도 ProseMirror 가 모르면 다음 save 시 false 로 돌아간다. 현재는 slash 가 `open: true` 로 삽입하는 정책으로 회피 (NodeView 의 'toggle' 이벤트 listener 는 후속 PR).
 - **ResizeObserver 미스텁** — TipTap table NodeView 가 jsdom 테스트에서 throw. `vitest.setup.ts` 의 no-op 스텁 유지.
