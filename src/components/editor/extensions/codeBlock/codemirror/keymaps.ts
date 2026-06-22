@@ -59,10 +59,16 @@ function backspaceExit({ editor, getPos }: ExitContext): Command {
     if (cmView.state.doc.length !== 0) return false;
     const pos = getPos();
     if (pos == null) return false;
+    // 순서가 invariant — focus 가 먼저 가면 selection 이 코드블록 밖으로 빠져 deleteNode 의 ancestor 검색이 빗나간다. tr.delete 로 정확한 pos 를 잘라낸 뒤 focus.
     editor
       .chain()
+      .command(({ tr }) => {
+        const node = tr.doc.nodeAt(pos);
+        if (!node) return false;
+        tr.delete(pos, pos + node.nodeSize);
+        return true;
+      })
       .focus(Math.max(0, pos - 1))
-      .deleteNode("codeBlock")
       .run();
     return true;
   };
