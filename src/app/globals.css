@@ -92,6 +92,22 @@
   --sidebar-accent-foreground: oklch(0.965 0.005 285);
   --sidebar-border: oklch(0.985 0.005 285 / 10%);
   --sidebar-ring: oklch(0.702 0.183 293.541 / 60%);
+
+  /* 코드 블록 syntax token 색 — editor (CodeMirror HighlightStyle) 와 viewer (hljs CSS) 단일 출처. GitHub Dark/Light theme 값. */
+  --syntax-keyword: #ff7b72;
+  --syntax-title: #d2a8ff;
+  --syntax-attr: #79c0ff;
+  --syntax-string: #a5d6ff;
+  --syntax-built-in: #ffa657;
+  --syntax-comment: #8b949e;
+  --syntax-name: #7ee787;
+  --syntax-text: #c9d1d9;
+  --syntax-section: #1f6feb;
+  --syntax-bullet: #f2cc60;
+  --syntax-addition-fg: #aff5b4;
+  --syntax-addition-bg: #033a16;
+  --syntax-deletion-fg: #ffdcd7;
+  --syntax-deletion-bg: #67060c;
 }
 
 /* mode 무관 토큰 (--radius, --surface-elevated, --heading-gradient-*) 은 `:root` 에만 정의 — alias 라 light 의 참조 토큰을 자동 상속. `.light` 는 mode 별로 다른 값만 override. (--chart-* 는 raw 값이라 chart 도입 시 .light 도 같이 채워야 한다.) */
@@ -125,6 +141,22 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.541 0.281 293.009 / 50%);
+
+  /* 코드 블록 syntax token 색 — GitHub Light theme. */
+  --syntax-keyword: #d73a49;
+  --syntax-title: #6f42c1;
+  --syntax-attr: #005cc5;
+  --syntax-string: #032f62;
+  --syntax-built-in: #e36209;
+  --syntax-comment: #6a737d;
+  --syntax-name: #22863a;
+  --syntax-text: #24292e;
+  --syntax-section: #005cc5;
+  --syntax-bullet: #735c0f;
+  --syntax-addition-fg: #22863a;
+  --syntax-addition-bg: #f0fff4;
+  --syntax-deletion-fg: #b31d28;
+  --syntax-deletion-bg: #ffeef0;
 }
 
 @layer base {
