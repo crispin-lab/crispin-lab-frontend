@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { asPageId } from "@/lib/api/ids";
 import type { Page, Space } from "@/lib/api/types";
+import { createQueryWrapper } from "@/test/queryWrapper";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -58,19 +59,26 @@ function renderView({
   page,
   space,
   isAuthenticated,
+  canEdit,
 }: {
   page?: Page;
   space?: Space;
   isAuthenticated: boolean;
+  // 명시 안 하면 기존 "isAuthenticated 면 편집 가능" 의미 유지 — 기존 테스트 케이스 호환.
+  canEdit?: boolean;
 }) {
   const value = page ?? makePage();
+  // TaskItemSaveMounter 가 usePageUpdate (mutation hook) 을 사용 — QueryClientProvider 필수.
+  const { Wrapper } = createQueryWrapper();
   return render(
     <PageReadingView
       page={value}
       pageId={asPageId(value.pageId)}
       space={space ?? makeSpace()}
       isAuthenticated={isAuthenticated}
+      canEdit={canEdit ?? isAuthenticated}
     />,
+    { wrapper: Wrapper },
   );
 }
 
@@ -113,6 +121,12 @@ describe("PageReadingView", () => {
 
     const editLink = screen.getByRole("link", { name: "편집" });
     expect(editLink).toHaveAttribute("href", "/pages/p_1/edit");
+  });
+
+  it("로그인했지만 비편집자 (canEdit=false) 면 '편집' link 가 노출되지 않는다", () => {
+    renderView({ isAuthenticated: true, canEdit: false });
+
+    expect(screen.queryByRole("link", { name: "편집" })).not.toBeInTheDocument();
   });
 
   it("PageLink 노드는 chip 으로 렌더링되며 data-page-id 와 role=link 를 갖는다", () => {

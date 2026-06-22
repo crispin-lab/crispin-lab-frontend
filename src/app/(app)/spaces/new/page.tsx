@@ -1,14 +1,14 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { fetchMeServer } from "@/lib/api/auth.server";
 import { loginRedirectUrl } from "@/lib/auth/redirect";
-import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
 import { NewSpaceView } from "./_components/NewSpaceView";
 
 export default async function NewSpaceRoute() {
-  const cookieStore = await cookies();
-  if (!cookieStore.get(SESSION_COOKIE_NAME)) {
+  // cookie 존재만으론 만료 세션을 못 거른다 — 유효성을 한 곳에서 확정.
+  const me = await fetchMeServer();
+  if (me === null) {
     redirect(loginRedirectUrl("/spaces/new"));
   }
 
