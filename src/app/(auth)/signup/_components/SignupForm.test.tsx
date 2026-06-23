@@ -40,6 +40,17 @@ function setRedirectQuery(value: string | null): void {
   searchParamsGet.mockImplementation((key: string) => (key === "redirect" ? value : null));
 }
 
+function stubSignupUpstream() {
+  const upstream = vi.fn();
+  server.use(
+    http.post("/api/auth/signup", () => {
+      upstream();
+      return HttpResponse.json({ ok: true });
+    }),
+  );
+  return upstream;
+}
+
 describe("SignupForm", () => {
   beforeEach(() => {
     routerPush.mockReset();
@@ -50,13 +61,7 @@ describe("SignupForm", () => {
   });
 
   it("잘못된 이메일은 FormMessage 를 노출하고 submit 이 막힌다", async () => {
-    const upstream = vi.fn();
-    server.use(
-      http.post("/api/auth/signup", () => {
-        upstream();
-        return HttpResponse.json({ ok: true });
-      }),
-    );
+    const upstream = stubSignupUpstream();
     const user = userEvent.setup();
     renderForm();
 
@@ -72,13 +77,7 @@ describe("SignupForm", () => {
   });
 
   it("사용자 이름에 대문자가 들어가면 FormMessage 노출 + submit 막힘", async () => {
-    const upstream = vi.fn();
-    server.use(
-      http.post("/api/auth/signup", () => {
-        upstream();
-        return HttpResponse.json({ ok: true });
-      }),
-    );
+    const upstream = stubSignupUpstream();
     const user = userEvent.setup();
     renderForm();
 
@@ -94,13 +93,7 @@ describe("SignupForm", () => {
   });
 
   it("비밀번호 확인이 비어 있으면 FormMessage 노출 + submit 막힘", async () => {
-    const upstream = vi.fn();
-    server.use(
-      http.post("/api/auth/signup", () => {
-        upstream();
-        return HttpResponse.json({ ok: true });
-      }),
-    );
+    const upstream = stubSignupUpstream();
     const user = userEvent.setup();
     renderForm();
 
@@ -115,13 +108,7 @@ describe("SignupForm", () => {
   });
 
   it("비밀번호와 비밀번호 확인이 다르면 FormMessage 노출 + submit 막힘", async () => {
-    const upstream = vi.fn();
-    server.use(
-      http.post("/api/auth/signup", () => {
-        upstream();
-        return HttpResponse.json({ ok: true });
-      }),
-    );
+    const upstream = stubSignupUpstream();
     const user = userEvent.setup();
     renderForm();
 
@@ -224,5 +211,142 @@ describe("SignupForm", () => {
     renderForm();
     const link = screen.getByRole("link", { name: /로그인/ });
     expect(link).toHaveAttribute("href", `/login?redirect=${encodeURIComponent("/pages/abc")}`);
+  });
+
+  describe("비밀번호 정책", () => {
+    async function fillAndSubmit(
+      user: ReturnType<typeof userEvent.setup>,
+      values: { email?: string; handle?: string; password: string; passwordConfirm?: string },
+    ) {
+      const { email = "a@b.com", handle = "alice", password } = values;
+      const passwordConfirm = values.passwordConfirm ?? password;
+      await user.type(screen.getByLabelText("이메일"), email);
+      await user.type(screen.getByLabelText("사용자 이름"), handle);
+      await user.type(screen.getByLabelText("비밀번호"), password);
+      await user.type(screen.getByLabelText("비밀번호 확인"), passwordConfirm);
+      await user.click(screen.getByRole("button", { name: "회원가입" }));
+    }
+
+    it("8자 미만은 길이 메시지 노출 + submit 막힘", async () => {
+      const upstream = stubSignupUpstream();
+      const user = userEvent.setup();
+      renderForm();
+
+      await fillAndSubmit(user, { password: "abc123!" });
+
+      expect(await screen.findByText("비밀번호는 8자 이상 입력해 주세요.")).toBeInTheDocument();
+      expect(upstream).not.toHaveBeenCalled();
+      expect(routerPush).not.toHaveBeenCalled();
+    });
+
+    it("72자 초과는 길이 메시지 노출 + submit 막힘", async () => {
+      const upstream = stubSignupUpstream();
+      const user = userEvent.setup();
+      renderForm();
+
+      await fillAndSubmit(user, { password: "a1".repeat(36) + "x" });
+
+      expect(await screen.findByText("비밀번호는 72자를 넘을 수 없습니다.")).toBeInTheDocument();
+      expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("영문만 사용하면 variety 메시지 노출 + submit 막힘", async () => {
+      const upstream = stubSignupUpstream();
+      const user = userEvent.setup();
+      renderForm();
+
+      await fillAndSubmit(user, { password: "abcdefghij" });
+
+      expect(
+        await screen.findByText("비밀번호에 영문/숫자/그 외 문자 중 두 종류 이상을 포함해 주세요."),
+      ).toBeInTheDocument();
+      expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("숫자만 사용하면 variety 메시지 노출 + submit 막힘", async () => {
+      const upstream = stubSignupUpstream();
+      const user = userEvent.setup();
+      renderForm();
+
+      await fillAndSubmit(user, { password: "12345678" });
+
+      expect(
+        await screen.findByText("비밀번호에 영문/숫자/그 외 문자 중 두 종류 이상을 포함해 주세요."),
+      ).toBeInTheDocument();
+      expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("양 끝에 공백이 있으면 공백 메시지 노출 + submit 막힘", async () => {
+      const upstream = stubSignupUpstream();
+      const user = userEvent.setup();
+      renderForm();
+
+      await fillAndSubmit(user, { password: "password1 " });
+
+      expect(
+        await screen.findByText("비밀번호 양 끝에는 공백을 사용할 수 없습니다."),
+      ).toBeInTheDocument();
+      expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("이메일 local-part 가 비밀번호에 포함되면 식별자 메시지 노출", async () => {
+      const upstream = stubSignupUpstream();
+      const user = userEvent.setup();
+      renderForm();
+
+      await fillAndSubmit(user, {
+        email: "alice@example.com",
+        handle: "carol_99",
+        password: "alice1234",
+      });
+
+      expect(
+        await screen.findByText("비밀번호에 이메일이나 사용자 이름을 포함할 수 없습니다."),
+      ).toBeInTheDocument();
+      expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("사용자 이름이 비밀번호에 포함되면 식별자 메시지 노출", async () => {
+      const upstream = stubSignupUpstream();
+      const user = userEvent.setup();
+      renderForm();
+
+      await fillAndSubmit(user, {
+        email: "x@y.com",
+        handle: "crispin",
+        password: "crispin12",
+      });
+
+      expect(
+        await screen.findByText("비밀번호에 이메일이나 사용자 이름을 포함할 수 없습니다."),
+      ).toBeInTheDocument();
+      expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("3자 이하 식별자는 사전 검증에 걸리지 않고 mutation 까지 진행된다", async () => {
+      // BE 의 MIN_SIMILARITY_LENGTH = 4 와 정합 — 짧은 식별자는 false positive 회피
+      const requestBody = vi.fn<(body: unknown) => void>();
+      server.use(
+        http.post("/api/auth/signup", async ({ request }) => {
+          requestBody(await request.json());
+          return HttpResponse.json({ ok: true });
+        }),
+      );
+      const user = userEvent.setup();
+      renderForm();
+
+      await fillAndSubmit(user, {
+        email: "a@b.com",
+        handle: "bob",
+        password: "bob12345",
+      });
+
+      await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/"));
+      expect(requestBody).toHaveBeenCalledWith({
+        email: "a@b.com",
+        handle: "bob",
+        password: "bob12345",
+      });
+    });
   });
 });
