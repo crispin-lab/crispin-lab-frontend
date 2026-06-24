@@ -28,10 +28,11 @@ const SEARCH_DEBOUNCE_MS = 150;
 type Props = {
   spaceId: SpaceId;
   activePageId: PageId;
+  canWrite: boolean;
   className?: string;
 };
 
-export function PageTreeSidebar({ spaceId, activePageId, className }: Props) {
+export function PageTreeSidebar({ spaceId, activePageId, canWrite, className }: Props) {
   const query = usePageList({ spaceId, size: TREE_PAGE_SIZE });
 
   const [rawSearch, setRawSearch] = useState("");
@@ -82,11 +83,13 @@ export function PageTreeSidebar({ spaceId, activePageId, className }: Props) {
       {isDataReady && items.length === 0 && (
         <div className="space-y-3 px-1 py-2">
           <p className="text-muted-foreground text-sm">이 스페이스에는 아직 페이지가 없습니다.</p>
-          <Button
-            size="sm"
-            nativeButton={false}
-            render={<Link href={newPageHref}>첫 페이지 만들기</Link>}
-          />
+          {canWrite && (
+            <Button
+              size="sm"
+              nativeButton={false}
+              render={<Link href={newPageHref}>첫 페이지 만들기</Link>}
+            />
+          )}
         </div>
       )}
 
@@ -100,14 +103,16 @@ export function PageTreeSidebar({ spaceId, activePageId, className }: Props) {
               onChange={(event) => setRawSearch(event.target.value)}
             />
           </div>
-          <div className="mb-3 px-1">
-            <Button
-              size="sm"
-              className="w-full"
-              nativeButton={false}
-              render={<Link href={newPageHref}>새 페이지 만들기</Link>}
-            />
-          </div>
+          {canWrite && (
+            <div className="mb-3 px-1">
+              <Button
+                size="sm"
+                className="w-full"
+                nativeButton={false}
+                render={<Link href={newPageHref}>새 페이지 만들기</Link>}
+              />
+            </div>
+          )}
           {isSearchingEmpty ? (
             <p className="text-muted-foreground px-1 py-2 text-sm">검색 결과가 없습니다.</p>
           ) : (

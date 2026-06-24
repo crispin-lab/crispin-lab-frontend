@@ -47,6 +47,7 @@ describe("useSpaceDetail", () => {
       name: "공개 위키",
       description: "설명",
       updatedAt: "2026-06-01T00:00:00Z",
+      canWrite: true,
     };
     server.use(http.get("*/api/v1/spaces/s_1", () => HttpResponse.json(body)));
 
@@ -136,6 +137,7 @@ describe("useSpaceDelete", () => {
       name: "삭제 대상",
       description: "설명",
       updatedAt: "2026-06-01T00:00:00Z",
+      canWrite: true,
     };
     let spaceDetailHits = 0;
     let spaceListHits = 0;
