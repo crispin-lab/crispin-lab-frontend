@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { asPageId } from "@/lib/api/ids";
 import type { Page, Space } from "@/lib/api/types";
+import { pageBody } from "@/test/fixtures/page";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
 vi.mock("next/navigation", () => ({
@@ -25,22 +26,16 @@ function makeDoc(content: unknown[]): string {
 }
 
 function makePage(overrides: Partial<Page> = {}): Page {
-  return {
+  return pageBody({
     createdAt: "2026-05-22T10:00:00Z",
-    spaceId: "s_1",
-    visibility: "PUBLIC",
-    parentPageId: null,
-    displayOrder: 0,
-    ancestors: [],
+    updatedAt: "2026-05-22T10:00:00Z",
     title: "TipTap 위키 링크 구현 메모",
     authorHandle: "crispin",
     authorId: "u_01HX9Z8E0SECRET",
-    pageId: "p_1",
     currentVersion: 1,
     content: makeDoc([{ type: "paragraph", content: [{ type: "text", text: "본문" }] }]),
-    updatedAt: "2026-05-22T10:00:00Z",
     ...overrides,
-  };
+  });
 }
 
 function makeSpace(overrides: Partial<Space> = {}): Space {

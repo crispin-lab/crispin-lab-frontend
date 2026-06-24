@@ -6,30 +6,12 @@ import { ApiError } from "@/lib/api/client";
 import { asPageId, asSpaceId } from "@/lib/api/ids";
 import { pageKeys } from "@/lib/api/queries/page";
 import { server } from "@/mocks/server";
+import { pageBody } from "@/test/fixtures/page";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
-import type { Page, PageSearchResult, PageSummary } from "@/lib/api/types";
+import type { PageSearchResult, PageSummary } from "@/lib/api/types";
 
 import { usePage, usePageCreate, usePageDelete, usePageList, usePageUpdate } from "./usePage";
-
-function pageBody(overrides: Partial<Page> = {}): Page {
-  return {
-    createdAt: "2026-01-01T00:00:00Z",
-    spaceId: "s_1",
-    visibility: "PUBLIC",
-    parentPageId: null,
-    displayOrder: 0,
-    ancestors: [],
-    title: "안녕",
-    authorHandle: "u_1",
-    authorId: "u_1",
-    pageId: "p_1",
-    currentVersion: 1,
-    content: "본문",
-    updatedAt: "2026-01-02T00:00:00Z",
-    ...overrides,
-  };
-}
 
 function pageSummary(overrides: Partial<PageSummary> = {}): PageSummary {
   return {
@@ -65,7 +47,7 @@ describe("usePage", () => {
     const { result } = renderHook(() => usePage(asPageId("p_1")), { wrapper: Wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.title).toBe("안녕");
+    expect(result.current.data?.title).toBe("원본 제목");
   });
 });
 
@@ -293,6 +275,6 @@ describe("usePageDelete", () => {
     expect(result.current.delete.error).toBeInstanceOf(ApiError);
     expect(result.current.delete.error?.code).toBe("FORBIDDEN");
     expect(result.current.delete.error?.message).toBe("삭제 권한이 없습니다.");
-    expect(result.current.detail.data?.title).toBe("안녕");
+    expect(result.current.detail.data?.title).toBe("원본 제목");
   });
 });

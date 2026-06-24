@@ -5,11 +5,10 @@ import { handleSsrAccessError } from "@/lib/api/access.server";
 import { fetchMeServer } from "@/lib/api/auth.server";
 import { asPageId, asSpaceId } from "@/lib/api/ids";
 import { INBOUND_LIST_SIZE } from "@/lib/api/page";
-import { fetchInboundLinksServer } from "@/lib/api/page.server";
+import { fetchInboundLinksServer, fetchPageServer } from "@/lib/api/page.server";
 import { fetchPageTagListServer } from "@/lib/api/pageTag.server";
 import { pageInboundLinksOptions } from "@/lib/api/queries/page";
 import { pageTagListOptions } from "@/lib/api/queries/pageTag";
-import { apiFetchServer } from "@/lib/api/server";
 import { fetchSpaceServer } from "@/lib/api/space.server";
 import type { Me, Page, Space } from "@/lib/api/types";
 import { makeServerQueryClient } from "@/lib/queryClient";
@@ -27,9 +26,7 @@ export default async function PageReadingRoute({
 
   let page: Page;
   try {
-    page = await apiFetchServer<Page>(`/v1/pages/${encodeURIComponent(pageId)}`, {
-      allowAnonymousFallback: true,
-    });
+    page = await fetchPageServer(pageId, { allowAnonymousFallback: true });
   } catch (error) {
     handleSsrAccessError(error, returnPath);
   }
@@ -59,9 +56,9 @@ export default async function PageReadingRoute({
   }
 
   // isAuthenticated 는 cookie 존재가 아니라 실 유효성 (me === null 이면 만료 세션도 false).
-  // canEdit 은 author === me — 비편집 로그인 사용자도 edit UI 미노출.
+  // canEdit 은 BE 의 단일 신호 — FE 가 author === me 로 재계산하면 ADMIN 경로가 누락된다.
   const isAuthenticated = me !== null;
-  const canEdit = me !== null && page.authorId === me.userId;
+  const canEdit = page.canEdit;
 
   // grid 골격은 이 라우트 한정 — layout.tsx 에 두면 [pageId]/edit 서브라우트까지 적용돼 편집 화면 폭이 깨진다.
   // sticky top 은 AppHeader 의 h-12 와 정합.

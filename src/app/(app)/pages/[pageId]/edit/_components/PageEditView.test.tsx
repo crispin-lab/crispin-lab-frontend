@@ -4,8 +4,8 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { asPageId } from "@/lib/api/ids";
-import type { Page } from "@/lib/api/types";
 import { server } from "@/mocks/server";
+import { pageBody } from "@/test/fixtures/page";
 import { spaceBody } from "@/test/fixtures/space";
 import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
@@ -51,25 +51,6 @@ vi.mock("@/components/editor/Editor", () => ({
 }));
 
 import { PageEditView } from "./PageEditView";
-
-function pageBody(overrides: Partial<Page> = {}): Page {
-  return {
-    createdAt: "2026-01-01T00:00:00Z",
-    spaceId: "s_1",
-    visibility: "PUBLIC",
-    parentPageId: null,
-    displayOrder: 0,
-    ancestors: [],
-    title: "원본 제목",
-    authorHandle: "u_1",
-    authorId: "u_1",
-    pageId: "p_1",
-    currentVersion: 3,
-    content: "본문 raw",
-    updatedAt: "2026-05-26T05:32:00Z",
-    ...overrides,
-  };
-}
 
 beforeEach(() => {
   toastError.mockReset();

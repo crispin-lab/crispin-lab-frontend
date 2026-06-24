@@ -35,10 +35,19 @@ const DRAFT_SAVE_DEBOUNCE_MS = 500;
 
 type Props = {
   pageId: PageId;
+  initialPage?: Page;
 };
 
-export function PageEditView({ pageId }: Props) {
-  const { data: page, isPending, isError, error } = usePage(pageId);
+export function PageEditView({ pageId, initialPage }: Props) {
+  const {
+    data: page,
+    isPending,
+    isError,
+    error,
+  } = usePage(pageId, {
+    initialData: initialPage,
+    refetchOnMount: "always",
+  });
 
   if (isPending) {
     return <PageEditSkeleton />;

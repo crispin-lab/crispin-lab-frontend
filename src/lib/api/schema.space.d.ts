@@ -463,6 +463,13 @@ export interface components {
             /** @description 본문 (위키링크 [[...]] 추출 대상)＊ */
             content: string;
         };
+        /** TagRegisterRequest */
+        TagRegisterRequest: {
+            /** @description 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 태그 이름＊ */
+            name: string;
+        };
         /** PageTagListResponse */
         PageTagListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -488,50 +495,6 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
-        };
-        /** TagRegisterRequest */
-        TagRegisterRequest: {
-            /** @description 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 태그 이름＊ */
-            name: string;
-        };
-        /** PageGetResponse */
-        PageGetResponse: {
-            /**
-             * @description 페이지 공개 범위＊
-             * @enum {string}
-             */
-            visibility: "DRAFT" | "INTERNAL" | "MEMBER" | "PUBLIC";
-            /** @description 부모 페이지 식별자 */
-            parentPageId?: string | null;
-            /** @description 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
-            displayOrder: number;
-            /** @description 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
-            authorHandle: string;
-            /** @description 제목＊ */
-            title: string;
-            /** @description 작성자 식별자＊ */
-            authorId: string;
-            /** @description 페이지 식별자＊ */
-            pageId: string;
-            /** @description 현재 버전＊ */
-            currentVersion: number;
-            /** @description 본문 (TipTap JSON 문자열). `{type:'pageLink', attrs:{pageId, displayText}}` 노드의 target 이 viewer 의 visibility scope 와 안 맞으면 attrs.displayText 가 `비공개 페이지` 로 마스킹된다 (pageId 는 보존).＊ */
-            content: string;
-            /** @description 생성 시각 (ISO)＊ */
-            createdAt: string;
-            /** @description 소속 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 조상 페이지 목록 — root → 직계 부모 순서＊ */
-            ancestors: {
-                /** @description ⎯ 조상 페이지 제목＊ */
-                title: string;
-                /** @description ⎯ 조상 페이지 식별자＊ */
-                pageId: string;
-            }[];
-            /** @description 최근 갱신 시각 (ISO)＊ */
-            updatedAt: string;
         };
         /** SpaceListResponse */
         SpaceListResponse: {
@@ -710,6 +673,50 @@ export interface components {
             /** @description 댓글 본문＊ */
             body: string;
         };
+        /** PageGetResponse */
+        PageGetResponse: {
+            /**
+             * @description 페이지 공개 범위＊
+             * @enum {string}
+             */
+            visibility: "DRAFT" | "INTERNAL" | "MEMBER" | "PUBLIC";
+            /** @description 현재 viewer 가 이 페이지를 수정할 수 있는지. ADMIN 글로벌 권한 또는 (author 본인 && 스페이스 쓰기 권한) 일 때 true.＊ */
+            canEdit: boolean;
+            /** @description 부모 페이지 식별자 */
+            parentPageId?: string | null;
+            /** @description 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
+            displayOrder: number;
+            /** @description 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
+            authorHandle: string;
+            /** @description 제목＊ */
+            title: string;
+            /** @description 작성자 식별자＊ */
+            authorId: string;
+            /** @description 페이지 식별자＊ */
+            pageId: string;
+            /** @description 현재 버전＊ */
+            currentVersion: number;
+            /** @description 본문 (TipTap JSON 문자열). `{type:'pageLink', attrs:{pageId, displayText}}` 노드의 target 이 viewer 의 visibility scope 와 안 맞으면 attrs.displayText 가 `비공개 페이지` 로 마스킹된다 (pageId 는 보존).＊ */
+            content: string;
+            /** @description 생성 시각 (ISO)＊ */
+            createdAt: string;
+            /** @description 소속 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 조상 페이지 목록 — root → 직계 부모 순서＊ */
+            ancestors: {
+                /** @description ⎯ 조상 페이지 제목＊ */
+                title: string;
+                /** @description ⎯ 조상 페이지 식별자＊ */
+                pageId: string;
+            }[];
+            /** @description 최근 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
+        /** SpaceMemberRoleChangeRequest */
+        SpaceMemberRoleChangeRequest: {
+            /** @description 새 역할＊ */
+            role: string;
+        };
         /** TagPopularityListResponse */
         TagPopularityListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -731,11 +738,6 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
-        };
-        /** SpaceMemberRoleChangeRequest */
-        SpaceMemberRoleChangeRequest: {
-            /** @description 새 역할＊ */
-            role: string;
         };
         /** SpaceRegisterResponse */
         SpaceRegisterResponse: {
@@ -827,11 +829,6 @@ export interface components {
             /** @description 스페이스 설명＊ */
             description: string;
         };
-        /** TagRegisterResponse */
-        TagRegisterResponse: {
-            /** @description 생성된 태그 식별자＊ */
-            tagId: string;
-        };
         /** PageInboundLinkListResponse */
         PageInboundLinkListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -867,6 +864,11 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
+        };
+        /** TagRegisterResponse */
+        TagRegisterResponse: {
+            /** @description 생성된 태그 식별자＊ */
+            tagId: string;
         };
         /** PageRegisterResponse */
         PageRegisterResponse: {
