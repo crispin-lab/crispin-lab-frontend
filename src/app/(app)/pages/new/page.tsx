@@ -1,7 +1,10 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
+import { handleSsrAccessError } from "@/lib/api/access.server";
 import { fetchMeServer } from "@/lib/api/auth.server";
 import { asSpaceId } from "@/lib/api/ids";
+import { fetchSpaceServer } from "@/lib/api/space.server";
+import type { Space } from "@/lib/api/types";
 import { loginRedirectUrl } from "@/lib/auth/redirect";
 
 import { NewPageView } from "./_components/NewPageView";
@@ -35,6 +38,15 @@ export default async function NewPageRoute({
       </main>
     );
   }
+
+  const returnPath = `/pages/new?${new URLSearchParams({ spaceId }).toString()}`;
+  let space: Space;
+  try {
+    space = await fetchSpaceServer(asSpaceId(spaceId));
+  } catch (error) {
+    handleSsrAccessError(error, returnPath);
+  }
+  if (!space.canWrite) notFound();
 
   return <NewPageView spaceId={asSpaceId(spaceId)} />;
 }

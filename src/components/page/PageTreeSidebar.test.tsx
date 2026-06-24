@@ -41,10 +41,17 @@ function listResponse(items: PageSummary[], hasNext = false): PageSearchResult {
   };
 }
 
-function renderSidebar(activePageId = "p_active") {
+function renderSidebar(
+  activePageId = "p_active",
+  { canWrite = true }: { canWrite?: boolean } = {},
+) {
   const { Wrapper } = createQueryWrapper();
   return render(
-    <PageTreeSidebar spaceId={asSpaceId("s_1")} activePageId={asPageId(activePageId)} />,
+    <PageTreeSidebar
+      spaceId={asSpaceId("s_1")}
+      activePageId={asPageId(activePageId)}
+      canWrite={canWrite}
+    />,
     { wrapper: Wrapper },
   );
 }
@@ -91,6 +98,26 @@ describe("PageTreeSidebar", () => {
     // shadcn Button + Link 합성 — anchor 가 role="button" 으로 노출된다.
     const cta = screen.getByRole("button", { name: "첫 페이지 만들기" });
     expect(cta).toHaveAttribute("href", "/pages/new?spaceId=s_1");
+  });
+
+  it("canWrite 가 false 면 빈 응답에서도 '첫 페이지 만들기' CTA 가 숨고 안내 문구만 남는다", async () => {
+    server.use(http.get("*/api/v1/pages", () => HttpResponse.json(listResponse([]))));
+    renderSidebar("p_active", { canWrite: false });
+
+    expect(await screen.findByText(/아직 페이지가 없습니다/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "첫 페이지 만들기" })).not.toBeInTheDocument();
+  });
+
+  it("canWrite 가 false 면 트리 응답에서도 '새 페이지 만들기' CTA 가 숨는다", async () => {
+    server.use(
+      http.get("*/api/v1/pages", () =>
+        HttpResponse.json(listResponse([summary({ pageId: "p_only", title: "유일" })])),
+      ),
+    );
+    renderSidebar("p_only", { canWrite: false });
+
+    await screen.findByRole("link", { name: "유일" });
+    expect(screen.queryByRole("button", { name: "새 페이지 만들기" })).not.toBeInTheDocument();
   });
 
   it("트리 응답이면 페이지 목록과 active 페이지가 같이 노출된다", async () => {
@@ -216,7 +243,11 @@ describe("PageTreeSidebar", () => {
     const { Wrapper: WrapperB } = createQueryWrapper();
     rerender(
       <WrapperB>
-        <PageTreeSidebar spaceId={asSpaceId("s_1")} activePageId={asPageId("p_active")} />
+        <PageTreeSidebar
+          spaceId={asSpaceId("s_1")}
+          activePageId={asPageId("p_active")}
+          canWrite={true}
+        />
       </WrapperB>,
     );
 

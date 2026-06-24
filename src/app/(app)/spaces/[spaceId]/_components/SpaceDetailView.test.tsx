@@ -37,6 +37,7 @@ function spaceBody(overrides: Partial<Space> = {}): Space {
     name: "공개 위키",
     description: "공개 위키 설명",
     updatedAt: "2026-06-01T00:00:00Z",
+    canWrite: true,
     ...overrides,
   };
 }
@@ -275,7 +276,9 @@ describe("SpaceDetailView", () => {
 
   it("비로그인이면 ⋯ 더보기 / 새 페이지 만들기 CTA 가 숨는다", async () => {
     server.use(
-      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+        HttpResponse.json(spaceBody({ canWrite: false })),
+      ),
       http.get("*/api/v1/pages", () =>
         HttpResponse.json(
           pageListBody([{ pageId: "p_1", title: "p1", updatedAt: "2026-05-01T00:00:00Z" }]),
@@ -293,7 +296,9 @@ describe("SpaceDetailView", () => {
 
   it("비로그인 + 빈 페이지 목록이면 '첫 페이지 만들기' CTA 가 안 보이고 카피가 바뀐다", async () => {
     server.use(
-      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+        HttpResponse.json(spaceBody({ canWrite: false })),
+      ),
       http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
     );
 
@@ -301,6 +306,40 @@ describe("SpaceDetailView", () => {
     render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={false} />, { wrapper: Wrapper });
 
     expect(await screen.findByText("아직 공개된 페이지가 없습니다.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "첫 페이지 만들기" })).not.toBeInTheDocument();
+  });
+
+  it("로그인이지만 canWrite 가 false 면 '새 페이지 만들기' CTA 가 숨는다 (VIEWER 멤버)", async () => {
+    server.use(
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+        HttpResponse.json(spaceBody({ canWrite: false })),
+      ),
+      http.get("*/api/v1/pages", () =>
+        HttpResponse.json(
+          pageListBody([{ pageId: "p_1", title: "p1", updatedAt: "2026-05-01T00:00:00Z" }]),
+        ),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+    await screen.findByRole("heading", { name: "공개 위키" });
+    expect(screen.queryByRole("button", { name: "새 페이지 만들기" })).not.toBeInTheDocument();
+  });
+
+  it("로그인 + canWrite false + 빈 목록이면 '첫 페이지 만들기' CTA 가 숨는다", async () => {
+    server.use(
+      http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+        HttpResponse.json(spaceBody({ canWrite: false })),
+      ),
+      http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+    expect(await screen.findByText("아직 페이지가 없습니다.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "첫 페이지 만들기" })).not.toBeInTheDocument();
   });
 });

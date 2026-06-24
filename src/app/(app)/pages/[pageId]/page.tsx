@@ -1,10 +1,9 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { notFound, redirect } from "next/navigation";
 
 import { PageTreeSidebar } from "@/components/page/PageTreeSidebar";
+import { handleSsrAccessError } from "@/lib/api/access.server";
 import { fetchMeServer } from "@/lib/api/auth.server";
-import { ApiError } from "@/lib/api/client";
-import { asPageId, asSpaceId, type PageId } from "@/lib/api/ids";
+import { asPageId, asSpaceId } from "@/lib/api/ids";
 import { INBOUND_LIST_SIZE } from "@/lib/api/page";
 import { fetchInboundLinksServer } from "@/lib/api/page.server";
 import { fetchPageTagListServer } from "@/lib/api/pageTag.server";
@@ -13,19 +12,9 @@ import { pageTagListOptions } from "@/lib/api/queries/pageTag";
 import { apiFetchServer } from "@/lib/api/server";
 import { fetchSpaceServer } from "@/lib/api/space.server";
 import type { Me, Page, Space } from "@/lib/api/types";
-import { loginRedirectUrl } from "@/lib/auth/redirect";
 import { makeServerQueryClient } from "@/lib/queryClient";
 
 import { PageReadingView } from "./_components/PageReadingView";
-
-// page / space fetch 가 같은 401·403·404 정책을 공유 — 한쪽만 갱신되는 드리프트 방지.
-function handlePageAccessError(error: unknown, pageId: PageId): never {
-  if (error instanceof ApiError) {
-    if (error.status === 401) redirect(loginRedirectUrl(`/pages/${pageId}`));
-    if (error.status === 403 || error.status === 404) notFound();
-  }
-  throw error;
-}
 
 export default async function PageReadingRoute({
   params,
@@ -34,6 +23,7 @@ export default async function PageReadingRoute({
 }) {
   const { pageId: raw } = await params;
   const pageId = asPageId(raw);
+  const returnPath = `/pages/${pageId}`;
 
   let page: Page;
   try {
@@ -41,7 +31,7 @@ export default async function PageReadingRoute({
       allowAnonymousFallback: true,
     });
   } catch (error) {
-    handlePageAccessError(error, pageId);
+    handleSsrAccessError(error, returnPath);
   }
 
   // prefetchQuery 는 throw 하지 않는다 — 인바운드 / 태그 실패는 Client 의 useQuery / ErrorRetryCard 가 받는다.
@@ -65,7 +55,7 @@ export default async function PageReadingRoute({
       }),
     ]);
   } catch (error) {
-    handlePageAccessError(error, pageId);
+    handleSsrAccessError(error, returnPath);
   }
 
   // isAuthenticated 는 cookie 존재가 아니라 실 유효성 (me === null 이면 만료 세션도 false).
@@ -82,6 +72,7 @@ export default async function PageReadingRoute({
           <PageTreeSidebar
             spaceId={asSpaceId(page.spaceId)}
             activePageId={pageId}
+            canWrite={space.canWrite}
             className="hidden px-3 py-4 lg:sticky lg:top-12 lg:block lg:self-start"
           />
           <PageReadingView

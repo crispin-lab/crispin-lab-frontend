@@ -32,11 +32,15 @@ import { cn } from "@/lib/utils";
 type Props = {
   spaceId: SpaceId;
   isAuthenticated: boolean;
+  initialSpace?: Space;
 };
 
-export function SpaceDetailView({ spaceId, isAuthenticated }: Props) {
+export function SpaceDetailView({ spaceId, isAuthenticated, initialSpace }: Props) {
   const router = useRouter();
-  const spaceQuery = useSpaceDetail(spaceId, { refetchOnMount: "always" });
+  const spaceQuery = useSpaceDetail(spaceId, {
+    refetchOnMount: "always",
+    initialData: initialSpace,
+  });
   const pageListQuery = usePageList({ spaceId }, { refetchOnMount: "always" });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { mutate: deleteMutate, isPending: isDeleting } = useSpaceDelete();
@@ -60,6 +64,8 @@ export function SpaceDetailView({ spaceId, isAuthenticated }: Props) {
     });
   }
 
+  const canWrite = spaceQuery.data?.canWrite ?? false;
+
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 px-6 py-10">
       <SpaceMetaSection
@@ -72,6 +78,7 @@ export function SpaceDetailView({ spaceId, isAuthenticated }: Props) {
         query={pageListQuery}
         newPageHref={newPageHref}
         isAuthenticated={isAuthenticated}
+        canWrite={canWrite}
       />
       <DeleteConfirmDialog
         open={deleteOpen}
@@ -152,10 +159,12 @@ function PageListSection({
   query,
   newPageHref,
   isAuthenticated,
+  canWrite,
 }: {
   query: UseQueryResult<PageSearchResult, ApiError>;
   newPageHref: string;
   isAuthenticated: boolean;
+  canWrite: boolean;
 }) {
   const hasItems = query.data !== undefined && query.data.items.length > 0;
   const isEmpty = query.data !== undefined && query.data.items.length === 0;
@@ -166,7 +175,7 @@ function PageListSection({
         <h2 id="page-list-heading" className="text-2xl font-semibold">
           페이지
         </h2>
-        {hasItems && isAuthenticated && (
+        {hasItems && canWrite && (
           <Button nativeButton={false} render={<Link href={newPageHref}>새 페이지 만들기</Link>} />
         )}
       </header>
@@ -187,7 +196,7 @@ function PageListSection({
             <p className="text-sm">
               {isAuthenticated ? "아직 페이지가 없습니다." : "아직 공개된 페이지가 없습니다."}
             </p>
-            {isAuthenticated && (
+            {canWrite && (
               <Button
                 nativeButton={false}
                 render={<Link href={newPageHref}>첫 페이지 만들기</Link>}
