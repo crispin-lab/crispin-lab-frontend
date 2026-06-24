@@ -6,7 +6,11 @@ import {
   type PageSearchParams,
 } from "./page";
 import { apiFetchServer, type ApiServerOptions } from "./server";
-import type { PageInboundLinkListResult, PageSearchResult } from "./types";
+import type { Page, PageInboundLinkListResult, PageSearchResult } from "./types";
+
+export function fetchPageServer(pageId: PageId, options?: ApiServerOptions): Promise<Page> {
+  return apiFetchServer<Page>(`/v1/pages/${encodeURIComponent(pageId)}`, options);
+}
 
 export function searchPagesServer(
   params: PageSearchParams,
