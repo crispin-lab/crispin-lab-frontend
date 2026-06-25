@@ -141,7 +141,7 @@ function PageEditor({ initialContent }: { initialContent: JSONContent }) {
 | `detailsSummary` | 없음 | `<summary>` | `<summary class="details-summary">` |
 | `detailsContent` | 없음 | `<div data-details-content>` | 동일 |
 | `footnoteReference` | `number: number` (1+, 정수 강제, default 1) | `<a data-footnote-ref>` 의 `data-number` 읽음 | `<a data-footnote-ref href="#fn-N" data-number="N">[N]</a>` |
-| `footnoteItem` | `number: number` (정수 강제, default 1) | `<li data-footnote-item>` 의 `data-number` 읽음 | `<li data-footnote-item id="fn-N" data-number="N">` |
+| `footnoteItem` | `number: number` (정수 강제, default 1) | `<li data-footnote-item>` 의 `data-number` 읽음 | `<li data-footnote-item id="fn-N" data-number="N">` (editor 측은 `index.ts` 의 `EditorFootnoteItem.extend` 가 `data-placeholder="각주 내용을 입력하세요"` 시각 attr 만 추가 — viewer 에는 미부착) |
 | `footnoteList` | 없음 | `<ol data-footnotes>` | `<ol data-footnotes class="footnote-list">` |
 | `inlineMath` / `blockMath` | `latex: string` | `[data-type="inline-math|block-math"]` 의 `data-latex` | 빈 wrapper (KatexMounter 가 hydrate) |
 | `codeBlock` | `language: SupportedLanguage` (16 종 + `text` + `mermaid`) | 기존 spec + 새 언어 인식 | `<pre class="hljs language-...">` 또는 mermaid 는 `<pre data-mermaid="true">` |
