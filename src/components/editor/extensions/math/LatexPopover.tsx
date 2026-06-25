@@ -125,7 +125,7 @@ function LatexPreview({ latex }: { latex: string }) {
       </p>
     );
   }
-  // dangerouslySetInnerHTML 안전성 근거: katex-options.ts 의 `trust: false` 기본값이 raw HTML 명령을 차단 + throwOnError:false 라 error 도 escape 된 span 으로 출력.
+  // dangerouslySetInnerHTML 안전: katex-options.ts 의 `trust: false` 가 raw HTML 차단 + `throwOnError: false` 라 error 도 escape 된 span.
   return (
     <div
       aria-label="미리보기"

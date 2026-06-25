@@ -1,6 +1,6 @@
 "use client";
 
-// shadcn 디폴트 위에 `anchor` prop 추가 — trigger 없이 virtual element / 외부 DOM 에 popover 를 앵커링하는 케이스 (예: 에디터 노드 클릭 → popover) 를 위해.
+// shadcn 디폴트에 `anchor` prop 추가 — trigger 없이 virtual element / 외부 DOM 에 popover 를 앵커링 (에디터 노드 클릭 → popover).
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "@/lib/utils";

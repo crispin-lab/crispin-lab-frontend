@@ -186,16 +186,15 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: ["footnote", "각주"],
     icon: StickyNoteIcon,
     command: ({ editor, range }) => {
-      // reference 를 caret 위치에 박고, 새 ref 의 doc-order ordinal 과 같은 자리에 item 을 list 안에 insert.
-      // 항상 끝에 append 하면 numbering plugin 이 doc 순서대로 재할당할 때 ref ↔ item 의 number 짝이 깨진다
-      // (앞쪽 caret 에서 추가하면 새 ref 가 작은 번호, 새 item 은 큰 번호를 받아 서로 다른 각주를 가리키게 됨).
+      // 새 ref 의 doc-order ordinal 과 같은 자리에 item 을 insert — 항상 끝에 append 하면 numbering 재할당 시
+      // ref ↔ item 의 number 짝이 깨진다 (앞쪽 caret 에 ref 가 들어가면 작은 번호인데 item 은 끝이라 큰 번호).
       editor
         .chain()
         .focus()
         .deleteRange(range)
         .insertContent({ type: "footnoteReference", attrs: { number: 1 } })
         .command(({ tr }) => {
-          // insertContent 가 inline atom 을 박은 뒤 selection 을 atom 뒤 (size 1) 로 옮긴다 — 새 ref 의 시작 위치.
+          // insertContent 가 inline atom 뒤 (size 1) 로 selection 을 옮기므로 새 ref 의 시작 위치는 selection.from - 1.
           const newRefPos = tr.selection.from - 1;
           let ordinal = 0;
           tr.doc.descendants((node, pos) => {
