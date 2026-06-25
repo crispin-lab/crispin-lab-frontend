@@ -1,4 +1,5 @@
 import type { Editor, Range } from "@tiptap/core";
+import { TextSelection } from "@tiptap/pm/state";
 import {
   AlertTriangleIcon,
   CheckSquareIcon,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { CALLOUT_KINDS, type CalloutKind } from "../callout/node";
+import { appendFootnoteItem } from "../footnote/appendItem";
 
 // command 는 자기 안에서 deleteRange(range) + 본문 action 을 같은 chain 으로 — slash 흔적 제거 책임을 호출자에 떠넘기지 않는다.
 export type SlashItem = {
@@ -184,12 +186,19 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: ["footnote", "각주"],
     icon: StickyNoteIcon,
     command: ({ editor, range }) => {
-      // reference 만 삽입 — list / item 은 사용자가 직접 본문 끝에 추가, numbering plugin 이 number 동기.
+      // reference 를 caret 위치에 박고, 본문 끝 footnoteList 에 짝이 되는 item 을 자동 append (없으면 list 도 생성),
+      // caret 을 새 item 의 paragraph 로 이동 — 사용자가 곧장 설명을 입력 가능. number 는 numbering plugin 이 동기.
       editor
         .chain()
         .focus()
         .deleteRange(range)
         .insertContent({ type: "footnoteReference", attrs: { number: 1 } })
+        .command(({ tr }) => {
+          const result = appendFootnoteItem(tr, tr.doc.type.schema);
+          if (result === null) return false;
+          tr.setSelection(TextSelection.near(tr.doc.resolve(result.itemParagraphPos)));
+          return true;
+        })
         .run();
     },
   },

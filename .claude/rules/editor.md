@@ -206,7 +206,7 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 - 문서 안의 `footnoteReference` 등장 순서대로 1, 2, 3, ... 을 number 로 부여. `footnoteList` 안의 `footnoteItem` 도 같은 순서로 동기.
 - 무한 루프 방어: 현재 number 와 desired 가 모두 일치하면 `setNodeMarkup` 을 호출하지 않아 `tr.steps.length` 가 0 — `appendTransaction` 이 null 반환.
 - viewer 는 plugin 을 등록하지 않는다 — 저장된 number 가 이미 plugin 의 결과라 그대로 노출.
-- reference 추가/삭제 시 list 의 item 자동 생성/삭제는 본 PR 범위 외 — 사용자가 본문 끝에서 직접 list 를 만들고 item 을 채운다 (slash 메뉴 또는 manual).
+- slash "각주" 의 reference 삽입은 `appendFootnoteItem(tr, schema)` 헬퍼를 통해 본문 끝 footnoteList 에 짝이 되는 item 도 같은 transaction 안에서 생성하고 caret 을 새 item 으로 이동시킨다. list 가 이미 있으면 그 list 안에 item 만 append. *역방향* (reference 삭제 시 item 삭제 / item 삭제 시 reference 삭제) 자동 동기는 LAB-137 후속 PR.
 
 ## 콜아웃 / details 시각
 
