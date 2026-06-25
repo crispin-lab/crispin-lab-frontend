@@ -41,6 +41,8 @@ describe("Footnote — JSON round-trip", () => {
     expect(html).toContain('data-footnote-item=""');
     expect(html).toContain('id="fn-1"');
     expect(html).toContain("각주 내용");
+    // viewer 정적 HTML 에 editor 전용 placeholder attribute 가 새지 않는다 — LAB-140 회귀 가드.
+    expect(html).not.toContain("data-placeholder");
   });
 
   it("HTML 의 각주 마크업을 JSON 으로 복원해도 number 와 본문이 유지된다", () => {

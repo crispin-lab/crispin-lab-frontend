@@ -208,6 +208,7 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 - viewer 는 plugin 을 등록하지 않는다 — 저장된 number 가 이미 plugin 의 결과라 그대로 노출.
 - slash "각주" 진입은 reference + 본문 끝 footnoteList item 을 같은 transaction 안에서 동시 생성하고 caret 을 새 item 으로 이동 — 사용자가 곧장 설명 입력 가능.
 - `FootnoteSync` 가 cardinality 를 강제한다 — **reference = single source of truth**. ref 사라지면 같은 number 의 item cascade 삭제, ref 가 있는데 item 이 없으면 빈 item 자동 보충, list 의 모든 item 이 사라지면 list 자체 삭제. sync 는 **반드시 numbering 보다 먼저 fire** — numbering 이 먼저 돌면 doc-order 재할당으로 짝 식별 정보가 사라져 사용자가 *둘째* 각주 ref 를 지웠는데 *셋째* 각주 item 콘텐츠가 사라지는 misalign 회귀.
+- `FootnoteItemPlaceholder` 가 editor 전용 placeholder 안내 ("각주 내용을 입력하세요") 를 담당. `Decoration.node` 로 빈 footnoteItem 의 `<li>` 에 `footnote-item-placeholder-active` class + `data-placeholder` attribute 동적 부착, `.prose-editor` 한정 CSS 가 `::before` 로 표시. 검출 조건은 PM *모델* 기준 — `node.childCount === 1` 이고 유일 자식이 `paragraph` 이고 그 paragraph 의 `childCount === 0`. CSS `p:empty` 가 아니라 모델을 보는 이유는 ProseMirror 가 contenteditable 의 빈 block 에 `<br class="ProseMirror-trailingBreak">` 를 view DOM 에 주입해 `:empty` 가 매칭하지 못하기 때문. `childCount === 1` 분기로 사용자가 본문 입력 후 Enter 로 paragraph 가 늘어나면 자연 해제 — placeholder 재노출 회귀 방지. Decoration 만 사용해 base spec (`item.ts`) 의 라운드트립 invariant / viewer 정적 HTML 청결 유지.
 
 ## 콜아웃 / details 시각
 
@@ -227,6 +228,7 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 - **KaTeX CSS 를 컴포넌트별로 import** — `layout.tsx` 에서 한 번. 컴포넌트별로 박으면 같은 stylesheet 가 N 번 들어가 layout shift / 번들 낭비.
 - **footnote numbering plugin 의 `appendTransaction` 가 항상 새 transaction 반환** — `tr.steps.length` 가드 누락 시 무한 루프. desired === current 면 null 반환해야 한다.
 - **`FootnoteSync` 를 `FootnoteNumbering` *앞* 에 두면 cascade 가 잘못된 item 을 지운다** — Tiptap ExtensionManager 가 plugin 수집 시 extensions 배열을 *역순* 순회한다. PM 에 먼저 등록되려면 배열의 *뒤쪽* 에 둬야 함. `editorFootnote()` 의 순서는 `[..., FootnoteNumbering, FootnoteSync]` — sync 를 *뒤* 에 두는 게 *먼저* fire. Tiptap upgrade 시 이 동작이 바뀌면 sync.test.ts 의 "중간 ref 삭제" 케이스가 실패해 알려준다.
+- **footnote placeholder 를 CSS `p:empty` 로 검출** — ProseMirror 가 빈 paragraph 에 `<br class="ProseMirror-trailingBreak">` 를 view DOM 에 주입해 `:empty` 가 매칭하지 못한다. PM *모델* (`node.childCount`) 기준 Decoration 으로 풀어야 한다 — `FootnoteItemPlaceholder` 가 정확히 그 패턴. 본문 placeholder (`code-highlight.css:84-90`) 도 같은 이유로 Tiptap Placeholder extension 의 `is-editor-empty` Decoration class 에 의존.
 - **slash 메뉴 item 이 deleteRange 누락** — `/` 입력 흔적이 본문에 남아 사용자가 수동 삭제해야 한다. 모든 item.command 가 `editor.chain().focus().deleteRange(range).<action>().run()` 패턴 강제.
 - **codeBlock language 추가 시 SUPPORTED_LANGUAGES / lowlight.register / `codemirror/languages.ts` 의 `LANGUAGE_NAME_MAP` 중 하나만 수정** — UI 에는 보이는데 viewer/editor 한쪽이 plaintext 로 떨어진다. 세 곳 같이 갱신, `lowlight.test.ts` 의 `lowlight.registered("...")` 단언 + `codemirror/languages.test.ts` 의 `loadLanguageSupport(...)` 단언으로 양쪽 가드.
 - **token 색을 컴포넌트에 하드코딩** — editor 의 `HighlightStyle` 과 viewer 의 `.hljs-*` 가 서로 다른 색이 되어 같은 코드가 두 모드에서 다르게 보인다. `globals.css` 의 `--syntax-*` 변수가 단일 출처 — 새 토큰이 필요하면 `:root` (dark) + `.light` 양쪽에 동시 정의.

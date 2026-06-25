@@ -148,6 +148,12 @@
 .prose-editor .footnote-item > :first-child {
   display: inline;
 }
+.prose-editor .footnote-item.footnote-item-placeholder-active::before {
+  content: attr(data-placeholder);
+  color: var(--color-muted-foreground);
+  font-style: italic;
+  pointer-events: none;
+}
 
 /* Details — marker (▶/▼) 는 accent 로 살짝 강조. native <details> 의 webkit marker 는 별도 제거. */
 .prose-page .details,
