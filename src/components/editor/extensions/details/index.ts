@@ -15,7 +15,10 @@ export const editorDetails = [
           const target = event.target;
           if (!(target instanceof Element)) return;
           const summary = target.closest("summary");
-          if (summary === null || !dom.contains(summary)) return;
+          if (summary === null) return;
+          // 직접 부모 details 만 매칭 — nested details (inner summary) 클릭이 outer 의 click 리스너로 bubble 되어
+          // outer 도 같이 토글되는 회귀 차단. dom.contains() 는 nested 자식까지 true 라 부적합.
+          if (summary.closest("details") !== dom) return;
           // native disclosure 토글 차단 — open attr 는 ProseMirror state 가 단일 출처.
           event.preventDefault();
           const pos = getPos();
@@ -54,7 +57,8 @@ export const editorDetails = [
             const target = event.target;
             if (!(target instanceof Element)) return false;
             const summary = target.closest("summary");
-            return summary !== null && dom.contains(summary);
+            // onClick 과 같은 매칭 — nested inner summary 의 이벤트는 outer 가 가두지 않게.
+            return summary !== null && summary.closest("details") === dom;
           },
           ignoreMutation(mutation) {
             // update() 가 직접 set/remove 한 open attribute 가 PM mutation observer 를 깨우지 않게.

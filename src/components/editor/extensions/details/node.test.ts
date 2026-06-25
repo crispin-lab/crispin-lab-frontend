@@ -156,4 +156,52 @@ describe("Details NodeView — summary 클릭 토글", () => {
     expect(editor.state.selection.from).toBe(before);
     expect(editor.state.selection.empty).toBe(true);
   });
+
+  it("nested details 의 inner summary 클릭이 outer 의 open 을 건드리지 않는다", () => {
+    editor = new Editor({
+      extensions: [StarterKit, ...editorDetails],
+      content: {
+        type: "doc",
+        content: [
+          {
+            type: "details",
+            attrs: { open: true },
+            content: [
+              { type: "detailsSummary", content: [{ type: "text", text: "outer" }] },
+              {
+                type: "detailsContent",
+                content: [
+                  {
+                    type: "details",
+                    attrs: { open: true },
+                    content: [
+                      { type: "detailsSummary", content: [{ type: "text", text: "inner" }] },
+                      {
+                        type: "detailsContent",
+                        content: [{ type: "paragraph", content: [{ type: "text", text: "본문" }] }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    // inner summary 만 정확히 클릭 — DOM 에 summary 두 개가 있고 inner 는 두 번째.
+    const summaries = editor.view.dom.querySelectorAll("summary");
+    if (summaries.length !== 2) throw new Error(`expected 2 summaries, got ${summaries.length}`);
+    summaries[1].dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    const opens: boolean[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "details") opens.push(node.attrs.open as boolean);
+      return true;
+    });
+
+    // doc 순서: outer first, inner second. outer 는 true 유지, inner 는 false 로 토글.
+    expect(opens).toEqual([true, false]);
+  });
 });
