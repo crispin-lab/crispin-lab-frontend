@@ -2,6 +2,7 @@ import { DetailsContent, DetailsNode, DetailsSummary } from "./node";
 
 // NodeView 는 editor 한정 — native <summary> 클릭이 ProseMirror state 와 동기되어 attrs.open 이 단일 출처.
 // viewer 는 static-renderer 라 NodeView 미적용 — viewer.ts 가 DETAILS_NODES 를 그대로 export.
+// click 만 가로채 토글하고 mousedown 은 PM 으로 흘림 — 사용자가 summary 안 텍스트로 caret 진입해 직접 편집 가능 (의도된 부수 효과).
 export const editorDetails = [
   DetailsNode.extend({
     addNodeView() {

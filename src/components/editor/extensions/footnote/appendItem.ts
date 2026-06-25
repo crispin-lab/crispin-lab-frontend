@@ -19,17 +19,18 @@ export function appendFootnoteItem(
   const newItem = itemType.create({ number: 1 }, paragraphType.create());
   const doc = tr.doc;
 
-  let lastList: { node: PMNode; pos: number } | null = null;
+  // forEach 콜백 안의 재할당을 TS narrow 가 추적 못해 `as` 가 강제되는 패턴을 피하려고 array 누적 → 마지막 원소만 추출.
+  const lists: Array<{ node: PMNode; pos: number }> = [];
   doc.forEach((node, offset) => {
     if (node.type === listType) {
-      lastList = { node, pos: offset };
+      lists.push({ node, pos: offset });
     }
   });
+  const last = lists[lists.length - 1];
 
-  if (lastList !== null) {
+  if (last !== undefined) {
     // 기존 list 의 닫기 바로 앞에 item insert — list 가 두 번 생기지 않게.
-    const { node, pos } = lastList as { node: PMNode; pos: number };
-    const insertPos = pos + node.nodeSize - 1;
+    const insertPos = last.pos + last.node.nodeSize - 1;
     tr.insert(insertPos, newItem);
     // insertPos = item open → +1 item 내부 → +1 paragraph 내부 (caret 목표).
     return { itemParagraphPos: insertPos + 2 };

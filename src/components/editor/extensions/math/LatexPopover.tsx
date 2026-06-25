@@ -30,6 +30,7 @@ export function BlockMathLatexPopover({ editor, target, onClose }: Props) {
   }
 
   // base-ui 가 매 measurement 마다 anchor 함수를 재호출 — NodeView 가 destroy/recreate 되어도 최신 DOM 을 잡는다.
+  // blockMath 노드의 NodeView 는 항상 HTMLElement 로 렌더 (KaTeX wrapper span) — base-ui 의 anchor 가 HTMLElement 만 받아 안전한 lift.
   const anchor =
     target === null ? null : () => editor.view.nodeDOM(target.pos) as HTMLElement | null;
 

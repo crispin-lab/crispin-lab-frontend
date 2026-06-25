@@ -206,7 +206,7 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 - 문서 안의 `footnoteReference` 등장 순서대로 1, 2, 3, ... 을 number 로 부여. `footnoteList` 안의 `footnoteItem` 도 같은 순서로 동기.
 - 무한 루프 방어: 현재 number 와 desired 가 모두 일치하면 `setNodeMarkup` 을 호출하지 않아 `tr.steps.length` 가 0 — `appendTransaction` 이 null 반환.
 - viewer 는 plugin 을 등록하지 않는다 — 저장된 number 가 이미 plugin 의 결과라 그대로 노출.
-- slash "각주" 의 reference 삽입은 `appendFootnoteItem(tr, schema)` 헬퍼를 통해 본문 끝 footnoteList 에 짝이 되는 item 도 같은 transaction 안에서 생성하고 caret 을 새 item 으로 이동시킨다. list 가 이미 있으면 그 list 안에 item 만 append. *역방향* (reference 삭제 시 item 삭제 / item 삭제 시 reference 삭제) 자동 동기는 LAB-137 후속 PR.
+- slash "각주" 진입은 reference + 본문 끝 footnoteList item 을 같은 transaction 안에서 동시 생성하고 caret 을 새 item 으로 이동 — 사용자가 곧장 설명 입력 가능. *역방향* (reference ↔ item 양방향 자동 동기) 은 LAB-137 후속 PR.
 
 ## 콜아웃 / details 시각
 
@@ -235,4 +235,5 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 - **mermaid render 의 in-flight overlap** — 같은 NodeView 에서 텍스트 변경이 연속이면 `mermaid.render(id, src)` 가 같은 id 로 동시 호출되어 SVG DOM cleanup race. seq 카운터 + render id 에 seq 섞기로 마지막 결과만 반영.
 - **`flushTextToPm` 의 ReplaceStep 가 PM marks 를 보존하지 않음** — 현재 `codeBlock` schema 가 marks 를 허용하지 않아 안전. 향후 코드블록 안의 mark 가 도입되면 `tr.replaceWith` 대신 fragment 기반 replace 로 재구성 필요.
 - **details NodeView 의 `stopEvent` / `ignoreMutation` 누락** — summary 클릭이 PM caret 흐름에 새거나, 직접 set/remove 한 open attribute 가 PM mutation observer 를 깨워 state 가 두 번 동기되는 회귀. 두 hook 은 항상 같이 구현 — CodeMirror NodeView 의 `stopEvent` / `ignoreMutation` 정신과 동일.
+- **`Mathematics` 외에 `BlockMath` / `InlineMath` 를 별도 등록** — `Mathematics` 가 이미 두 노드를 내부 등록한다. 같은 이름의 노드를 또 등록하면 "Duplicate extension names" 경고 + 라운드트립 깨짐. block / inline 의 onClick 등 옵션 분기는 `Mathematics.configure({ blockOptions, inlineOptions })` 로.
 - **ResizeObserver 미스텁** — TipTap table NodeView 가 jsdom 테스트에서 throw. `vitest.setup.ts` 의 no-op 스텁 유지.

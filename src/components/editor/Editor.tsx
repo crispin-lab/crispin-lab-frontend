@@ -53,7 +53,7 @@ export function Editor({
         refreshSuggestionRef.current = refresh;
       },
       onBlockMathClick: (node, pos) => {
-        // blockMath schema 가 latex: string default "" 으로 강제 (extension-mathematics dts).
+        // blockMath schema 가 latex 을 string 으로 강제 — as 안전.
         setLatexEditTarget({ pos, initialLatex: node.attrs.latex as string });
       },
       placeholder,
