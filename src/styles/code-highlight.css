@@ -351,7 +351,8 @@
 .prose-editor table .selectedCell {
   background: color-mix(in oklch, transparent, var(--color-accent) 12%);
 }
-/* 열 너비 resize 핸들 시각 */
+/* 열 너비 resize 핸들 — prosemirror-tables 가 mouse 가 셀 edge 근처일 때만 .column-resize-handle
+   데코를 동적 생성. 그 시점부터 cursor: col-resize 가 발견 신호, hover 진입 시 opacity 1 로 강조. */
 .prose-editor table .column-resize-handle {
   position: absolute;
   right: -2px;
@@ -359,11 +360,12 @@
   bottom: 0;
   width: 4px;
   background: var(--color-accent);
-  opacity: 0;
+  opacity: 0.5;
+  cursor: col-resize;
   transition: opacity 0.15s ease-out;
 }
-.prose-editor table:hover .column-resize-handle {
-  opacity: 0.4;
+.prose-editor table .column-resize-handle:hover {
+  opacity: 1;
 }
 
 /* CodeBlockCopyMounter 가 동적으로 부착 — Tailwind JIT 가 동적 className 을 못 잡아 plain CSS. */
