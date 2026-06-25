@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { EditorBubbleMenu } from "./BubbleMenu";
 import { editorExtensions } from "./extensions/editor";
 import { BlockMathLatexPopover, type LatexEditTarget } from "./extensions/math/LatexPopover";
+import { TableToolbar } from "./TableToolbar";
 
 type Props = {
   spaceId: SpaceId;
@@ -93,6 +94,7 @@ export function Editor({
       )}
     >
       <EditorBubbleMenu editor={editor} />
+      <TableToolbar editor={editor} />
       <EditorContent editor={editor} />
       {editor !== null && (
         <BlockMathLatexPopover
