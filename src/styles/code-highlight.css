@@ -148,7 +148,7 @@
 .prose-editor .footnote-item > :first-child {
   display: inline;
 }
-.prose-editor .footnote-item:has(> p:empty)::before {
+.prose-editor .footnote-item.footnote-item-placeholder-active::before {
   content: attr(data-placeholder);
   color: var(--color-muted-foreground);
   font-style: italic;
