@@ -3,7 +3,7 @@ import type { Editor } from "@tiptap/react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getTableVirtualElement, TableToolbar } from "./TableToolbar";
 
@@ -212,6 +212,21 @@ describe("TableToolbar", () => {
 });
 
 describe("getTableVirtualElement", () => {
+  const appended: Node[] = [];
+
+  function appendToBody<T extends Node>(node: T): T {
+    document.body.appendChild(node);
+    appended.push(node);
+    return node;
+  }
+
+  afterEach(() => {
+    while (appended.length > 0) {
+      const node = appended.pop();
+      if (node?.parentNode) node.parentNode.removeChild(node);
+    }
+  });
+
   function makeEditorWithDomAtPos(node: Node | null, isActiveTable = true): Editor {
     return {
       state: { selection: { from: 1 } },
@@ -222,11 +237,10 @@ describe("getTableVirtualElement", () => {
     } as unknown as Editor;
   }
 
-  it("caret 이 표 안일 때 closest('table') 의 bounding rect 를 노출한다", () => {
-    const table = document.createElement("table");
+  it("caret 이 표 안 (cell Element) 일 때 closest('table') 의 bounding rect 를 노출한다", () => {
+    const table = appendToBody(document.createElement("table"));
     const td = document.createElement("td");
     table.appendChild(td);
-    document.body.appendChild(table);
 
     const editor = makeEditorWithDomAtPos(td);
     const ve = getTableVirtualElement(editor);
@@ -234,29 +248,33 @@ describe("getTableVirtualElement", () => {
     expect(ve?.contextElement).toBe(table);
     expect(typeof ve?.getBoundingClientRect).toBe("function");
     expect(ve?.getBoundingClientRect()).toBeDefined();
+  });
 
-    document.body.removeChild(table);
+  it("caret 이 셀 안 Text node 일 때도 parentElement 를 타고 올라가 table 을 찾는다", () => {
+    const table = appendToBody(document.createElement("table"));
+    const td = document.createElement("td");
+    const text = document.createTextNode("cell text");
+    td.appendChild(text);
+    table.appendChild(td);
+
+    const editor = makeEditorWithDomAtPos(text);
+    const ve = getTableVirtualElement(editor);
+    expect(ve?.contextElement).toBe(table);
   });
 
   it("editor.isActive('table') 가 false 면 즉시 null 반환 — transition frame race 방어", () => {
+    const table = appendToBody(document.createElement("table"));
     const td = document.createElement("td");
-    const table = document.createElement("table");
     table.appendChild(td);
-    document.body.appendChild(table);
 
     const editor = makeEditorWithDomAtPos(td, false);
     expect(getTableVirtualElement(editor)).toBeNull();
-
-    document.body.removeChild(table);
   });
 
   it("DOM 이 table 의 자손이 아니면 null 을 반환한다", () => {
-    const orphan = document.createElement("p");
-    document.body.appendChild(orphan);
+    const orphan = appendToBody(document.createElement("p"));
 
     const editor = makeEditorWithDomAtPos(orphan);
     expect(getTableVirtualElement(editor)).toBeNull();
-
-    document.body.removeChild(orphan);
   });
 });
