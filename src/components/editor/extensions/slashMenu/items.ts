@@ -186,15 +186,23 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: ["footnote", "각주"],
     icon: StickyNoteIcon,
     command: ({ editor, range }) => {
-      // reference 를 caret 위치에 박고, 본문 끝 footnoteList 에 짝이 되는 item 을 자동 append (없으면 list 도 생성),
-      // caret 을 새 item 의 paragraph 로 이동 — 사용자가 곧장 설명을 입력 가능. number 는 numbering plugin 이 동기.
+      // reference 를 caret 위치에 박고, 새 ref 의 doc-order ordinal 과 같은 자리에 item 을 list 안에 insert.
+      // 항상 끝에 append 하면 numbering plugin 이 doc 순서대로 재할당할 때 ref ↔ item 의 number 짝이 깨진다
+      // (앞쪽 caret 에서 추가하면 새 ref 가 작은 번호, 새 item 은 큰 번호를 받아 서로 다른 각주를 가리키게 됨).
       editor
         .chain()
         .focus()
         .deleteRange(range)
         .insertContent({ type: "footnoteReference", attrs: { number: 1 } })
         .command(({ tr }) => {
-          const result = appendFootnoteItem(tr, tr.doc.type.schema);
+          // insertContent 가 inline atom 을 박은 뒤 selection 을 atom 뒤 (size 1) 로 옮긴다 — 새 ref 의 시작 위치.
+          const newRefPos = tr.selection.from - 1;
+          let ordinal = 0;
+          tr.doc.descendants((node, pos) => {
+            if (node.type.name === "footnoteReference" && pos < newRefPos) ordinal += 1;
+            return true;
+          });
+          const result = appendFootnoteItem(tr, tr.doc.type.schema, ordinal);
           if (result === null) return false;
           tr.setSelection(TextSelection.near(tr.doc.resolve(result.itemParagraphPos)));
           return true;

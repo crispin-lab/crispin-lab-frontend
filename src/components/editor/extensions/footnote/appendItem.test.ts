@@ -77,7 +77,7 @@ describe("footnote slash command", () => {
     expect(collectNumbers(editor, "footnoteItem")).toEqual([1, 2]);
   });
 
-  it("기존 footnoteList 가 있는 상태에서 호출 시 같은 list 에 item 만 append 된다", () => {
+  it("기존 footnoteList 가 있고 그 뒤에 paragraph 가 더 있어도 같은 list 에 item 만 append 된다 (lastChild 회귀 가드)", () => {
     editor = makeEditor({
       type: "doc",
       content: [
@@ -92,6 +92,8 @@ describe("footnote slash command", () => {
             },
           ],
         },
+        // doc.lastChild 가 paragraph 가 되어도 type-search 가 list 를 찾는지 검증 — trailingNode 회귀 가드.
+        { type: "paragraph" },
       ],
     });
     editor.commands.setTextSelection(1);
@@ -99,5 +101,54 @@ describe("footnote slash command", () => {
 
     expect(countNodes(editor, "footnoteList")).toBe(1);
     expect(countNodes(editor, "footnoteItem")).toBe(2);
+  });
+
+  it("기존 ref 보다 앞쪽 caret 에서 호출 시 새 ref / 새 item 이 같은 ordinal 자리에 들어가 짝이 깨지지 않는다", () => {
+    editor = makeEditor({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "본문 " },
+            { type: "footnoteReference", attrs: { number: 1 } },
+            { type: "text", text: " 끝" },
+          ],
+        },
+        {
+          type: "footnoteList",
+          content: [
+            {
+              type: "footnoteItem",
+              attrs: { number: 1 },
+              content: [{ type: "paragraph", content: [{ type: "text", text: "기존 각주" }] }],
+            },
+          ],
+        },
+      ],
+    });
+    // caret 을 paragraph 맨 앞 (pos 1) 에 두어 기존 ref 보다 앞쪽에서 호출.
+    editor.commands.setTextSelection(1);
+    footnoteSlashItem().command({ editor, range: { from: 1, to: 1 } });
+
+    const refs: number[] = [];
+    const items: Array<{ number: number; text: string }> = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "footnoteReference") {
+        refs.push(node.attrs.number as number);
+      } else if (node.type.name === "footnoteItem") {
+        items.push({ number: node.attrs.number as number, text: node.textContent });
+      }
+      return true;
+    });
+
+    // 새 ref (doc 첫 ref) = number 1, 새 item (list 첫 item, 빈 본문) = number 1 — 짝.
+    expect(refs[0]).toBe(1);
+    expect(items[0].number).toBe(1);
+    expect(items[0].text).toBe("");
+    // 기존 ref / item 은 number 2 로 밀려나도 서로 짝 유지.
+    expect(refs[1]).toBe(2);
+    expect(items[1].number).toBe(2);
+    expect(items[1].text).toBe("기존 각주");
   });
 });
