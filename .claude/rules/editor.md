@@ -211,8 +211,8 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 ## 콜아웃 / details 시각
 
 - callout: `--accent` (info), `--destructive` (warn), `--accent-secondary` (tip) 의 옅은 (8%) 표면 + 4px 좌측 보더. accent 한도 (`design.md`) 정신 유지 — 한 화면 1~2 곳을 넘기지 않게.
-- details: native `<details>` + `<summary>` 사용. 클릭 토글은 브라우저가 처리하지만 `open` attr 가 ProseMirror 의 `parseHTML` 통해 JSON 에 보존된다.
-- 두 노드 모두 NodeView 를 두지 않는다 — prose CSS (`src/styles/code-highlight.css` 의 `.prose-page .callout` / `.prose-page .details`) 가 시각 책임.
+- details: native `<details>` + `<summary>` 사용. editor 측은 `extensions/details/index.ts` 의 NodeView 가 summary 클릭을 가로채 `setNodeAttribute(pos, "open", !current)` 로 PM state 단일 출처 — native disclosure 토글은 `event.preventDefault()` 로 차단. viewer 는 static-renderer 라 NodeView 없이 native 토글 그대로.
+- callout 은 NodeView 없이 prose CSS 책임. details 는 NodeView 가 있어도 시각 자체는 native `<details>` + prose CSS (`src/styles/code-highlight.css` 의 `.prose-page .details`) 가 담당 — NodeView 는 *동기* 책임만 진다.
 
 ## 자주 빠뜨리는 것
 
@@ -234,5 +234,5 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 - **언어 grammar 비동기 로드의 race** — 사용자가 Select 를 빠르게 토글하면 A 가 cache miss / B 가 cache hit 일 때 A 의 load 가 *나중에* resolve 해 stale 언어가 박힌다. instance-level seq 카운터로 *마지막 요청만* dispatch 하도록 가드.
 - **mermaid render 의 in-flight overlap** — 같은 NodeView 에서 텍스트 변경이 연속이면 `mermaid.render(id, src)` 가 같은 id 로 동시 호출되어 SVG DOM cleanup race. seq 카운터 + render id 에 seq 섞기로 마지막 결과만 반영.
 - **`flushTextToPm` 의 ReplaceStep 가 PM marks 를 보존하지 않음** — 현재 `codeBlock` schema 가 marks 를 허용하지 않아 안전. 향후 코드블록 안의 mark 가 도입되면 `tr.replaceWith` 대신 fragment 기반 replace 로 재구성 필요.
-- **details 의 open 토글이 저장되지 않음** — 사용자가 native `<details>` 를 클릭해 열어도 ProseMirror 가 모르면 다음 save 시 false 로 돌아간다. 현재는 slash 가 `open: true` 로 삽입하는 정책으로 회피 (NodeView 의 'toggle' 이벤트 listener 는 후속 PR).
+- **details NodeView 의 `stopEvent` / `ignoreMutation` 누락** — summary 클릭이 PM caret 흐름에 새거나, 직접 set/remove 한 open attribute 가 PM mutation observer 를 깨워 state 가 두 번 동기되는 회귀. 두 hook 은 항상 같이 구현 — CodeMirror NodeView 의 `stopEvent` / `ignoreMutation` 정신과 동일.
 - **ResizeObserver 미스텁** — TipTap table NodeView 가 jsdom 테스트에서 throw. `vitest.setup.ts` 의 no-op 스텁 유지.
