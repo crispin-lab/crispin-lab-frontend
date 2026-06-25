@@ -1,3 +1,4 @@
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 
@@ -18,6 +19,7 @@ type EditorExtensionsOptions = {
   spaceId: SpaceId;
   getSourceVisibility?: () => Visibility;
   onRefreshAvailable?: (refresh: () => void) => void;
+  onBlockMathClick?: (node: ProseMirrorNode, pos: number) => void;
   placeholder?: string;
 };
 
@@ -27,6 +29,7 @@ export function editorExtensions({
   spaceId,
   getSourceVisibility,
   onRefreshAvailable,
+  onBlockMathClick,
   placeholder,
 }: EditorExtensionsOptions) {
   return [
@@ -37,7 +40,7 @@ export function editorExtensions({
     ...editorTaskList(),
     editorCallout,
     ...editorDetails,
-    ...editorMath(),
+    ...editorMath({ onBlockClick: onBlockMathClick }),
     ...editorFootnote(),
     editorSlashMenu,
     // Placeholder 는 showOnlyWhenEditable 기본 — viewer 에서는 자연 안 보임.

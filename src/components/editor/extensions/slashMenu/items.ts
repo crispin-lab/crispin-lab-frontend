@@ -157,7 +157,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: ["math", "katex", "수식", "공식"],
     icon: FunctionSquareIcon,
     command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).insertBlockMath({ latex: "" }).run();
+      editor.chain().focus().deleteRange(range).insertBlockMath({ latex: "x^2" }).run();
     },
   },
   {

@@ -1,5 +1,6 @@
 "use client";
 
+// shadcn 디폴트 위에 `anchor` prop 추가 — trigger 없이 virtual element / 외부 DOM 에 popover 를 앵커링하는 케이스 (예: 에디터 노드 클릭 → popover) 를 위해.
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "@/lib/utils";
@@ -17,10 +18,14 @@ function PopoverContent({
   alignOffset = 0,
   side = "bottom",
   sideOffset = 6,
+  anchor,
   className,
   ...props
 }: PopoverPrimitive.Popup.Props &
-  Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">) {
+  Pick<
+    PopoverPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "side" | "sideOffset" | "anchor"
+  >) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -29,6 +34,7 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
+        anchor={anchor}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
