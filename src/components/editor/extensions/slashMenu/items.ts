@@ -1,4 +1,5 @@
 import type { Editor, Range } from "@tiptap/core";
+import { TextSelection } from "@tiptap/pm/state";
 import {
   AlertTriangleIcon,
   CheckSquareIcon,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { CALLOUT_KINDS, type CalloutKind } from "../callout/node";
+import { appendFootnoteItem } from "../footnote/appendItem";
 
 // command 는 자기 안에서 deleteRange(range) + 본문 action 을 같은 chain 으로 — slash 흔적 제거 책임을 호출자에 떠넘기지 않는다.
 export type SlashItem = {
@@ -157,7 +159,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: ["math", "katex", "수식", "공식"],
     icon: FunctionSquareIcon,
     command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).insertBlockMath({ latex: "" }).run();
+      editor.chain().focus().deleteRange(range).insertBlockMath({ latex: "x^2" }).run();
     },
   },
   {
@@ -184,12 +186,27 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: ["footnote", "각주"],
     icon: StickyNoteIcon,
     command: ({ editor, range }) => {
-      // reference 만 삽입 — list / item 은 사용자가 직접 본문 끝에 추가, numbering plugin 이 number 동기.
+      // reference 를 caret 위치에 박고, 새 ref 의 doc-order ordinal 과 같은 자리에 item 을 list 안에 insert.
+      // 항상 끝에 append 하면 numbering plugin 이 doc 순서대로 재할당할 때 ref ↔ item 의 number 짝이 깨진다
+      // (앞쪽 caret 에서 추가하면 새 ref 가 작은 번호, 새 item 은 큰 번호를 받아 서로 다른 각주를 가리키게 됨).
       editor
         .chain()
         .focus()
         .deleteRange(range)
         .insertContent({ type: "footnoteReference", attrs: { number: 1 } })
+        .command(({ tr }) => {
+          // insertContent 가 inline atom 을 박은 뒤 selection 을 atom 뒤 (size 1) 로 옮긴다 — 새 ref 의 시작 위치.
+          const newRefPos = tr.selection.from - 1;
+          let ordinal = 0;
+          tr.doc.descendants((node, pos) => {
+            if (node.type.name === "footnoteReference" && pos < newRefPos) ordinal += 1;
+            return true;
+          });
+          const result = appendFootnoteItem(tr, tr.doc.type.schema, ordinal);
+          if (result === null) return false;
+          tr.setSelection(TextSelection.near(tr.doc.resolve(result.itemParagraphPos)));
+          return true;
+        })
         .run();
     },
   },

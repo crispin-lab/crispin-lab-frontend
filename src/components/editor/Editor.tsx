@@ -1,7 +1,7 @@
 "use client";
 
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { SpaceId } from "@/lib/api/ids";
 import { parseEditorContent, serializeEditorContent } from "@/lib/editor/content";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 import { EditorBubbleMenu } from "./BubbleMenu";
 import { editorExtensions } from "./extensions/editor";
+import { BlockMathLatexPopover, type LatexEditTarget } from "./extensions/math/LatexPopover";
 
 type Props = {
   spaceId: SpaceId;
@@ -40,6 +41,8 @@ export function Editor({
     refreshSuggestionRef.current?.();
   }, [sourceVisibility]);
 
+  const [latexEditTarget, setLatexEditTarget] = useState<LatexEditTarget | null>(null);
+
   const editor = useEditor({
     // ref 들은 suggestion 트리거 시점 (mount 이후) 에 호출되며 render 중에는 읽히지 않는다.
     // eslint-disable-next-line react-hooks/refs
@@ -48,6 +51,10 @@ export function Editor({
       getSourceVisibility: () => sourceVisibilityRef.current,
       onRefreshAvailable: (refresh) => {
         refreshSuggestionRef.current = refresh;
+      },
+      onBlockMathClick: (node, pos) => {
+        // blockMath schema 가 latex 을 string 으로 강제 — as 안전.
+        setLatexEditTarget({ pos, initialLatex: node.attrs.latex as string });
       },
       placeholder,
     }),
@@ -87,6 +94,13 @@ export function Editor({
     >
       <EditorBubbleMenu editor={editor} />
       <EditorContent editor={editor} />
+      {editor !== null && (
+        <BlockMathLatexPopover
+          editor={editor}
+          target={latexEditTarget}
+          onClose={() => setLatexEditTarget(null)}
+        />
+      )}
     </div>
   );
 }
