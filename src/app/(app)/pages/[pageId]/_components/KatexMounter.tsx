@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
+import { KATEX_BASE_OPTIONS } from "@/components/editor/extensions/math/katex-options";
+
 type Props = {
   children: ReactNode;
 };
@@ -39,8 +41,7 @@ export function KatexMounter({ children }: Props) {
         const displayMode = node.dataset.type === "block-math";
         try {
           node.innerHTML = katex.renderToString(latex, {
-            throwOnError: false,
-            errorColor: "var(--color-destructive)",
+            ...KATEX_BASE_OPTIONS,
             displayMode,
             output: "html",
           });
