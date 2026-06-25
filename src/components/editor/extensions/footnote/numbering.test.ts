@@ -13,6 +13,7 @@ function makeEditor(initial?: object) {
 
 describe("FootnoteNumbering plugin", () => {
   it("문서 안의 reference 순서대로 1, 2, 3 으로 재할당한다", () => {
+    // sync plugin 도 같이 등록되어 있어 ref / item 짝이 맞아야 sync 가 끼어들지 않는다 — numbering 단독 행동 검증.
     const editor = makeEditor({
       type: "doc",
       content: [
@@ -24,6 +25,26 @@ describe("FootnoteNumbering plugin", () => {
             { type: "footnoteReference", attrs: { number: 99 } },
             { type: "text", text: " " },
             { type: "footnoteReference", attrs: { number: 99 } },
+          ],
+        },
+        {
+          type: "footnoteList",
+          content: [
+            {
+              type: "footnoteItem",
+              attrs: { number: 99 },
+              content: [{ type: "paragraph" }],
+            },
+            {
+              type: "footnoteItem",
+              attrs: { number: 99 },
+              content: [{ type: "paragraph" }],
+            },
+            {
+              type: "footnoteItem",
+              attrs: { number: 99 },
+              content: [{ type: "paragraph" }],
+            },
           ],
         },
       ],
@@ -48,7 +69,15 @@ describe("FootnoteNumbering plugin", () => {
     const editor = makeEditor({
       type: "doc",
       content: [
-        { type: "paragraph", content: [{ type: "text", text: "본문" }] },
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "본문 " },
+            { type: "footnoteReference", attrs: { number: 50 } },
+            { type: "text", text: " " },
+            { type: "footnoteReference", attrs: { number: 51 } },
+          ],
+        },
         {
           type: "footnoteList",
           content: [
@@ -92,6 +121,16 @@ describe("FootnoteNumbering plugin", () => {
           {
             type: "paragraph",
             content: [{ type: "footnoteReference", attrs: { number: 1 } }],
+          },
+          {
+            type: "footnoteList",
+            content: [
+              {
+                type: "footnoteItem",
+                attrs: { number: 1 },
+                content: [{ type: "paragraph" }],
+              },
+            ],
           },
         ],
       },

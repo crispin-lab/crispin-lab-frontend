@@ -78,10 +78,17 @@ describe("footnote slash command", () => {
   });
 
   it("기존 footnoteList 가 있고 그 뒤에 paragraph 가 더 있어도 같은 list 에 item 만 append 된다 (lastChild 회귀 가드)", () => {
+    // sync 가 cardinality 를 강제하므로 fixture 는 항상 ref ↔ item 짝을 맞춰 둔다.
     editor = makeEditor({
       type: "doc",
       content: [
-        { type: "paragraph" },
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "본문 " },
+            { type: "footnoteReference", attrs: { number: 1 } },
+          ],
+        },
         {
           type: "footnoteList",
           content: [
