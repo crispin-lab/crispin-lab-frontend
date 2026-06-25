@@ -45,9 +45,11 @@ function deleteNodeAt(editor: Editor, typeName: string, indexInDoc: number): voi
 }
 
 describe("FootnoteSync plugin", () => {
-  let editor: Editor;
+  // makeEditor 가 던지면 editor 가 미할당 상태로 afterEach 에 진입할 수 있어 2 차 에러로 원인이 가려진다.
+  let editor: Editor | undefined;
   afterEach(() => {
-    editor.destroy();
+    editor?.destroy();
+    editor = undefined;
   });
 
   it("ref 삭제 시 같은 number 의 item 도 cascade 삭제된다", () => {
@@ -308,6 +310,97 @@ describe("FootnoteSync plugin", () => {
       { number: 1, text: "" },
       { number: 2, text: "" },
     ]);
+  });
+
+  it("다중 list 환경에서 한 list 의 item 만 사라지면 같은 list 의 짝 자리에 빈 item 이 보충된다", () => {
+    // 정상 흐름 (slash 만 사용) 에서는 multi-list 가 만들어지지 않지만, 붙여넣기 / migration 의 안전망.
+    // 회귀 시: appendFootnoteItem 가 *마지막* list 만 보던 시기에는 빈 item 이 list_B 로 들어가
+    // numbering 이후 list_A 의 콘텐츠가 한 번호씩 밀려 ref(2)↔'C', ref(3)↔empty, ref(4)↔'D' 로 misalign.
+    editor = makeEditor({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "footnoteReference", attrs: { number: 1 } },
+            { type: "text", text: " " },
+            { type: "footnoteReference", attrs: { number: 2 } },
+            { type: "text", text: " 사이 " },
+            { type: "footnoteReference", attrs: { number: 3 } },
+            { type: "text", text: " " },
+            { type: "footnoteReference", attrs: { number: 4 } },
+          ],
+        },
+        {
+          type: "footnoteList",
+          content: [
+            {
+              type: "footnoteItem",
+              attrs: { number: 1 },
+              content: [{ type: "paragraph", content: [{ type: "text", text: "A" }] }],
+            },
+            {
+              type: "footnoteItem",
+              attrs: { number: 2 },
+              content: [{ type: "paragraph", content: [{ type: "text", text: "B" }] }],
+            },
+          ],
+        },
+        { type: "paragraph", content: [{ type: "text", text: "구분" }] },
+        {
+          type: "footnoteList",
+          content: [
+            {
+              type: "footnoteItem",
+              attrs: { number: 3 },
+              content: [{ type: "paragraph", content: [{ type: "text", text: "C" }] }],
+            },
+            {
+              type: "footnoteItem",
+              attrs: { number: 4 },
+              content: [{ type: "paragraph", content: [{ type: "text", text: "D" }] }],
+            },
+          ],
+        },
+      ],
+    });
+
+    // list_A 의 item(2)='B' 만 삭제 → 빈 item 이 list_A 의 item(1) 뒤 자리에 들어가야 짝 보존.
+    deleteNodeAt(editor, "footnoteItem", 1);
+
+    expect(countNodes(editor, "footnoteList")).toBe(2);
+    expect(collectItems(editor)).toEqual([
+      { number: 1, text: "A" },
+      { number: 2, text: "" },
+      { number: 3, text: "C" },
+      { number: 4, text: "D" },
+    ]);
+  });
+
+  it("ref 가 없는 list 의 마지막 item 을 사용자가 직접 지우면 빈 list 자체가 cleanup 된다", () => {
+    // 정상 흐름에서는 발생하지 않지만, 붙여넣기 / migration 으로 들어온 orphan list 의 item 을 사용자가
+    // 지웠을 때 빈 list (schema "footnoteItem+" 위반) 가 남는 회귀를 막는다.
+    editor = makeEditor({
+      type: "doc",
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "본문" }] },
+        {
+          type: "footnoteList",
+          content: [
+            {
+              type: "footnoteItem",
+              attrs: { number: 1 },
+              content: [{ type: "paragraph", content: [{ type: "text", text: "ref 없는 item" }] }],
+            },
+          ],
+        },
+      ],
+    });
+
+    deleteNodeAt(editor, "footnoteItem", 0);
+
+    expect(countNodes(editor, "footnoteList")).toBe(0);
+    expect(countNodes(editor, "footnoteItem")).toBe(0);
   });
 
   it("balanced 상태에서는 transaction 이 추가로 발생하지 않는다 (무한 루프 방어)", () => {
