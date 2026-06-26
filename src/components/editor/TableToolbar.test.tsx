@@ -40,6 +40,8 @@ type ChainCalls = {
   addColumnAfter: ReturnType<typeof vi.fn<() => void>>;
   deleteRow: ReturnType<typeof vi.fn<() => void>>;
   deleteColumn: ReturnType<typeof vi.fn<() => void>>;
+  mergeCells: ReturnType<typeof vi.fn<() => void>>;
+  splitCell: ReturnType<typeof vi.fn<() => void>>;
   toggleHeaderRow: ReturnType<typeof vi.fn<() => void>>;
   deleteTable: ReturnType<typeof vi.fn<() => void>>;
   run: ReturnType<typeof vi.fn<() => void>>;
@@ -48,7 +50,14 @@ type ChainCalls = {
 function makeEditor({
   isActiveTable = true,
   isEditable = true,
-}: { isActiveTable?: boolean; isEditable?: boolean } = {}): {
+  canMergeCells = true,
+  canSplitCell = true,
+}: {
+  isActiveTable?: boolean;
+  isEditable?: boolean;
+  canMergeCells?: boolean;
+  canSplitCell?: boolean;
+} = {}): {
   editor: Editor;
   calls: ChainCalls;
 } {
@@ -60,6 +69,8 @@ function makeEditor({
     addColumnAfter: vi.fn<() => void>(),
     deleteRow: vi.fn<() => void>(),
     deleteColumn: vi.fn<() => void>(),
+    mergeCells: vi.fn<() => void>(),
+    splitCell: vi.fn<() => void>(),
     toggleHeaderRow: vi.fn<() => void>(),
     deleteTable: vi.fn<() => void>(),
     run: vi.fn<() => void>(),
@@ -93,6 +104,14 @@ function makeEditor({
       calls.deleteColumn();
       return chain;
     },
+    mergeCells: () => {
+      calls.mergeCells();
+      return chain;
+    },
+    splitCell: () => {
+      calls.splitCell();
+      return chain;
+    },
     toggleHeaderRow: () => {
       calls.toggleHeaderRow();
       return chain;
@@ -106,8 +125,13 @@ function makeEditor({
       return true;
     },
   };
+  const canApi = {
+    mergeCells: () => canMergeCells,
+    splitCell: () => canSplitCell,
+  };
   const editor = {
     chain: () => chain,
+    can: () => canApi,
     isActive: (name: string) => name === "table" && isActiveTable,
     isEditable,
   } as unknown as Editor;
@@ -189,6 +213,8 @@ describe("TableToolbar", () => {
     { label: "열 우측 삽입", key: "addColumnAfter" as const },
     { label: "현재 행 삭제", key: "deleteRow" as const },
     { label: "현재 열 삭제", key: "deleteColumn" as const },
+    { label: "선택한 셀 병합", key: "mergeCells" as const },
+    { label: "병합된 셀 분할", key: "splitCell" as const },
     { label: "헤더 행 토글", key: "toggleHeaderRow" as const },
     { label: "표 삭제", key: "deleteTable" as const },
   ])("$label 버튼 클릭 시 chain().focus().$key().run() 을 호출한다", async ({ label, key }) => {
@@ -208,6 +234,41 @@ describe("TableToolbar", () => {
     for (const label of ["행 위 삽입", "헤더 행 토글", "표 삭제"]) {
       expect(screen.getByRole("button", { name: label })).not.toHaveAttribute("aria-pressed");
     }
+  });
+
+  describe("셀 병합 / 분할 disabled 상태", () => {
+    it("can().mergeCells() 가 false 면 '선택한 셀 병합' 버튼이 disabled 되고 클릭이 chain 을 호출하지 않는다", async () => {
+      const user = userEvent.setup();
+      const { editor, calls } = makeEditor({ canMergeCells: false });
+      render(<TableToolbar editor={editor} />);
+
+      const button = screen.getByRole("button", { name: "선택한 셀 병합" });
+      expect(button).toBeDisabled();
+
+      await user.click(button);
+      expect(calls.mergeCells).not.toHaveBeenCalled();
+      expect(calls.run).not.toHaveBeenCalled();
+    });
+
+    it("can().splitCell() 가 false 면 '병합된 셀 분할' 버튼이 disabled 되고 클릭이 chain 을 호출하지 않는다", async () => {
+      const user = userEvent.setup();
+      const { editor, calls } = makeEditor({ canSplitCell: false });
+      render(<TableToolbar editor={editor} />);
+
+      const button = screen.getByRole("button", { name: "병합된 셀 분할" });
+      expect(button).toBeDisabled();
+
+      await user.click(button);
+      expect(calls.splitCell).not.toHaveBeenCalled();
+      expect(calls.run).not.toHaveBeenCalled();
+    });
+
+    it("can().mergeCells() / splitCell() 가 true 면 두 버튼 모두 활성", () => {
+      const { editor } = makeEditor();
+      render(<TableToolbar editor={editor} />);
+      expect(screen.getByRole("button", { name: "선택한 셀 병합" })).not.toBeDisabled();
+      expect(screen.getByRole("button", { name: "병합된 셀 분할" })).not.toBeDisabled();
+    });
   });
 });
 
