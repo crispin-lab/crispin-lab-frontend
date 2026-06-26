@@ -11,6 +11,8 @@ import {
   Columns3Icon,
   HeadingIcon,
   Rows3Icon,
+  TableCellsMergeIcon,
+  TableCellsSplitIcon,
   Trash2Icon,
 } from "lucide-react";
 
@@ -22,6 +24,11 @@ type Props = {
 
 export function TableToolbar({ editor }: Props) {
   if (!editor) return null;
+
+  const inTable = editor.isActive("table");
+  const can = inTable ? editor.can() : null;
+  const canMergeCells = can?.mergeCells() ?? false;
+  const canSplitCell = can?.splitCell() ?? false;
 
   return (
     <TiptapBubbleMenu
@@ -82,6 +89,23 @@ export function TableToolbar({ editor }: Props) {
       <Separator />
 
       <ToolbarButton
+        ariaLabel="선택한 셀 병합"
+        disabled={!canMergeCells}
+        onClick={() => editor.chain().focus().mergeCells().run()}
+      >
+        <TableCellsMergeIcon className="size-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        ariaLabel="병합된 셀 분할"
+        disabled={!canSplitCell}
+        onClick={() => editor.chain().focus().splitCell().run()}
+      >
+        <TableCellsSplitIcon className="size-4" />
+      </ToolbarButton>
+
+      <Separator />
+
+      <ToolbarButton
         ariaLabel="헤더 행 토글"
         onClick={() => editor.chain().focus().toggleHeaderRow().run()}
       >
@@ -106,21 +130,25 @@ function ToolbarButton({
   children,
   ariaLabel,
   variant = "default",
+  disabled = false,
   onClick,
 }: {
   children: React.ReactNode;
   ariaLabel: string;
   variant?: "default" | "destructive";
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       aria-label={ariaLabel}
+      disabled={disabled}
       onClick={onClick}
       className={cn(
         "hover:bg-muted hover:text-foreground inline-flex size-7 items-center justify-center rounded text-sm",
         variant === "destructive" && "hover:bg-destructive/15 hover:text-destructive",
+        "disabled:pointer-events-none disabled:opacity-50",
       )}
     >
       {children}
