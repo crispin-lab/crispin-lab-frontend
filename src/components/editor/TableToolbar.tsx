@@ -26,8 +26,9 @@ export function TableToolbar({ editor }: Props) {
   if (!editor) return null;
 
   const inTable = editor.isActive("table");
-  const canMergeCells = inTable && editor.can().mergeCells();
-  const canSplitCell = inTable && editor.can().splitCell();
+  const can = inTable ? editor.can() : null;
+  const canMergeCells = can?.mergeCells() ?? false;
+  const canSplitCell = can?.splitCell() ?? false;
 
   return (
     <TiptapBubbleMenu
