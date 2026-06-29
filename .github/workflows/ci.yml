@@ -98,7 +98,7 @@ jobs:
       # 캐시 step 은 install 이전 — install 이후엔 hashFiles 가 node_modules 안의 .ts/.tsx 까지
       # 스캔해 키가 의존성 트리에 흔들리고 해시 비용이 커진다. glob 도 src + 루트 설정 파일로 좁힌다.
       - name: Cache Next.js build
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.[jt]s', 'src/**/*.[jt]sx', 'next.config.*', 'postcss.config.*', 'tsconfig.json', 'tailwind.config.*') }}
