@@ -31,7 +31,8 @@ const DUPLICATE_FIELDS = {
 type DuplicateCode = keyof typeof DUPLICATE_FIELDS;
 
 function isDuplicateCode(code: string): code is DuplicateCode {
-  return code in DUPLICATE_FIELDS;
+  // `in` 은 prototype chain 까지 검사해 "toString" / "hasOwnProperty" 같은 backend code 가 함수 값으로 매핑돼 setError 가 silent 무동작 — own property 만 허용.
+  return Object.hasOwn(DUPLICATE_FIELDS, code);
 }
 
 export function SignupForm() {

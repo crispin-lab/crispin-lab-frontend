@@ -203,6 +203,30 @@ describe("SignupForm", () => {
     expect(routerPush).not.toHaveBeenCalled();
   });
 
+  it("Object.prototype key 를 code 로 보내도 inline 분기로 떨어지지 않고 root fallback 으로 흡수", async () => {
+    server.use(
+      http.post("/api/auth/signup", () =>
+        HttpResponse.json(
+          { code: "toString", message: "요청을 처리하지 못했습니다." },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("이메일"), "a@b.com");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
+    await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
+    await user.click(screen.getByRole("button", { name: "회원가입" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("요청을 처리하지 못했습니다.");
+    expect(screen.getByLabelText("이메일")).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("사용자 이름")).not.toHaveAttribute("aria-invalid", "true");
+  });
+
   it("매핑되지 않은 409 code 는 root form error 로 fallback — toast + form-level alert 동시 노출, 필드 aria-invalid 없음", async () => {
     server.use(
       http.post("/api/auth/signup", () =>
