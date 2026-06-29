@@ -19,8 +19,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useSignup } from "@/hooks/useAuth";
+import { ApiError } from "@/lib/api/client";
 import { loginRedirectUrl, safeRedirectTarget } from "@/lib/auth/redirect";
 import { signupFormSchema, toSignupInput, type SignupFormInput } from "@/lib/schemas/auth";
+
+const DUPLICATE_FIELDS = {
+  EMAIL_DUPLICATED: "email",
+  HANDLE_DUPLICATED: "handle",
+} as const satisfies Record<string, "email" | "handle">;
+
+type DuplicateCode = keyof typeof DUPLICATE_FIELDS;
+
+function isDuplicateCode(code: string): code is DuplicateCode {
+  // `in` 은 prototype chain 까지 검사해 "toString" / "hasOwnProperty" 같은 backend code 가 함수 값으로 매핑돼 setError 가 silent 무동작 — own property 만 허용.
+  return Object.hasOwn(DUPLICATE_FIELDS, code);
+}
 
 export function SignupForm() {
   const router = useRouter();
@@ -36,12 +49,27 @@ export function SignupForm() {
   const loginHref = rawRedirect ? loginRedirectUrl(rawRedirect) : "/login";
 
   function onSubmit(values: SignupFormInput) {
+    form.clearErrors("root.duplicate");
     mutate(toSignupInput(values), {
       onSuccess: () => {
         router.push(safeRedirectTarget(rawRedirect));
       },
+      onError: (error) => {
+        if (!(error instanceof ApiError) || error.status !== 409) return;
+        if (isDuplicateCode(error.code)) {
+          form.setError(DUPLICATE_FIELDS[error.code], {
+            type: "server",
+            message: error.message,
+          });
+          return;
+        }
+        // 매핑되지 않은 409 — root error 로 user-visible fallback. backend 가 새 code 를 추가했을 때 inline 이 silent 가 되지 않도록.
+        form.setError("root.duplicate", { type: "server", message: error.message });
+      },
     });
   }
+
+  const rootDuplicateMessage = form.formState.errors.root?.duplicate?.message;
 
   return (
     <div className="space-y-12">
@@ -131,6 +159,12 @@ export function SignupForm() {
               </FormItem>
             )}
           />
+
+          {rootDuplicateMessage && (
+            <p role="alert" className="text-destructive text-sm">
+              {rootDuplicateMessage}
+            </p>
+          )}
 
           <div className="pt-2">
             <CtaLink type="submit" isPending={isPending}>

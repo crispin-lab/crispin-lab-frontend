@@ -7,25 +7,24 @@ import { server } from "@/mocks/server";
 import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
-const { routerPush, urlSearchParams, pathname } = vi.hoisted(() => ({
+const { routerPush, routerRefresh, urlSearchParams, pathname } = vi.hoisted(() => ({
   routerPush: vi.fn(),
+  routerRefresh: vi.fn(),
   urlSearchParams: { current: new URLSearchParams() },
   pathname: { current: "/" },
 }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: routerPush }),
+  useRouter: () => ({ push: routerPush, refresh: routerRefresh }),
   useSearchParams: () => urlSearchParams.current,
   usePathname: () => pathname.current,
 }));
 
-const { redirectToLoginMock, navigateAfterLogoutMock } = vi.hoisted(() => ({
+const { redirectToLoginMock } = vi.hoisted(() => ({
   redirectToLoginMock: vi.fn(),
-  navigateAfterLogoutMock: vi.fn(),
 }));
 vi.mock("@/lib/auth/redirect", () =>
   redirectModuleMock({
     redirectToLogin: redirectToLoginMock,
-    navigateAfterLogout: navigateAfterLogoutMock,
   }),
 );
 
@@ -46,8 +45,8 @@ function renderHeader() {
 
 function resetAllSpies() {
   routerPush.mockReset();
+  routerRefresh.mockReset();
   redirectToLoginMock.mockReset();
-  navigateAfterLogoutMock.mockReset();
   setThemeMock.mockReset();
   themeRef.resolvedTheme = "dark";
   urlSearchParams.current = new URLSearchParams();
@@ -68,11 +67,65 @@ describe("AppHeader — 비로그인", () => {
     );
   });
 
-  it("로그인 link 가 /login 으로 노출된다", async () => {
+  it("로그인 link 가 현재 path 를 redirect 쿼리로 carry 한다", async () => {
+    pathname.current = "/pages/p_1";
+    renderHeader();
+
+    const loginLink = await screen.findByRole("link", { name: /로그인/ });
+    expect(loginLink).toHaveAttribute(
+      "href",
+      `/login?redirect=${encodeURIComponent("/pages/p_1")}`,
+    );
+  });
+
+  it("현재 path 의 search 까지 redirect 쿼리에 포함한다", async () => {
+    pathname.current = "/pages/p_1";
+    urlSearchParams.current = new URLSearchParams({ tab: "draft" });
+    renderHeader();
+
+    const loginLink = await screen.findByRole("link", { name: /로그인/ });
+    expect(loginLink).toHaveAttribute(
+      "href",
+      `/login?redirect=${encodeURIComponent("/pages/p_1?tab=draft")}`,
+    );
+  });
+
+  it("/login 자기 자신에서는 redirect 쿼리 없이 plain /login (loop 방어)", async () => {
+    pathname.current = "/login";
     renderHeader();
 
     const loginLink = await screen.findByRole("link", { name: /로그인/ });
     expect(loginLink).toHaveAttribute("href", "/login");
+  });
+
+  it("/signup 자기 자신에서도 redirect 쿼리 없이 plain /login (loop 방어)", async () => {
+    pathname.current = "/signup";
+    renderHeader();
+
+    const loginLink = await screen.findByRole("link", { name: /로그인/ });
+    expect(loginLink).toHaveAttribute("href", "/login");
+  });
+
+  it("/login/forgot sub-route 도 self-path 로 본다", async () => {
+    pathname.current = "/login/forgot";
+    renderHeader();
+    expect(await screen.findByRole("link", { name: /로그인/ })).toHaveAttribute("href", "/login");
+  });
+
+  it("/signup/verify sub-route 도 self-path 로 본다", async () => {
+    pathname.current = "/signup/verify";
+    renderHeader();
+    expect(await screen.findByRole("link", { name: /로그인/ })).toHaveAttribute("href", "/login");
+  });
+
+  it("auth self-path 에서도 기존 redirect 쿼리는 carry — /signup?redirect=/pages/p_1 → /login?redirect=/pages/p_1", async () => {
+    pathname.current = "/signup";
+    urlSearchParams.current = new URLSearchParams({ redirect: "/pages/p_1" });
+    renderHeader();
+    expect(await screen.findByRole("link", { name: /로그인/ })).toHaveAttribute(
+      "href",
+      `/login?redirect=${encodeURIComponent("/pages/p_1")}`,
+    );
   });
 
   it("계정 메뉴 trigger 는 노출되지 않는다", async () => {
@@ -122,7 +175,7 @@ describe("AppHeader — 로그인", () => {
     expect(spacesItem).toHaveAttribute("href", "/spaces");
   });
 
-  it("로그아웃 항목 클릭 시 BFF POST → 캐시 clear → navigateAfterLogout 호출", async () => {
+  it("로그아웃 항목 클릭 시 BFF POST → 캐시 clear → router.refresh 호출 (anonymous RSC 재진입)", async () => {
     server.use(http.post("/api/auth/logout", () => HttpResponse.json({ ok: true })));
     const user = userEvent.setup();
     renderHeader();
@@ -130,7 +183,7 @@ describe("AppHeader — 로그인", () => {
     await user.click(await screen.findByRole("button", { name: "계정 메뉴" }));
     await user.click(await screen.findByRole("menuitem", { name: "로그아웃" }));
 
-    await waitFor(() => expect(navigateAfterLogoutMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(routerRefresh).toHaveBeenCalledTimes(1));
   });
 
   it("로그아웃 BFF 가 5xx 여도 cleanup 은 동일하게 수행된다 (onSettled)", async () => {
@@ -148,7 +201,7 @@ describe("AppHeader — 로그인", () => {
     await user.click(await screen.findByRole("button", { name: "계정 메뉴" }));
     await user.click(await screen.findByRole("menuitem", { name: "로그아웃" }));
 
-    await waitFor(() => expect(navigateAfterLogoutMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(routerRefresh).toHaveBeenCalledTimes(1));
   });
 });
 

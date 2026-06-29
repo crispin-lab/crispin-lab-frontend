@@ -10,6 +10,7 @@ import { SearchInput } from "@/components/SearchInput";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/hooks/useAuth";
 import { useSearchSubmit } from "@/hooks/useSearchSubmit";
+import { loginRedirectUrl } from "@/lib/auth/redirect";
 import { cn } from "@/lib/utils";
 
 import { AccountMenu } from "./AccountMenu";
@@ -52,7 +53,9 @@ export function AppHeader({ className, variant = "full" }: Props) {
         <div aria-hidden className="flex-1" />
       )}
       <ThemeToggle />
-      <AccountSlot />
+      <Suspense fallback={<div aria-hidden className="h-8 w-20" />}>
+        <AccountSlot pathname={pathname} />
+      </Suspense>
     </header>
   );
 }
@@ -108,8 +111,9 @@ function HeaderSearchForm({ initialValue, isActive }: { initialValue: string; is
   );
 }
 
-function AccountSlot() {
+function AccountSlot({ pathname }: { pathname: string }) {
   const { data: me, isPending, isError } = useMe();
+  const searchParams = useSearchParams();
 
   // 첫 로드 동안 깜빡임 방지 + 5xx 일시 장애에서 "로그아웃된 것처럼 보이는" 회귀 방지를 같이 잡는다.
   // 트레이드오프: 백엔드 영구 5xx 시 비로그인 사용자가 로그인 link 도 못 보지만, 로그인 페이지는 BFF 의 다른 경로라
@@ -127,11 +131,34 @@ function AccountSlot() {
 
   if (me == null) {
     return (
-      <Link href="/login" className="text-muted-foreground text-sm hover:underline">
+      <Link
+        href={loginHrefFor(pathname, searchParams)}
+        className="text-muted-foreground text-sm hover:underline"
+      >
         로그인 →
       </Link>
     );
   }
 
   return <AccountMenu me={me} />;
+}
+
+function loginHrefFor(pathname: string, searchParams: URLSearchParams): string {
+  if (isAuthSelfPath(pathname)) {
+    // /signup?redirect=/pages/p_1 처럼 auth 자기 자신에서도 user 의 원래 복귀 대상은 살린다 — SignupForm footer link 의 carry 규약과 정합.
+    const existing = searchParams.get("redirect");
+    return existing ? loginRedirectUrl(existing) : "/login";
+  }
+  const search = searchParams.toString();
+  const target = search === "" ? pathname : `${pathname}?${search}`;
+  return loginRedirectUrl(target);
+}
+
+function isAuthSelfPath(pathname: string): boolean {
+  return (
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/signup" ||
+    pathname.startsWith("/signup/")
+  );
 }

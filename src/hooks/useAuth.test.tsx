@@ -11,16 +11,19 @@ vi.mock("sonner", () => ({
   toast: { error: toastError },
 }));
 
-const { redirectToLoginMock, navigateAfterLogoutMock } = vi.hoisted(() => ({
+const { redirectToLoginMock } = vi.hoisted(() => ({
   redirectToLoginMock: vi.fn(),
-  navigateAfterLogoutMock: vi.fn(),
 }));
 vi.mock("@/lib/auth/redirect", () =>
   redirectModuleMock({
     redirectToLogin: redirectToLoginMock,
-    navigateAfterLogout: navigateAfterLogoutMock,
   }),
 );
+
+const { routerRefreshMock } = vi.hoisted(() => ({ routerRefreshMock: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: routerRefreshMock }),
+}));
 
 import { useLogin, useLogout, useMe, useSignup } from "./useAuth";
 
@@ -205,10 +208,10 @@ describe("useLogout", () => {
   beforeEach(() => {
     toastError.mockReset();
     redirectToLoginMock.mockReset();
-    navigateAfterLogoutMock.mockReset();
+    routerRefreshMock.mockReset();
   });
 
-  it("성공 시 캐시를 clear 하고 navigateAfterLogout 으로 떠난다", async () => {
+  it("성공 시 캐시를 clear 하고 router.refresh 로 anonymous RSC 재진입을 트리거한다", async () => {
     server.use(http.post("/api/auth/logout", () => HttpResponse.json({ ok: true })));
     const client = createTestQueryClient();
     const clearSpy = vi.spyOn(client, "clear");
@@ -220,7 +223,7 @@ describe("useLogout", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(clearSpy).toHaveBeenCalledTimes(1);
-    expect(navigateAfterLogoutMock).toHaveBeenCalledTimes(1);
+    expect(routerRefreshMock).toHaveBeenCalledTimes(1);
   });
 
   it("BFF 가 5xx 여도 onSettled 로 cleanup 이 동일하게 수행된다 (사용자가 의도대로 떠날 수 있어야 함)", async () => {
@@ -242,6 +245,6 @@ describe("useLogout", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(clearSpy).toHaveBeenCalledTimes(1);
-    expect(navigateAfterLogoutMock).toHaveBeenCalledTimes(1);
+    expect(routerRefreshMock).toHaveBeenCalledTimes(1);
   });
 });
