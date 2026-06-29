@@ -203,7 +203,7 @@ describe("SignupForm", () => {
     expect(routerPush).not.toHaveBeenCalled();
   });
 
-  it("알 수 없는 409 code 는 inline 분기 없이 toast 만 노출 (필드 추정 불가 — 글로벌 attention 으로 fallback)", async () => {
+  it("매핑되지 않은 409 code 는 root form error 로 fallback — toast + form-level alert 동시 노출, 필드 aria-invalid 없음", async () => {
     server.use(
       http.post("/api/auth/signup", () =>
         HttpResponse.json(
@@ -221,6 +221,8 @@ describe("SignupForm", () => {
     await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("예약된 이메일입니다.");
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("예약된 이메일입니다."));
     expect(screen.getByLabelText("이메일")).not.toHaveAttribute("aria-invalid", "true");
     expect(screen.getByLabelText("사용자 이름")).not.toHaveAttribute("aria-invalid", "true");

@@ -48,6 +48,7 @@ export function SignupForm() {
   const loginHref = rawRedirect ? loginRedirectUrl(rawRedirect) : "/login";
 
   function onSubmit(values: SignupFormInput) {
+    form.clearErrors("root.duplicate");
     mutate(toSignupInput(values), {
       onSuccess: () => {
         router.push(safeRedirectTarget(rawRedirect));
@@ -61,13 +62,13 @@ export function SignupForm() {
           });
           return;
         }
-        if (process.env.NODE_ENV !== "production") {
-          // 새 backend 409 code 가 추가되면 DUPLICATE_FIELDS 매핑을 늘려야 한다 — 글로벌 toast 만으로는 어느 필드인지 못 알림.
-          console.warn(`[SignupForm] unhandled 409 code "${error.code}"`);
-        }
+        // 매핑되지 않은 409 — root error 로 user-visible fallback. backend 가 새 code 를 추가했을 때 inline 이 silent 가 되지 않도록.
+        form.setError("root.duplicate", { type: "server", message: error.message });
       },
     });
   }
+
+  const rootDuplicateMessage = form.formState.errors.root?.duplicate?.message;
 
   return (
     <div className="space-y-12">
@@ -157,6 +158,12 @@ export function SignupForm() {
               </FormItem>
             )}
           />
+
+          {rootDuplicateMessage && (
+            <p role="alert" className="text-destructive text-sm">
+              {rootDuplicateMessage}
+            </p>
+          )}
 
           <div className="pt-2">
             <CtaLink type="submit" isPending={isPending}>
