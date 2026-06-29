@@ -7,25 +7,24 @@ import { server } from "@/mocks/server";
 import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
-const { routerPush, urlSearchParams, pathname } = vi.hoisted(() => ({
+const { routerPush, routerRefresh, urlSearchParams, pathname } = vi.hoisted(() => ({
   routerPush: vi.fn(),
+  routerRefresh: vi.fn(),
   urlSearchParams: { current: new URLSearchParams() },
   pathname: { current: "/" },
 }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: routerPush }),
+  useRouter: () => ({ push: routerPush, refresh: routerRefresh }),
   useSearchParams: () => urlSearchParams.current,
   usePathname: () => pathname.current,
 }));
 
-const { redirectToLoginMock, navigateAfterLogoutMock } = vi.hoisted(() => ({
+const { redirectToLoginMock } = vi.hoisted(() => ({
   redirectToLoginMock: vi.fn(),
-  navigateAfterLogoutMock: vi.fn(),
 }));
 vi.mock("@/lib/auth/redirect", () =>
   redirectModuleMock({
     redirectToLogin: redirectToLoginMock,
-    navigateAfterLogout: navigateAfterLogoutMock,
   }),
 );
 
@@ -46,8 +45,8 @@ function renderHeader() {
 
 function resetAllSpies() {
   routerPush.mockReset();
+  routerRefresh.mockReset();
   redirectToLoginMock.mockReset();
-  navigateAfterLogoutMock.mockReset();
   setThemeMock.mockReset();
   themeRef.resolvedTheme = "dark";
   urlSearchParams.current = new URLSearchParams();
@@ -154,7 +153,7 @@ describe("AppHeader — 로그인", () => {
     expect(spacesItem).toHaveAttribute("href", "/spaces");
   });
 
-  it("로그아웃 항목 클릭 시 BFF POST → 캐시 clear → navigateAfterLogout 호출", async () => {
+  it("로그아웃 항목 클릭 시 BFF POST → 캐시 clear → router.refresh 호출 (anonymous RSC 재진입)", async () => {
     server.use(http.post("/api/auth/logout", () => HttpResponse.json({ ok: true })));
     const user = userEvent.setup();
     renderHeader();
@@ -162,7 +161,7 @@ describe("AppHeader — 로그인", () => {
     await user.click(await screen.findByRole("button", { name: "계정 메뉴" }));
     await user.click(await screen.findByRole("menuitem", { name: "로그아웃" }));
 
-    await waitFor(() => expect(navigateAfterLogoutMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(routerRefresh).toHaveBeenCalledTimes(1));
   });
 
   it("로그아웃 BFF 가 5xx 여도 cleanup 은 동일하게 수행된다 (onSettled)", async () => {
@@ -180,7 +179,7 @@ describe("AppHeader — 로그인", () => {
     await user.click(await screen.findByRole("button", { name: "계정 메뉴" }));
     await user.click(await screen.findByRole("menuitem", { name: "로그아웃" }));
 
-    await waitFor(() => expect(navigateAfterLogoutMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(routerRefresh).toHaveBeenCalledTimes(1));
   });
 });
 
