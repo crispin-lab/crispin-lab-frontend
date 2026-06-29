@@ -43,10 +43,7 @@ export function useMe(): UseQueryResult<Me | null, ApiError> {
   return useQuery(meOptions());
 }
 
-// `onSettled` — 성공·실패 모두 같은 cleanup. BFF 5xx 로 logout 호출이 실패해도 사용자는 의도대로 떠날 수 있어야 한다.
-// 의도적 로그아웃은 401 만료의 forced-redirect 와 의미가 다르다 — 현재 path 가 PUBLIC 이면 그대로 머무는 게 자연.
-// 캐시 clear 후 router.refresh() 로 anonymous RSC 재진입을 트리거하면, 권한 필요 페이지의 SSR 가드가
-// 자동으로 loginRedirectUrl 로 보내고 PUBLIC 페이지는 그대로 새 본문이 흘러든다.
+// onSettled — BFF 5xx 여도 떠난다. router.refresh() 가 anonymous RSC 재진입을 트리거 → 권한 페이지는 SSR 가드가 redirect, PUBLIC 은 머무름.
 export function useLogout(): UseMutationResult<LogoutResult, ApiError, void> {
   const queryClient = useQueryClient();
   const router = useRouter();
