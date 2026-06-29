@@ -144,7 +144,11 @@ function AccountSlot({ pathname }: { pathname: string }) {
 }
 
 function loginHrefFor(pathname: string, searchParams: URLSearchParams): string {
-  if (isAuthSelfPath(pathname)) return "/login";
+  if (isAuthSelfPath(pathname)) {
+    // /signup?redirect=/pages/p_1 처럼 auth 자기 자신에서도 user 의 원래 복귀 대상은 살린다 — SignupForm footer link 의 carry 규약과 정합.
+    const existing = searchParams.get("redirect");
+    return existing ? loginRedirectUrl(existing) : "/login";
+  }
   const search = searchParams.toString();
   const target = search === "" ? pathname : `${pathname}?${search}`;
   return loginRedirectUrl(target);

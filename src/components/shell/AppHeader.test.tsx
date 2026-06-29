@@ -106,10 +106,26 @@ describe("AppHeader — 비로그인", () => {
     expect(loginLink).toHaveAttribute("href", "/login");
   });
 
-  it("/login/forgot · /signup/verify 같은 sub-route 도 self-path 로 본다", async () => {
+  it("/login/forgot sub-route 도 self-path 로 본다", async () => {
     pathname.current = "/login/forgot";
     renderHeader();
     expect(await screen.findByRole("link", { name: /로그인/ })).toHaveAttribute("href", "/login");
+  });
+
+  it("/signup/verify sub-route 도 self-path 로 본다", async () => {
+    pathname.current = "/signup/verify";
+    renderHeader();
+    expect(await screen.findByRole("link", { name: /로그인/ })).toHaveAttribute("href", "/login");
+  });
+
+  it("auth self-path 에서도 기존 redirect 쿼리는 carry — /signup?redirect=/pages/p_1 → /login?redirect=/pages/p_1", async () => {
+    pathname.current = "/signup";
+    urlSearchParams.current = new URLSearchParams({ redirect: "/pages/p_1" });
+    renderHeader();
+    expect(await screen.findByRole("link", { name: /로그인/ })).toHaveAttribute(
+      "href",
+      `/login?redirect=${encodeURIComponent("/pages/p_1")}`,
+    );
   });
 
   it("계정 메뉴 trigger 는 노출되지 않는다", async () => {

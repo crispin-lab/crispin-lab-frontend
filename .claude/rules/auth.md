@@ -190,11 +190,11 @@ PRIVATE 페이지에 권한이 없는 사용자가 접근하면 백엔드가 403
 로그인 페이지 자체에서 다시 로그인 페이지로 가는 redirect 는 loop 다. 두 곳에서 같은 self-path 규약을 지킨다.
 
 - **`redirect.ts` 의 `redirectToLogin`** (401 만료 후 forced) — `isLoginPath(window.location.pathname)` 으로 자기 자신 (`/login`, `/login/...` sub-route) 진입 시 navigation 을 skip. `/signup` 은 자기 자신이 아니라 *옵션 경로* 라 skip 안 함 — 만료된 세션은 그대로 `/login` 으로 보내야 한다.
-- **`AppHeader` 의 `loginHrefFor`** (헤더 로그인 link href) — `isAuthSelfPath` 로 `/login`, `/login/...`, `/signup`, `/signup/...` 네 패턴 모두 self-path 로 묶고 plain `/login` 반환. 헤더의 link 는 사용자가 보던 페이지로 돌아오기 위한 carry 이므로 auth 페이지 안에서는 carry 가 의미 없다.
+- **`AppHeader` 의 `loginHrefFor`** (헤더 로그인 link href) — `isAuthSelfPath` 로 `/login`, `/login/...`, `/signup`, `/signup/...` 네 패턴을 self-path 로 묶고, *현재 path* 는 carry 하지 않는다 (self-loop 방어). 단, search params 에 `redirect` 가 이미 있으면 그건 `/signup?redirect=/pages/p_1` 처럼 사용자가 auth 흐름에 진입하기 전부터 가지고 들어온 *원래 복귀 대상* 이므로 그대로 carry — `SignupForm` footer link 의 `rawRedirect` 보존 규약과 정합.
 
 같은 규약이지만 적용 범위가 다른 이유:
 - forced redirect 는 *세션 만료의 회복 경로* 이므로 `/signup` 에서도 `/login` 으로 가는 게 자연 (signup 흐름 중 만료 ↔ 재로그인).
-- 헤더 link 는 *사용자가 의도해서 로그인 페이지로 가는 entry* 이므로 자기 자신 + 회원가입 페이지에서 carry 가 무의미.
+- 헤더 link 는 *사용자가 의도해서 로그인 페이지로 가는 entry* 이므로 *현재 auth path 자체* 는 carry 로 박지 않는다. 다만 *기존 redirect 쿼리* 는 원래 사용자가 가려던 곳이라 살린다.
 
 **sub-route 도 self-path 로 묶는다** — `/login/forgot`, `/signup/verify` 같은 sub-route 가 추가되면 정확한 일치만 검사할 때 회귀가 생긴다. 두 함수 모두 `startsWith("/login/")` / `startsWith("/signup/")` 를 포함한다.
 
