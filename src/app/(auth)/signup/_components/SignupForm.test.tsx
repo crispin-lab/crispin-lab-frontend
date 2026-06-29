@@ -178,11 +178,11 @@ describe("SignupForm", () => {
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/"));
   });
 
-  it("409 HANDLE_ALREADY_USED 응답 시 toast.error 호출 + redirect 안 함", async () => {
+  it("409 HANDLE_DUPLICATED 응답 시 handle 필드 inline FormMessage + toast 동시 노출", async () => {
     server.use(
       http.post("/api/auth/signup", () =>
         HttpResponse.json(
-          { code: "HANDLE_ALREADY_USED", message: "이미 등록된 사용자 이름입니다." },
+          { code: "HANDLE_DUPLICATED", message: "이미 등록된 사용자 이름입니다." },
           { status: 409 },
         ),
       ),
@@ -196,7 +196,35 @@ describe("SignupForm", () => {
     await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
     await user.click(screen.getByRole("button", { name: "회원가입" }));
 
+    expect(await screen.findByText("이미 등록된 사용자 이름입니다.")).toBeInTheDocument();
+    expect(screen.getByLabelText("사용자 이름")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("이메일")).not.toHaveAttribute("aria-invalid", "true");
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("이미 등록된 사용자 이름입니다."));
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("409 EMAIL_DUPLICATED 응답 시 email 필드 inline FormMessage + toast 동시 노출", async () => {
+    server.use(
+      http.post("/api/auth/signup", () =>
+        HttpResponse.json(
+          { code: "EMAIL_DUPLICATED", message: "이미 등록된 이메일입니다." },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("이메일"), "taken@b.com");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
+    await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
+    await user.click(screen.getByRole("button", { name: "회원가입" }));
+
+    expect(await screen.findByText("이미 등록된 이메일입니다.")).toBeInTheDocument();
+    expect(screen.getByLabelText("이메일")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("사용자 이름")).not.toHaveAttribute("aria-invalid", "true");
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("이미 등록된 이메일입니다."));
     expect(routerPush).not.toHaveBeenCalled();
   });
 

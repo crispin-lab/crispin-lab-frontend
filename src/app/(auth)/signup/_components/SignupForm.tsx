@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useSignup } from "@/hooks/useAuth";
+import { ApiError } from "@/lib/api/client";
 import { loginRedirectUrl, safeRedirectTarget } from "@/lib/auth/redirect";
 import { signupFormSchema, toSignupInput, type SignupFormInput } from "@/lib/schemas/auth";
 
@@ -39,6 +40,15 @@ export function SignupForm() {
     mutate(toSignupInput(values), {
       onSuccess: () => {
         router.push(safeRedirectTarget(rawRedirect));
+      },
+      // toast 는 글로벌 MutationCache.onError 가 그대로 띄운다 — inline 분기는 *추가로* 어느 필드인지 노출하는 책임만.
+      onError: (error) => {
+        if (!(error instanceof ApiError) || error.status !== 409) return;
+        if (error.code === "EMAIL_DUPLICATED") {
+          form.setError("email", { type: "server", message: error.message });
+        } else if (error.code === "HANDLE_DUPLICATED") {
+          form.setError("handle", { type: "server", message: error.message });
+        }
       },
     });
   }
