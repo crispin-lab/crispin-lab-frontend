@@ -143,7 +143,6 @@ function AccountSlot({ pathname }: { pathname: string }) {
   return <AccountMenu me={me} />;
 }
 
-// auth 자기 자신 (`/login`, `/signup` 와 sub-route) 에서는 redirect 쿼리를 박지 않는다 — 로그인 성공 후 같은 페이지로 돌아오는 무의미한 루프 방어. redirect.ts 의 isLoginPath 와 같은 sub-route 정신.
 function loginHrefFor(pathname: string, searchParams: URLSearchParams): string {
   if (isAuthSelfPath(pathname)) return "/login";
   const search = searchParams.toString();

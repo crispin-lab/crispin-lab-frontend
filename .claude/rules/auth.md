@@ -185,6 +185,19 @@ PRIVATE 페이지에 권한이 없는 사용자가 접근하면 백엔드가 403
 - 글로벌 `not-found.tsx` 의 문구는 "권한" 류 단어를 쓰지 않는다 — 권한 부재와 미존재를 한 화면으로 묶어 페이지 존재 여부 자체를 누출하지 않는 것이 목적 (`design.md` 와이어프레임 02 의 "비로그인 PRIVATE 접근 시 404" 정합).
 - Client Component 의 query 404 는 컴포넌트별 inline UI 또는 redirect. mutation 404 는 사용자 액션 실패라 글로벌 toast 가 그대로 받는다.
 
+## 로그인 link · forced redirect 의 self-path 규약
+
+로그인 페이지 자체에서 다시 로그인 페이지로 가는 redirect 는 loop 다. 두 곳에서 같은 self-path 규약을 지킨다.
+
+- **`redirect.ts` 의 `redirectToLogin`** (401 만료 후 forced) — `isLoginPath(window.location.pathname)` 으로 자기 자신 (`/login`, `/login/...` sub-route) 진입 시 navigation 을 skip. `/signup` 은 자기 자신이 아니라 *옵션 경로* 라 skip 안 함 — 만료된 세션은 그대로 `/login` 으로 보내야 한다.
+- **`AppHeader` 의 `loginHrefFor`** (헤더 로그인 link href) — `isAuthSelfPath` 로 `/login`, `/login/...`, `/signup`, `/signup/...` 네 패턴 모두 self-path 로 묶고 plain `/login` 반환. 헤더의 link 는 사용자가 보던 페이지로 돌아오기 위한 carry 이므로 auth 페이지 안에서는 carry 가 의미 없다.
+
+같은 규약이지만 적용 범위가 다른 이유:
+- forced redirect 는 *세션 만료의 회복 경로* 이므로 `/signup` 에서도 `/login` 으로 가는 게 자연 (signup 흐름 중 만료 ↔ 재로그인).
+- 헤더 link 는 *사용자가 의도해서 로그인 페이지로 가는 entry* 이므로 자기 자신 + 회원가입 페이지에서 carry 가 무의미.
+
+**sub-route 도 self-path 로 묶는다** — `/login/forgot`, `/signup/verify` 같은 sub-route 가 추가되면 정확한 일치만 검사할 때 회귀가 생긴다. 두 함수 모두 `startsWith("/login/")` / `startsWith("/signup/")` 를 포함한다.
+
 ## Server Component 에서 인증
 
 ```tsx
