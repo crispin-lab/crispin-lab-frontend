@@ -106,6 +106,12 @@ describe("AppHeader — 비로그인", () => {
     expect(loginLink).toHaveAttribute("href", "/login");
   });
 
+  it("/login/forgot · /signup/verify 같은 sub-route 도 self-path 로 본다", async () => {
+    pathname.current = "/login/forgot";
+    renderHeader();
+    expect(await screen.findByRole("link", { name: /로그인/ })).toHaveAttribute("href", "/login");
+  });
+
   it("계정 메뉴 trigger 는 노출되지 않는다", async () => {
     renderHeader();
 
