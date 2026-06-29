@@ -18,8 +18,12 @@ vi.mock("./InboundLinkList", () => ({
 vi.mock("./PageTagList", () => ({
   PageTagList: () => null,
 }));
+const { commentThreadSpy } = vi.hoisted(() => ({ commentThreadSpy: vi.fn() }));
 vi.mock("./CommentThread", () => ({
-  CommentThread: () => null,
+  CommentThread: (props: unknown) => {
+    commentThreadSpy(props);
+    return null;
+  },
 }));
 
 import { PageReadingView } from "./PageReadingView";
@@ -82,6 +86,20 @@ function renderView({
 }
 
 describe("PageReadingView", () => {
+  it("CommentThread 에 pageId / spaceId / sourceVisibility / canComment 가 정확히 전달된다", () => {
+    commentThreadSpy.mockReset();
+    const page = makePage({ canComment: true, visibility: "PUBLIC" });
+    const space = makeSpace({ spaceId: "s_42" });
+    renderView({ page, space, isAuthenticated: true });
+
+    expect(commentThreadSpy).toHaveBeenCalledTimes(1);
+    const props = commentThreadSpy.mock.calls[0][0] as Record<string, unknown>;
+    expect(props.pageId).toBe("p_1");
+    expect(props.spaceId).toBe("s_42");
+    expect(props.sourceVisibility).toBe("PUBLIC");
+    expect(props.canComment).toBe(true);
+  });
+
   it("제목 / 저자 / 작성일 / visibility 가 메타 줄에 노출된다", () => {
     renderView({ isAuthenticated: false });
 

@@ -22,8 +22,14 @@ vi.mock("@/components/editor/CommentEditor", () => ({
       aria-label={placeholder ?? "댓글 본문 (mock)"}
       data-initial={initialContent ?? ""}
       onChange={(event) => {
-        const value = event.target.value;
-        onChange?.(value, value === "");
+        // 실제 CommentEditor 와 같은 계약 — JSON.stringify(JSONContent) 를 onChange 로 전달.
+        // mock 이 raw text 를 흘리면 본문 직렬화 회귀를 테스트가 못 잡는다.
+        const text = event.target.value;
+        const doc =
+          text === ""
+            ? { type: "doc", content: [{ type: "paragraph" }] }
+            : { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text }] }] };
+        onChange?.(JSON.stringify(doc), text === "");
       }}
     />
   ),
@@ -68,7 +74,7 @@ describe("CommentThread", () => {
               body: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"첫 댓글"}]}]}',
               authorHandle: "alice",
               createdAt: "2026-03-01T00:00:00Z",
-              updatedAt: "2026-03-01T00:00:00Z",
+              updatedAt: "2026-03-05T00:00:00Z",
             }),
           ]),
         ),
@@ -79,6 +85,19 @@ describe("CommentThread", () => {
 
     expect(await screen.findByText("첫 댓글")).toBeInTheDocument();
     expect(screen.getByText("@alice")).toBeInTheDocument();
+    // 시간 메타 — formatUpdatedAtKR 결과. createdAt 과 updatedAt 이 다르면 두 줄 모두 노출.
+    const created = screen.getByText(
+      (_, node) =>
+        node?.tagName === "TIME" && node.getAttribute("datetime") === "2026-03-01T00:00:00Z",
+    );
+    expect(created).toBeInTheDocument();
+    expect(created.textContent).toMatch(/2026/);
+    const updated = screen.getByText(
+      (_, node) =>
+        node?.tagName === "TIME" && node.getAttribute("datetime") === "2026-03-05T00:00:00Z",
+    );
+    expect(updated).toBeInTheDocument();
+    expect(updated.textContent).toMatch(/수정/);
   });
 
   it("빈 결과면 '아직 댓글이 없습니다' 안내가 나온다", async () => {

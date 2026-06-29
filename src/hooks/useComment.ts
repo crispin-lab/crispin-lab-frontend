@@ -1,9 +1,7 @@
 import {
+  useInfiniteQuery,
   useMutation,
   type UseMutationResult,
-  useQuery,
-  type UseQueryOptions,
-  type UseQueryResult,
   useQueryClient,
 } from "@tanstack/react-query";
 
@@ -19,19 +17,23 @@ import { commentKeys, commentListOptions } from "@/lib/api/queries/comment";
 import type {
   CommentEditRequest,
   CommentEditResult,
-  CommentListResult,
   CommentRegisterRequest,
   CommentRegisterResult,
 } from "@/lib/api/types";
 
-type QueryOverrides<TData> = Omit<UseQueryOptions<TData, ApiError, TData>, "queryKey" | "queryFn">;
+type CommentInfiniteParams = Omit<CommentListParams, "page">;
+
+// 사용처가 현재 enabled 하나만 필요 — overrides 전체를 타입화하면 infinite query 의 select 시그니처와 충돌해 복잡. 본 hook 에 필요한 것만 노출.
+type CommentListOverrides = {
+  enabled?: boolean;
+};
 
 export function useCommentList(
   pageId: PageId,
-  params: CommentListParams = {},
-  overrides?: QueryOverrides<CommentListResult>,
-): UseQueryResult<CommentListResult, ApiError> {
-  return useQuery({ ...commentListOptions(pageId, params), ...overrides });
+  params: CommentInfiniteParams = {},
+  overrides?: CommentListOverrides,
+) {
+  return useInfiniteQuery({ ...commentListOptions(pageId, params), ...overrides });
 }
 
 export function useCommentRegister(

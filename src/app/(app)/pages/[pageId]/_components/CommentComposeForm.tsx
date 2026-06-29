@@ -64,7 +64,7 @@ export function CommentComposeForm({ pageId, spaceId, sourceVisibility, classNam
         </p>
       )}
       <div className="flex items-center justify-between gap-3">
-        <p className="text-muted-foreground text-xs">⌘ + Enter 로 등록</p>
+        <p className="text-muted-foreground text-xs">Ctrl/⌘ + Enter 로 등록</p>
         <Button type="submit" disabled={isEmpty || isPending} size="sm">
           {isPending ? "등록 중…" : "등록"}
         </Button>

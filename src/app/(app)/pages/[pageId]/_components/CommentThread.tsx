@@ -1,15 +1,12 @@
 "use client";
 
-import type { UseQueryResult } from "@tanstack/react-query";
-
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCommentList } from "@/hooks/useComment";
-import type { ApiError } from "@/lib/api/client";
 import { COMMENT_LIST_SIZE } from "@/lib/api/comment";
 import { toUserMessage } from "@/lib/api/errors";
 import type { PageId, SpaceId } from "@/lib/api/ids";
-import type { CommentListResult } from "@/lib/api/types";
 import type { Visibility } from "@/lib/page/visibility";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +60,8 @@ type ListBodyProps = {
   pageId: PageId;
   spaceId: SpaceId;
   sourceVisibility: Visibility;
-  query: UseQueryResult<CommentListResult, ApiError>;
+  // TanStack Query 의 infinite result 타입 chain (UseInfiniteQueryResult<InfiniteData<...>, ApiError>) 을 직접 적으면 generic 인퍼런스와 충돌해 깨진다. hook 의 추론된 타입을 그대로 빌려온다.
+  query: ReturnType<typeof useCommentList>;
 };
 
 function CommentListBody({ pageId, spaceId, sourceVisibility, query }: ListBodyProps) {
@@ -81,14 +79,16 @@ function CommentListBody({ pageId, spaceId, sourceVisibility, query }: ListBodyP
     );
   }
 
-  if (query.data.items.length === 0) {
+  const items = query.data.pages.flatMap((page) => page.items);
+
+  if (items.length === 0) {
     return <p className="text-muted-foreground text-sm italic">아직 댓글이 없습니다.</p>;
   }
 
   return (
     <PageLinkChipNavigator>
       <ul className="divide-border divide-y border-y">
-        {query.data.items.map((comment) => (
+        {items.map((comment) => (
           <CommentRow
             key={comment.commentId}
             comment={comment}
@@ -98,6 +98,19 @@ function CommentListBody({ pageId, spaceId, sourceVisibility, query }: ListBodyP
           />
         ))}
       </ul>
+      {query.hasNextPage && (
+        <div className="mt-3 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => query.fetchNextPage()}
+            disabled={query.isFetchingNextPage}
+          >
+            {query.isFetchingNextPage ? "불러오는 중…" : "더 보기"}
+          </Button>
+        </div>
+      )}
     </PageLinkChipNavigator>
   );
 }

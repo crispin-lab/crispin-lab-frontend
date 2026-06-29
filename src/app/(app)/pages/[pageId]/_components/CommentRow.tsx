@@ -83,17 +83,16 @@ export function CommentRow({ comment, pageId, spaceId, sourceVisibility }: Props
 
       <DeleteConfirmDialog
         open={deleteOpen}
-        onOpenChange={setDeleteOpen}
+        onOpenChange={(next) => {
+          setDeleteOpen(next);
+          if (!next && deleteMutation.error !== null) deleteMutation.reset();
+        }}
         title="댓글을 삭제할까요?"
         description="댓글이 삭제됩니다. 되돌릴 수 없습니다."
         isPending={deleteMutation.isPending}
+        errorMessage={deleteMutation.error !== null ? toUserMessage(deleteMutation.error) : null}
         onConfirm={handleDeleteConfirm}
       />
-      {deleteMutation.isError && !deleteOpen && (
-        <p role="alert" className="text-destructive mt-1 text-xs">
-          {toUserMessage(deleteMutation.error)}
-        </p>
-      )}
     </li>
   );
 }
@@ -140,7 +139,7 @@ function CommentEditForm({
   const initialSerialized = serializeEditorContent(initialDoc);
   const [content, setContent] = useState<string>(initialSerialized);
   const [isEmpty, setIsEmpty] = useState<boolean>(isEmptyEditorContent(initialDoc));
-  const { mutate, isPending, error } = useCommentEdit(pageId, commentId);
+  const { mutate, isPending, error, reset } = useCommentEdit(pageId, commentId);
 
   function handleSave() {
     if (isEmpty || isPending) return;
@@ -157,6 +156,7 @@ function CommentEditForm({
         onChange={(next, empty) => {
           setContent(next);
           setIsEmpty(empty);
+          if (error !== null) reset();
         }}
         onSubmitShortcut={handleSave}
       />

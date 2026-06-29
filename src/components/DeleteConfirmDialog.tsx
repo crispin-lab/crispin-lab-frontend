@@ -19,6 +19,8 @@ type Props = {
   confirmLabel?: string;
   pendingLabel?: string;
   isPending: boolean;
+  // 삭제 mutation 실패 시 dialog 안에 노출할 에러 메시지. 호출부는 toUserMessage(error) 결과를 넘긴다.
+  errorMessage?: string | null;
   onConfirm: () => void;
   size?: "default" | "sm";
   className?: string;
@@ -32,6 +34,7 @@ export function DeleteConfirmDialog({
   confirmLabel = "삭제",
   pendingLabel = "삭제 중…",
   isPending,
+  errorMessage,
   onConfirm,
   size = "default",
   className,
@@ -49,6 +52,11 @@ export function DeleteConfirmDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+        {errorMessage !== undefined && errorMessage !== null && (
+          <p role="alert" className="text-destructive text-sm">
+            {errorMessage}
+          </p>
+        )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
           <AlertDialogAction variant="destructive" disabled={isPending} onClick={onConfirm}>

@@ -29,7 +29,21 @@ describe("commentKeys factory", () => {
 describe("commentListOptions", () => {
   it("queryKey 가 commentKeys.list 와 일치한다", () => {
     const pageId = asPageId("p_42");
-    const params = { page: 1, size: 20 };
+    const params = { size: 20 };
     expect(commentListOptions(pageId, params).queryKey).toEqual(commentKeys.list(pageId, params));
+  });
+
+  it("getNextPageParam 은 hasNext=true 일 때 page+1, false 면 undefined 를 반환한다", () => {
+    const pageId = asPageId("p_42");
+    const opts = commentListOptions(pageId);
+    const base = {
+      size: 20,
+      isEmpty: false,
+      totalPages: 5,
+      totalElements: 100,
+      items: [],
+    };
+    expect(opts.getNextPageParam({ ...base, page: 0, hasNext: true }, [], 0, [])).toBe(1);
+    expect(opts.getNextPageParam({ ...base, page: 4, hasNext: false }, [], 4, [])).toBeUndefined();
   });
 });
