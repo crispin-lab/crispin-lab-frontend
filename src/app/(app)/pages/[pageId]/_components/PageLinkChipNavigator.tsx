@@ -16,6 +16,8 @@ export function PageLinkChipNavigator({ children, className }: Props) {
   const navigate = useCallback(
     (target: EventTarget | null) => {
       if (!(target instanceof Element)) return false;
+      // 편집 영역 (TipTap ProseMirror) 안의 chip click 은 caret 이동 의도 — navigation 하면 작성 중인 내용이 사라진다.
+      if (target.closest('.ProseMirror, [contenteditable="true"]')) return false;
       const chip = target.closest("[data-page-link]");
       if (!chip) return false;
       const pageId = chip.getAttribute("data-page-id");

@@ -10,13 +10,20 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-// InboundLinkList / PageTagList 는 별도 테스트 (각자 *.test.tsx) 가 커버.
+// InboundLinkList / PageTagList / CommentThread 는 별도 테스트 (각자 *.test.tsx) 가 커버.
 // PageReadingView 테스트가 QueryClient / MSW handler 의존 없이 단독 렌더되도록 stub.
 vi.mock("./InboundLinkList", () => ({
   InboundLinkList: () => null,
 }));
 vi.mock("./PageTagList", () => ({
   PageTagList: () => null,
+}));
+const { commentThreadSpy } = vi.hoisted(() => ({ commentThreadSpy: vi.fn() }));
+vi.mock("./CommentThread", () => ({
+  CommentThread: (props: unknown) => {
+    commentThreadSpy(props);
+    return null;
+  },
 }));
 
 import { PageReadingView } from "./PageReadingView";
@@ -79,6 +86,20 @@ function renderView({
 }
 
 describe("PageReadingView", () => {
+  it("CommentThread 에 pageId / spaceId / sourceVisibility / canComment 가 정확히 전달된다", () => {
+    commentThreadSpy.mockReset();
+    const page = makePage({ canComment: true, visibility: "PUBLIC" });
+    const space = makeSpace({ spaceId: "s_42" });
+    renderView({ page, space, isAuthenticated: true });
+
+    expect(commentThreadSpy).toHaveBeenCalledTimes(1);
+    const props = commentThreadSpy.mock.calls[0][0] as Record<string, unknown>;
+    expect(props.pageId).toBe("p_1");
+    expect(props.spaceId).toBe("s_42");
+    expect(props.sourceVisibility).toBe("PUBLIC");
+    expect(props.canComment).toBe(true);
+  });
+
   it("제목 / 저자 / 작성일 / visibility 가 메타 줄에 노출된다", () => {
     renderView({ isAuthenticated: false });
 

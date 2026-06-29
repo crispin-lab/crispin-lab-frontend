@@ -6,12 +6,13 @@ import { viewerExtensions } from "@/components/editor/extensions/viewer";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
 import { SpaceChip } from "@/components/page/SpaceChip";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
-import type { PageId } from "@/lib/api/ids";
+import { asSpaceId, type PageId } from "@/lib/api/ids";
 import type { Page, Space } from "@/lib/api/types";
 import { parseEditorContent } from "@/lib/editor/content";
 import { cn } from "@/lib/utils";
 
 import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
+import { CommentThread } from "./CommentThread";
 import { InboundLinkList } from "./InboundLinkList";
 import { KatexMounter } from "./KatexMounter";
 import { MermaidMounter } from "./MermaidMounter";
@@ -144,6 +145,14 @@ export function PageReadingView({
           )}
 
           <InboundLinkList pageId={pageId} isAuthenticated={isAuthenticated} className="mt-12" />
+
+          <CommentThread
+            pageId={pageId}
+            spaceId={asSpaceId(space.spaceId)}
+            sourceVisibility={page.visibility}
+            canComment={page.canComment}
+            className="mt-12"
+          />
         </article>
 
         {showToc && <Toc items={headings} />}

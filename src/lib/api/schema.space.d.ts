@@ -436,15 +436,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** CommentEditResponse */
-        CommentEditResponse: {
-            /** @description 댓글 식별자＊ */
-            commentId: string;
-            /** @description 갱신된 본문＊ */
-            body: string;
-            /** @description 갱신 시각 (ISO)＊ */
-            updatedAt: string;
-        };
         /** PageMoveRequest */
         PageMoveRequest: {
             /** @description 새 부모 페이지 식별자. null 이면 루트로 이동. */
@@ -594,36 +585,6 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
-        /** CommentListResponse */
-        CommentListResponse: {
-            /** @description 페이지당 항목 수＊ */
-            size: number;
-            /** @description 결과 비어 있음 여부＊ */
-            isEmpty: boolean;
-            /** @description 총 페이지 수＊ */
-            totalPages: number;
-            /** @description 다음 페이지 존재 여부＊ */
-            hasNext: boolean;
-            /** @description 현재 페이지＊ */
-            page: number;
-            /** @description 댓글 목록＊ */
-            items: {
-                /** @description ⎯ 생성 시각 (ISO)＊ */
-                createdAt: string;
-                /** @description ⎯ 댓글 식별자＊ */
-                commentId: string;
-                /** @description ⎯ 본문＊ */
-                body: string;
-                /** @description ⎯ 작성자 식별자＊ */
-                authorId: string;
-                /** @description ⎯ 소속 페이지 식별자＊ */
-                pageId: string;
-                /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
-                updatedAt: string;
-            }[];
-            /** @description 총 항목 수＊ */
-            totalElements: number;
-        };
         /** TagListResponse */
         TagListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -673,6 +634,33 @@ export interface components {
             /** @description 댓글 본문＊ */
             body: string;
         };
+        /** SpaceMemberRoleChangeRequest */
+        SpaceMemberRoleChangeRequest: {
+            /** @description 새 역할＊ */
+            role: string;
+        };
+        /** TagPopularityListResponse */
+        TagPopularityListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 인기 태그 목록 (사용 빈도 내림차순)＊ */
+            items: {
+                /** @description ⎯ 태그 이름 (cross-space 합산)＊ */
+                name: string;
+                /** @description ⎯ 페이지 사용 횟수＊ */
+                usageCount: number;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
         /** PageGetResponse */
         PageGetResponse: {
             /**
@@ -702,6 +690,8 @@ export interface components {
             createdAt: string;
             /** @description 소속 스페이스 식별자＊ */
             spaceId: string;
+            /** @description 현재 viewer 가 이 페이지에 댓글을 남길 수 있는지. 로그인 상태이면 true (본 응답을 받은 viewer 는 페이지를 GET 한 reader 임이 보장됨). 비로그인은 false.＊ */
+            canComment: boolean;
             /** @description 조상 페이지 목록 — root → 직계 부모 순서＊ */
             ancestors: {
                 /** @description ⎯ 조상 페이지 제목＊ */
@@ -711,33 +701,6 @@ export interface components {
             }[];
             /** @description 최근 갱신 시각 (ISO)＊ */
             updatedAt: string;
-        };
-        /** SpaceMemberRoleChangeRequest */
-        SpaceMemberRoleChangeRequest: {
-            /** @description 새 역할＊ */
-            role: string;
-        };
-        /** TagPopularityListResponse */
-        TagPopularityListResponse: {
-            /** @description 페이지당 항목 수＊ */
-            size: number;
-            /** @description 결과 비어 있음 여부＊ */
-            isEmpty: boolean;
-            /** @description 총 페이지 수＊ */
-            totalPages: number;
-            /** @description 다음 페이지 존재 여부＊ */
-            hasNext: boolean;
-            /** @description 현재 페이지＊ */
-            page: number;
-            /** @description 인기 태그 목록 (사용 빈도 내림차순)＊ */
-            items: {
-                /** @description ⎯ 태그 이름 (cross-space 합산)＊ */
-                name: string;
-                /** @description ⎯ 페이지 사용 횟수＊ */
-                usageCount: number;
-            }[];
-            /** @description 총 항목 수＊ */
-            totalElements: number;
         };
         /** SpaceRegisterResponse */
         SpaceRegisterResponse: {
@@ -765,21 +728,6 @@ export interface components {
             spaceMemberId: string;
             /** @description 사용자 식별자＊ */
             userId: string;
-        };
-        /** CommentGetResponse */
-        CommentGetResponse: {
-            /** @description 생성 시각 (ISO)＊ */
-            createdAt: string;
-            /** @description 댓글 식별자＊ */
-            commentId: string;
-            /** @description 본문＊ */
-            body: string;
-            /** @description 작성자 식별자＊ */
-            authorId: string;
-            /** @description 소속 페이지 식별자＊ */
-            pageId: string;
-            /** @description 최근 갱신 시각 (ISO)＊ */
-            updatedAt: string;
         };
         /** PageSearchResponse */
         PageSearchResponse: {
@@ -870,6 +818,17 @@ export interface components {
             /** @description 생성된 태그 식별자＊ */
             tagId: string;
         };
+        /** CommentEditResponse */
+        CommentEditResponse: {
+            /** @description 댓글 식별자＊ */
+            commentId: string;
+            /** @description 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
+            authorHandle: string;
+            /** @description 갱신된 본문＊ */
+            body: string;
+            /** @description 갱신 시각 (ISO)＊ */
+            updatedAt: string;
+        };
         /** PageRegisterResponse */
         PageRegisterResponse: {
             /** @description 생성된 페이지 식별자＊ */
@@ -905,10 +864,58 @@ export interface components {
             /** @description 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
-        /** CommentRegisterResponse */
-        CommentRegisterResponse: {
-            /** @description 생성된 댓글 식별자＊ */
+        /** CommentListResponse */
+        CommentListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 댓글 목록＊ */
+            items: {
+                /** @description ⎯ 생성 시각 (ISO)＊ */
+                createdAt: string;
+                /** @description ⎯ 현재 viewer 가 이 댓글을 수정할 수 있는지. ADMIN 글로벌 권한 또는 (author 본인 && 스페이스 쓰기 권한) 일 때 true.＊ */
+                canEdit: boolean;
+                /** @description ⎯ 댓글 식별자＊ */
+                commentId: string;
+                /** @description ⎯ 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
+                authorHandle: string;
+                /** @description ⎯ 본문＊ */
+                body: string;
+                /** @description ⎯ 작성자 식별자＊ */
+                authorId: string;
+                /** @description ⎯ 소속 페이지 식별자＊ */
+                pageId: string;
+                /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
+                updatedAt: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
+        /** CommentGetResponse */
+        CommentGetResponse: {
+            /** @description 생성 시각 (ISO)＊ */
+            createdAt: string;
+            /** @description 현재 viewer 가 이 댓글을 수정할 수 있는지. ADMIN 글로벌 권한 또는 (author 본인 && 스페이스 쓰기 권한) 일 때 true.＊ */
+            canEdit: boolean;
+            /** @description 댓글 식별자＊ */
             commentId: string;
+            /** @description 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
+            authorHandle: string;
+            /** @description 본문＊ */
+            body: string;
+            /** @description 작성자 식별자＊ */
+            authorId: string;
+            /** @description 소속 페이지 식별자＊ */
+            pageId: string;
+            /** @description 최근 갱신 시각 (ISO)＊ */
+            updatedAt: string;
         };
         /** SpaceEditRequest */
         SpaceEditRequest: {
@@ -935,6 +942,13 @@ export interface components {
             canWrite: boolean;
             /** @description 최근 갱신 시각 (ISO)＊ */
             updatedAt: string;
+        };
+        /** CommentRegisterResponse */
+        CommentRegisterResponse: {
+            /** @description 생성된 댓글 식별자＊ */
+            commentId: string;
+            /** @description 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
+            authorHandle: string;
         };
         /** CommentEditRequest */
         CommentEditRequest: {

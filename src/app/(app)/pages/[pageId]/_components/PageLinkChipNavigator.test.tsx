@@ -80,4 +80,23 @@ describe("PageLinkChipNavigator", () => {
 
     expect(pushMock).not.toHaveBeenCalled();
   });
+
+  it("편집 영역 (ProseMirror / contenteditable) 안의 chip click 은 navigation 을 건너뛴다 (caret 이동 의도 보존, 작성 내용 손실 회피)", async () => {
+    const user = userEvent.setup();
+    pushMock.mockReset();
+
+    render(
+      <PageLinkChipNavigator>
+        <div className="ProseMirror" contentEditable suppressContentEditableWarning>
+          <span data-page-link="" data-page-id="p_target" role="link" tabIndex={0}>
+            편집 중 chip
+          </span>
+        </div>
+      </PageLinkChipNavigator>,
+    );
+
+    await user.click(screen.getByText("편집 중 chip"));
+
+    expect(pushMock).not.toHaveBeenCalled();
+  });
 });

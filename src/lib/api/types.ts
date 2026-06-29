@@ -35,6 +35,13 @@ export type PageTagListResult = PageSchemas["PageTagListResponse"];
 export type PageTag = PageTagListResult["items"][number];
 export type PageTagAttachRequest = PageSchemas["PageTagAttachRequest"];
 
+export type CommentListResult = PageSchemas["CommentListResponse"];
+export type CommentSummary = CommentListResult["items"][number];
+export type CommentRegisterRequest = PageSchemas["CommentRegisterRequest"];
+export type CommentRegisterResult = PageSchemas["CommentRegisterResponse"];
+export type CommentEditRequest = PageSchemas["CommentEditRequest"];
+export type CommentEditResult = PageSchemas["CommentEditResponse"];
+
 export type LoginInput = UserSchemas["AuthLoginRequest"];
 
 export type Role = "USER" | "ADMIN";
