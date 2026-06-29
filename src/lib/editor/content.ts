@@ -27,3 +27,13 @@ export function parseEditorContent(raw: string | undefined): JSONContent {
 export function serializeEditorContent(json: JSONContent): string {
   return JSON.stringify(json);
 }
+
+// editor 인스턴스 없이 초기 상태에서 isEmpty 를 결정해야 할 때. TipTap getJSON 정규형 (빈 paragraph 한 개 또는 content 부재) 을 empty 로 본다.
+export function isEmptyEditorContent(json: JSONContent): boolean {
+  if (!json.content || json.content.length === 0) return true;
+  if (json.content.length === 1) {
+    const only = json.content[0];
+    if (only.type === "paragraph" && (!only.content || only.content.length === 0)) return true;
+  }
+  return false;
+}

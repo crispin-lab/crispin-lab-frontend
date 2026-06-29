@@ -16,6 +16,7 @@ export function pageBody(overrides: Partial<Page> = {}): Page {
     content: "본문 raw",
     updatedAt: "2026-05-26T05:32:00Z",
     canEdit: false,
+    canComment: false,
     ...overrides,
   };
 }

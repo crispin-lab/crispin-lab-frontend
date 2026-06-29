@@ -10,13 +10,16 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-// InboundLinkList / PageTagList 는 별도 테스트 (각자 *.test.tsx) 가 커버.
+// InboundLinkList / PageTagList / CommentThread 는 별도 테스트 (각자 *.test.tsx) 가 커버.
 // PageReadingView 테스트가 QueryClient / MSW handler 의존 없이 단독 렌더되도록 stub.
 vi.mock("./InboundLinkList", () => ({
   InboundLinkList: () => null,
 }));
 vi.mock("./PageTagList", () => ({
   PageTagList: () => null,
+}));
+vi.mock("./CommentThread", () => ({
+  CommentThread: () => null,
 }));
 
 import { PageReadingView } from "./PageReadingView";
