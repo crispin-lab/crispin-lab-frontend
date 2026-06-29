@@ -23,6 +23,17 @@ import { ApiError } from "@/lib/api/client";
 import { loginRedirectUrl, safeRedirectTarget } from "@/lib/auth/redirect";
 import { signupFormSchema, toSignupInput, type SignupFormInput } from "@/lib/schemas/auth";
 
+const DUPLICATE_FIELDS = {
+  EMAIL_DUPLICATED: "email",
+  HANDLE_DUPLICATED: "handle",
+} as const satisfies Record<string, "email" | "handle">;
+
+type DuplicateCode = keyof typeof DUPLICATE_FIELDS;
+
+function isDuplicateCode(code: string): code is DuplicateCode {
+  return code in DUPLICATE_FIELDS;
+}
+
 export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,13 +52,18 @@ export function SignupForm() {
       onSuccess: () => {
         router.push(safeRedirectTarget(rawRedirect));
       },
-      // toast 는 글로벌 MutationCache.onError 가 그대로 띄운다 — inline 분기는 *추가로* 어느 필드인지 노출하는 책임만.
       onError: (error) => {
         if (!(error instanceof ApiError) || error.status !== 409) return;
-        if (error.code === "EMAIL_DUPLICATED") {
-          form.setError("email", { type: "server", message: error.message });
-        } else if (error.code === "HANDLE_DUPLICATED") {
-          form.setError("handle", { type: "server", message: error.message });
+        if (isDuplicateCode(error.code)) {
+          form.setError(DUPLICATE_FIELDS[error.code], {
+            type: "server",
+            message: error.message,
+          });
+          return;
+        }
+        if (process.env.NODE_ENV !== "production") {
+          // 새 backend 409 code 가 추가되면 DUPLICATE_FIELDS 매핑을 늘려야 한다 — 글로벌 toast 만으로는 어느 필드인지 못 알림.
+          console.warn(`[SignupForm] unhandled 409 code "${error.code}"`);
         }
       },
     });

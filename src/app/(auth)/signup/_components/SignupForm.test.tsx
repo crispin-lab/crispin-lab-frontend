@@ -203,6 +203,30 @@ describe("SignupForm", () => {
     expect(routerPush).not.toHaveBeenCalled();
   });
 
+  it("알 수 없는 409 code 는 inline 분기 없이 toast 만 노출 (필드 추정 불가 — 글로벌 attention 으로 fallback)", async () => {
+    server.use(
+      http.post("/api/auth/signup", () =>
+        HttpResponse.json(
+          { code: "EMAIL_RESERVED", message: "예약된 이메일입니다." },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("이메일"), "a@b.com");
+    await user.type(screen.getByLabelText("사용자 이름"), "alice");
+    await user.type(screen.getByLabelText("비밀번호"), "password1");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "password1");
+    await user.click(screen.getByRole("button", { name: "회원가입" }));
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("예약된 이메일입니다."));
+    expect(screen.getByLabelText("이메일")).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("사용자 이름")).not.toHaveAttribute("aria-invalid", "true");
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
   it("409 EMAIL_DUPLICATED 응답 시 email 필드 inline FormMessage + toast 동시 노출", async () => {
     server.use(
       http.post("/api/auth/signup", () =>
