@@ -15,6 +15,7 @@ description: PR 전 컨벤션 체크. `.claude/rules/` 의 프론트 룰 기준�
 - `.claude/rules/docs-style.md` — 문서 한국어 정책 (문서 변경 PR 일 때 특히 중요)
 - `.claude/rules/architecture.md` — 디렉토리, Server / Client Component, 라우팅, 컴포넌트 책임
 - `.claude/rules/conventions.md` — 네이밍, 타입, 검증, 함수, 테스트, 포맷팅, PR 체크리스트
+- `.claude/rules/design.md` — 시각 방향 (색 역할 / 폰트 / dark·light / 레이아웃 골격 / accent 한도)
 - `.claude/rules/ui.md` — shadcn primitive, `cn`, variant, 접근성
 - `.claude/rules/state.md` — 서버·폼·URL·local 상태 분리
 - `.claude/rules/comments.md` — 주석·JSDoc·TODO 정책

@@ -111,3 +111,63 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      # build job 과 같은 키로 .next/cache 를 공유 — 두 job 이 병렬이라도 한쪽이 먼저 채우면
+      # 후속 PR push 에서 hit. restore-keys 로 부분 hit 도 허용.
+      - name: Cache Next.js build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.[jt]s', 'src/**/*.[jt]sx', 'next.config.*', 'postcss.config.*', 'tsconfig.json', 'tailwind.config.*') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      # Playwright chromium 바이너리 + 의존 system lib (--with-deps) 캐시. 키는 lockfile 해시 —
+      # @playwright/test 가 exact-pin 이라 lockfile 만 바뀌면 새 chromium 을 받는다.
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      - name: Build
+        run: pnpm build
+
+      - name: Run E2E
+        run: pnpm e2e
+
+      # 실패 시 trace.zip / screenshot / video / HTML report 까지 모두 artifact 로 노출 — 리뷰어가
+      # diff 이미지를 직접 확인할 수 있어야 시각 회귀 PR 검토가 굴러간다.
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
+          if-no-files-found: ignore
