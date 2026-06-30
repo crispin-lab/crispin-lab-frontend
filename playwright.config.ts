@@ -42,7 +42,9 @@ export default defineConfig({
       // CI 는 production build 의 결정론, 로컬은 hot-reload 반복 속도 — 두 환경의 trade-off.
       command: isCI ? "pnpm start" : "pnpm dev",
       url: "http://localhost:3000",
-      reuseExistingServer: !isCI,
+      // 로컬에 떠 있는 dev server 는 BACKEND_URL 이 mock-backend 로 주입되지 않은 상태일 수 있다 —
+      // reuse 시 SSR 이 엉뚱한 backend 를 가리키는 flaky 원인. 항상 본 config 가 spawn 한 instance 만 사용.
+      reuseExistingServer: false,
       timeout: 120_000,
       env: { BACKEND_URL: MOCK_BACKEND_URL },
     },

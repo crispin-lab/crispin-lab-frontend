@@ -1,5 +1,7 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 
+import { MOCK_BACKEND_URL } from "../mock-backend/url";
+
 type LoginMock = { ok?: true } | { ok: false; code: string; message: string };
 
 export async function mockLogin(page: Page, options: LoginMock = {}): Promise<void> {
@@ -20,13 +22,11 @@ export async function mockLogin(page: Page, options: LoginMock = {}): Promise<vo
   });
 }
 
-// SSR (apiFetchServer) 호출은 Node 안에서 일어나 page.route 로 가로챌 수 없다. mock-backend 가 BACKEND_URL
-// 로 떠 있고, 본 헬퍼는 그 mock-backend 의 in-memory handler map 을 박는다.
-import { MOCK_BACKEND_URL } from "../mock-backend/url";
-
 type MockMethod = "GET" | "POST" | "PUT" | "DELETE";
 type MockResponse = { status?: number; body?: unknown };
 
+// SSR (apiFetchServer) 호출은 Node 안에서 일어나 page.route 로 가로챌 수 없다 — mock-backend 가 BACKEND_URL
+// 로 떠 있고, 본 헬퍼가 그 in-memory handler map 을 박는다.
 export async function configureMock(
   request: APIRequestContext,
   method: MockMethod,
@@ -42,5 +42,8 @@ export async function configureMock(
 }
 
 export async function resetMocks(request: APIRequestContext): Promise<void> {
-  await request.delete(`${MOCK_BACKEND_URL}/__configure`);
+  const result = await request.delete(`${MOCK_BACKEND_URL}/__configure`);
+  if (!result.ok()) {
+    throw new Error(`mock-backend reset 실패 (${result.status()})`);
+  }
 }
