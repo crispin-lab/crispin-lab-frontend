@@ -1,3 +1,4 @@
+import type { UserId } from "./ids";
 import type { components as SpaceComponentsType } from "./schema.space";
 import type { components as UserComponentsType } from "./schema.user";
 
@@ -43,6 +44,15 @@ export type CommentEditRequest = PageSchemas["CommentEditRequest"];
 export type CommentEditResult = PageSchemas["CommentEditResponse"];
 
 export type LoginInput = UserSchemas["AuthLoginRequest"];
+
+export type UserSummary = {
+  userId: UserId;
+  handle: string;
+};
+
+export type UserSearchResult = {
+  items: UserSummary[];
+};
 
 export type Role = "USER" | "ADMIN";
 

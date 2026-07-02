@@ -10,6 +10,7 @@ import { parseEditorContent, serializeEditorContent } from "@/lib/editor/content
 import type { Visibility } from "@/lib/page/visibility";
 import { cn } from "@/lib/utils";
 
+import { editorMention } from "./extensions/mention";
 import { editorPageLink } from "./extensions/pageLink";
 
 type Props = {
@@ -62,6 +63,7 @@ export function CommentEditor({
           refreshSuggestionRef.current = refresh;
         },
       }),
+      editorMention(),
       ...(placeholder !== undefined ? [Placeholder.configure({ placeholder })] : []),
     ],
     content: parseEditorContent(initialContent),

@@ -6,6 +6,7 @@ import { viewerCodeBlock } from "./codeBlock/viewer";
 import { viewerDetails } from "./details/viewer";
 import { viewerFootnote } from "./footnote/viewer";
 import { viewerMath } from "./math/viewer";
+import { viewerMention } from "./mention/viewer";
 import { viewerPageLink } from "./pageLink/viewer";
 import { viewerTable } from "./table/viewer";
 import { viewerTaskList } from "./taskList/viewer";
@@ -29,6 +30,7 @@ export const viewerExtensions = [
   ViewerHeading,
   viewerCodeBlock,
   viewerPageLink,
+  viewerMention,
   ...viewerTable,
   ...viewerTaskList,
   viewerCallout,
