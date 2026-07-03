@@ -10,6 +10,7 @@ import { editorCodeBlock } from "./codeBlock";
 import { editorDetails } from "./details";
 import { editorFootnote } from "./footnote";
 import { editorMath } from "./math";
+import { editorMention } from "./mention";
 import { editorPageLink } from "./pageLink";
 import { editorSlashMenu } from "./slashMenu";
 import { editorTable } from "./table";
@@ -36,6 +37,7 @@ export function editorExtensions({
     StarterKit.configure({ codeBlock: false }),
     editorCodeBlock(),
     editorPageLink({ spaceId, getSourceVisibility, onRefreshAvailable }),
+    editorMention(),
     ...editorTable(),
     ...editorTaskList(),
     editorCallout,
