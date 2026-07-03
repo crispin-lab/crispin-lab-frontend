@@ -19,7 +19,7 @@ vi.mock("@/components/editor/CommentEditor", () => ({
     onChange?: (next: string, isEmpty: boolean) => void;
   }) => (
     <textarea
-      aria-label={placeholder ?? "댓글 본문 (mock)"}
+      aria-label={placeholder ?? "댓글 본문"}
       data-initial={initialContent ?? ""}
       onChange={(event) => {
         // 실제 CommentEditor 와 같은 계약 — JSON.stringify(JSONContent) 를 onChange 로 전달.
@@ -71,7 +71,8 @@ describe("CommentThread", () => {
           commentListBody([
             commentSummary({
               commentId: "c_1",
-              body: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"첫 댓글"}]}]}',
+              content:
+                '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"첫 댓글"}]}]}',
               authorHandle: "alice",
               createdAt: "2026-03-01T00:00:00Z",
               updatedAt: "2026-03-05T00:00:00Z",
@@ -189,20 +190,24 @@ describe("CommentThread", () => {
 
   it("등록 mutation 성공 시 list 가 invalidate 되어 새 댓글이 노출된다", async () => {
     let listCallCount = 0;
-    const newCommentBody = JSON.stringify({
+    const newCommentContent = JSON.stringify({
       type: "doc",
       content: [{ type: "paragraph", content: [{ type: "text", text: "방금 등록한 댓글" }] }],
     });
+    let registerPayload: unknown = null;
     server.use(
       http.get(`*/api/v1/pages/${PAGE_ID_RAW}/comments`, () => {
         listCallCount += 1;
         const items =
-          listCallCount === 1 ? [] : [commentSummary({ body: newCommentBody, authorHandle: "me" })];
+          listCallCount === 1
+            ? []
+            : [commentSummary({ content: newCommentContent, authorHandle: "me" })];
         return HttpResponse.json(commentListBody(items));
       }),
-      http.post(`*/api/v1/pages/${PAGE_ID_RAW}/comments`, () =>
-        HttpResponse.json({ commentId: "c_new" }, { status: 201 }),
-      ),
+      http.post(`*/api/v1/pages/${PAGE_ID_RAW}/comments`, async ({ request }) => {
+        registerPayload = await request.json();
+        return HttpResponse.json({ commentId: "c_new", authorHandle: "me" }, { status: 201 });
+      }),
     );
 
     renderThread();
@@ -216,6 +221,53 @@ describe("CommentThread", () => {
     await waitFor(() => {
       expect(screen.getByText("방금 등록한 댓글")).toBeInTheDocument();
     });
+    expect(registerPayload).toMatchObject({ content: expect.any(String) });
+    expect(registerPayload).not.toHaveProperty("body");
+  });
+
+  it("수정 mutation 성공 시 편집 폼이 content 필드로 PUT 을 보낸다", async () => {
+    let listCallCount = 0;
+    const editedContent = JSON.stringify({
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text: "수정된 댓글" }] }],
+    });
+    let editPayload: unknown = null;
+    server.use(
+      http.get(`*/api/v1/pages/${PAGE_ID_RAW}/comments`, () => {
+        listCallCount += 1;
+        const item =
+          listCallCount === 1
+            ? commentSummary({ canEdit: true })
+            : commentSummary({
+                canEdit: true,
+                content: editedContent,
+                updatedAt: "2026-04-01T00:00:00Z",
+              });
+        return HttpResponse.json(commentListBody([item]));
+      }),
+      http.put(`*/api/v1/pages/${PAGE_ID_RAW}/comments/c_1`, async ({ request }) => {
+        editPayload = await request.json();
+        return HttpResponse.json({
+          commentId: "c_1",
+          authorHandle: "tester",
+          content: editedContent,
+          updatedAt: "2026-04-01T00:00:00Z",
+        });
+      }),
+    );
+
+    renderThread();
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "수정" }));
+    await user.type(screen.getByLabelText("댓글 본문"), "수정된 댓글");
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("수정된 댓글")).toBeInTheDocument();
+    });
+    expect(editPayload).toMatchObject({ content: expect.any(String) });
+    expect(editPayload).not.toHaveProperty("body");
   });
 
   it("삭제는 confirm dialog 를 거쳐 DELETE 를 호출한다", async () => {

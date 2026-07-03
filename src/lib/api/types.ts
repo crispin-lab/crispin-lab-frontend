@@ -1,10 +1,13 @@
 import type { UserId } from "./ids";
+import type { components as CompositionComponentsType } from "./schema.composition";
 import type { components as SpaceComponentsType } from "./schema.space";
 import type { components as UserComponentsType } from "./schema.user";
 
-export type { components as UserComponents } from "./schema.user";
+export type { components as CompositionComponents } from "./schema.composition";
 export type { components as SpaceComponents } from "./schema.space";
+export type { components as UserComponents } from "./schema.user";
 
+type CompositionSchemas = CompositionComponentsType["schemas"];
 type PageSchemas = SpaceComponentsType["schemas"];
 type UserSchemas = UserComponentsType["schemas"];
 
@@ -36,12 +39,12 @@ export type PageTagListResult = PageSchemas["PageTagListResponse"];
 export type PageTag = PageTagListResult["items"][number];
 export type PageTagAttachRequest = PageSchemas["PageTagAttachRequest"];
 
-export type CommentListResult = PageSchemas["CommentListResponse"];
+export type CommentListResult = CompositionSchemas["CommentListResponse"];
 export type CommentSummary = CommentListResult["items"][number];
-export type CommentRegisterRequest = PageSchemas["CommentRegisterRequest"];
-export type CommentRegisterResult = PageSchemas["CommentRegisterResponse"];
-export type CommentEditRequest = PageSchemas["CommentEditRequest"];
-export type CommentEditResult = PageSchemas["CommentEditResponse"];
+export type CommentRegisterRequest = CompositionSchemas["CommentRegisterRequest"];
+export type CommentRegisterResult = CompositionSchemas["CommentRegisterResponse"];
+export type CommentEditRequest = CompositionSchemas["CommentEditRequest"];
+export type CommentEditResult = CompositionSchemas["CommentEditResponse"];
 
 export type LoginInput = UserSchemas["AuthLoginRequest"];
 
