@@ -98,7 +98,7 @@ TipTap 의 `@tiptap/extension-mention` 을 베이스로 한 custom node. trigger
 
 ## 검색 suggestion 의 디바운스 / 캐시
 
-- mention suggestion 의 query 는 **300ms 디바운스**. 매 키 입력마다 백엔드를 두드리지 않는다.
+- suggestion 검색 query 는 **150ms 디바운스** (pageLink `[[]]` + user `@` 공통 표준 — `pageLink/suggestion.ts` / `mention/suggestion.ts` 의 `DEBOUNCE_MS` 상수 단일 출처). 매 키 입력마다 백엔드를 두드리지 않는다. 150ms 는 실사용 UX 테스트에서 응답성과 부하 사이의 실질적 균형점 — 300ms 는 초기 초안 값이었다.
 - 같은 query 가 반복되면 TanStack Query 의 `staleTime: 30_000` 으로 캐시 (`api-client.md` 의 staleTime 가이드).
 - 결과가 0 개일 때 "새 페이지 만들기" 옵션 — 도입 시점에 결정. 본 룰 문서에 추가 절로.
 

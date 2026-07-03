@@ -5,6 +5,7 @@ import type { UserSummary } from "@/lib/api/types";
 import { searchUsers } from "@/lib/api/user";
 
 import {
+  MENTION_USER_LISTBOX_ID,
   MentionUserList,
   type MentionUserListHandle,
   type MentionUserSelection,
@@ -89,17 +90,11 @@ function positionPopover(popoverEl: HTMLDivElement | null, clientRect: ClientRec
 type MentionListRenderProps = {
   items: UserSummary[];
   command: SuggestionProps["command"];
+  onActiveOptionIdChange: (activeOptionId: string | null) => void;
 };
 
 export function createMentionSuggestion(): MentionSuggestion {
   const debouncedSearch = createDebouncedSearch({ search: searchUsers });
-
-  function toMentionListProps(props: SuggestionProps): MentionListRenderProps {
-    return {
-      items: props.items,
-      command: props.command,
-    };
-  }
 
   return {
     char: "@",
@@ -134,9 +129,27 @@ export function createMentionSuggestion(): MentionSuggestion {
       let component: ReactRenderer<MentionUserListHandle> | null = null;
       let popoverEl: HTMLDivElement | null = null;
       let currentRect: ClientRectFn = null;
+      let editorDom: HTMLElement | null = null;
 
       function reposition(): void {
         positionPopover(popoverEl, currentRect);
+      }
+
+      function syncActiveDescendant(activeOptionId: string | null): void {
+        if (!editorDom) return;
+        if (activeOptionId !== null) {
+          editorDom.setAttribute("aria-activedescendant", activeOptionId);
+        } else {
+          editorDom.removeAttribute("aria-activedescendant");
+        }
+      }
+
+      function toMentionListProps(props: SuggestionProps): MentionListRenderProps {
+        return {
+          items: props.items,
+          command: props.command,
+          onActiveOptionIdChange: syncActiveDescendant,
+        };
       }
 
       function cleanup(): void {
@@ -147,10 +160,20 @@ export function createMentionSuggestion(): MentionSuggestion {
         component?.destroy();
         component = null;
         currentRect = null;
+        if (editorDom) {
+          editorDom.removeAttribute("aria-activedescendant");
+          editorDom.removeAttribute("aria-controls");
+          editorDom.removeAttribute("aria-expanded");
+          editorDom = null;
+        }
       }
 
       return {
         onStart: (props: SuggestionProps) => {
+          editorDom = props.editor.view.dom;
+          editorDom.setAttribute("aria-controls", MENTION_USER_LISTBOX_ID);
+          editorDom.setAttribute("aria-expanded", "true");
+
           component = new ReactRenderer(MentionUserList, {
             props: toMentionListProps(props),
             editor: props.editor,

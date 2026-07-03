@@ -1,7 +1,8 @@
+import { mergeAttributes } from "@tiptap/core";
 import Mention from "@tiptap/extension-mention";
 
 // viewer 도 import 하므로 suggestion / 검색 / React 의존이 없어야 한다.
-// Mention 베이스의 attribute / keyboardShortcuts / markdown spec 는 우리 attribute (`userId`, `handle`)
+// Mention 베이스의 attribute / keyboardShortcuts / renderText 는 우리 attribute (`userId`, `handle`)
 // 와 호환되지 않아 모두 명시적으로 교체한다 — 부모 동작에 우연히 의존해 Mention 버전 업그레이드에서 회귀하는 것을 막는다.
 export const MentionNode = Mention.extend({
   name: "mention",
@@ -43,12 +44,18 @@ export const MentionNode = Mention.extend({
     const handle = typeof node.attrs.handle === "string" ? node.attrs.handle : "";
     return [
       "span",
-      {
-        ...HTMLAttributes,
+      mergeAttributes(HTMLAttributes, {
         "data-mention": "",
         class: "mention-chip rounded bg-accent px-1 py-0.5 text-accent-foreground",
-      },
+      }),
       `@${handle}`,
     ];
+  },
+
+  // 부모 Mention 의 기본 renderText 는 `${suggestion.char}${attrs.label ?? attrs.id}` 를 반환하는데
+  // 우리는 label/id 를 없애고 handle/userId 로 교체해서 `editor.getText()` 나 복사 경로에서 `@null` 이 나온다.
+  renderText({ node }) {
+    const handle = typeof node.attrs.handle === "string" ? node.attrs.handle : "";
+    return `@${handle}`;
   },
 });

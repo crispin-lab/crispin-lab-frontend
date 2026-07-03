@@ -1,9 +1,13 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 
 import type { UserSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+
+// suggestion.ts 가 editor DOM 의 `aria-controls` 로 참조하므로 이 상수를 export 한다.
+// 페이지 전역에 mention popover 는 동시 하나만 열려 있어 상수 단일 값으로 충분하다.
+export const MENTION_USER_LISTBOX_ID = "mention-user-listbox";
 
 // Mention 의 기본 SuggestionOptions 가 TSelected 를 `MentionNodeAttrs ({ id, label })` 로 고정하기 때문에 같은 shape 으로 맞춘다.
 // 노드 attribute (`userId`, `handle`) 로의 매핑은 suggestion command 에서 한 번에 처리.
@@ -19,23 +23,42 @@ export type MentionUserListHandle = {
 type Props = {
   items: UserSummary[];
   command: (selection: MentionUserSelection) => void;
+  // suggestion.ts 가 editor DOM 의 `aria-activedescendant` 를 동기화하도록 강조 옵션 변경 시 호출된다.
+  onActiveOptionIdChange?: (activeOptionId: string | null) => void;
 };
 
+function optionIdFor(item: UserSummary | undefined): string | null {
+  return item ? `mention-option-${item.userId}` : null;
+}
+
 export const MentionUserList = forwardRef<MentionUserListHandle, Props>(function MentionUserList(
-  { items, command },
+  { items, command, onActiveOptionIdChange },
   ref,
 ) {
   const remountKey = items.map((item) => item.userId).join("|");
-  return <MentionUserListInner ref={ref} items={items} command={command} key={remountKey} />;
+  return (
+    <MentionUserListInner
+      ref={ref}
+      items={items}
+      command={command}
+      onActiveOptionIdChange={onActiveOptionIdChange}
+      key={remountKey}
+    />
+  );
 });
 
 const MentionUserListInner = forwardRef<MentionUserListHandle, Props>(function MentionUserListInner(
-  { items, command },
+  { items, command, onActiveOptionIdChange },
   ref,
 ) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  function selectItem(index: number) {
+  // 강조 옵션 → editor DOM `aria-activedescendant` 동기 (외부 시스템 sync 라 useEffect 가 정합).
+  useEffect(() => {
+    onActiveOptionIdChange?.(optionIdFor(items[selectedIndex]));
+  }, [selectedIndex, items, onActiveOptionIdChange]);
+
+  function selectItem(index: number): void {
     const item = items[index];
     if (!item) return;
     command({ id: item.userId, label: item.handle });
@@ -63,6 +86,7 @@ const MentionUserListInner = forwardRef<MentionUserListHandle, Props>(function M
   if (items.length === 0) {
     return (
       <div
+        id={MENTION_USER_LISTBOX_ID}
         role="listbox"
         aria-label="사용자 검색 결과"
         className="border-border bg-popover text-popover-foreground rounded-md border p-2 text-sm shadow-md"
@@ -74,9 +98,15 @@ const MentionUserListInner = forwardRef<MentionUserListHandle, Props>(function M
 
   return (
     <div className="border-border bg-popover text-popover-foreground min-w-48 rounded-md border shadow-md">
-      <ul role="listbox" aria-label="사용자 검색 결과" className="max-h-60 overflow-auto py-1">
+      <ul
+        id={MENTION_USER_LISTBOX_ID}
+        role="listbox"
+        aria-label="사용자 검색 결과"
+        className="max-h-60 overflow-auto py-1"
+      >
         {items.map((item, index) => (
           <li
+            id={optionIdFor(item) ?? undefined}
             key={item.userId}
             role="option"
             aria-selected={index === selectedIndex}

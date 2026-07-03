@@ -1,4 +1,4 @@
-import { generateHTML, generateJSON } from "@tiptap/react";
+import { generateHTML, generateJSON, generateText } from "@tiptap/react";
 import { describe, expect, it } from "vitest";
 
 import { viewerExtensions } from "../viewer";
@@ -61,5 +61,26 @@ describe("MentionNode", () => {
     };
 
     expect(mention.attrs.handle).toBe("bob");
+  });
+
+  it("plain-text 직렬화가 label/id 대신 handle 을 사용한다 (@null 회귀 방어)", () => {
+    const json = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "리뷰 부탁 " },
+            { type: "mention", attrs: { userId: "u_alice", handle: "alice" } },
+            { type: "text", text: " 님" },
+          ],
+        },
+      ],
+    };
+
+    const text = generateText(json, viewerExtensions);
+
+    expect(text).toBe("리뷰 부탁 @alice 님");
+    expect(text).not.toContain("@null");
   });
 });
