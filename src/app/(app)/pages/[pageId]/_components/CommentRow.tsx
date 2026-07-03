@@ -74,11 +74,11 @@ export function CommentRow({ comment, pageId, spaceId, sourceVisibility }: Props
           commentId={commentId}
           spaceId={spaceId}
           sourceVisibility={sourceVisibility}
-          initialContent={comment.body}
+          initialContent={comment.content}
           onClose={() => setIsEditing(false)}
         />
       ) : (
-        <CommentBody body={comment.body} />
+        <CommentBody content={comment.content} />
       )}
 
       <DeleteConfirmDialog
@@ -97,11 +97,11 @@ export function CommentRow({ comment, pageId, spaceId, sourceVisibility }: Props
   );
 }
 
-function CommentBody({ body }: { body: string }) {
+function CommentBody({ content }: { content: string }) {
   const html = useMemo(() => {
-    const doc = parseEditorContent(body);
+    const doc = parseEditorContent(content);
     return renderToHTMLString({ content: doc, extensions: viewerExtensions });
-  }, [body]);
+  }, [content]);
 
   return (
     <div
@@ -143,7 +143,7 @@ function CommentEditForm({
 
   function handleSave() {
     if (isEmpty || isPending) return;
-    mutate({ body: content }, { onSuccess: onClose });
+    mutate({ content }, { onSuccess: onClose });
   }
 
   return (

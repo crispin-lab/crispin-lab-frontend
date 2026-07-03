@@ -16,6 +16,10 @@ const targets = [
     spec: `${base}/lab-space/app/build/api-spec/openapi3.json`,
     out: "src/lib/api/schema.space.d.ts",
   },
+  {
+    spec: `${base}/lab-composition/app/build/api-spec/openapi3.json`,
+    out: "src/lib/api/schema.composition.d.ts",
+  },
 ];
 
 // 백엔드 워크트리가 모듈별로 빌드 산출을 가지지 않을 수 있다 (한 워크트리가 lab-space 만, 다른 워크트리는 lab-user 만).

@@ -27,7 +27,7 @@ export function CommentComposeForm({ pageId, spaceId, sourceVisibility, classNam
   function handleSubmit() {
     if (isEmpty || isPending) return;
     mutate(
-      { body: content },
+      { content },
       {
         onSuccess: () => {
           setContent("");
