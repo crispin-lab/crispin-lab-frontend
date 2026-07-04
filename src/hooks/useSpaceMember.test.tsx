@@ -8,6 +8,8 @@ import { server } from "@/mocks/server";
 import { spaceMemberListBody, spaceMemberSummary } from "@/test/fixtures/spaceMember";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
+import { usePageList } from "./usePage";
+import { useSpaceDetail } from "./useSpace";
 import {
   useSpaceMemberInvite,
   useSpaceMemberList,
@@ -216,6 +218,63 @@ describe("useSpaceMemberRemove", () => {
 
     await waitFor(() => expect(removed).toBe(true));
     await waitFor(() => expect(listHits).toBe(2));
+  });
+
+  it("성공 시 space detail · page list 도 함께 invalidate 된다 (canWrite · 가시성 필터 파생)", async () => {
+    let spaceDetailHits = 0;
+    let pageListHits = 0;
+    server.use(
+      http.get("*/api/v1/spaces/s_1", () => {
+        spaceDetailHits += 1;
+        return HttpResponse.json({
+          createdAt: "2026-01-01T00:00:00Z",
+          spaceId: "s_1",
+          visibility: "PUBLIC",
+          name: "S",
+          description: "",
+          updatedAt: "2026-01-01T00:00:00Z",
+          canWrite: true,
+        });
+      }),
+      http.get("*/api/v1/pages", () => {
+        pageListHits += 1;
+        return HttpResponse.json({
+          size: 20,
+          isEmpty: true,
+          totalPages: 0,
+          hasNext: false,
+          page: 0,
+          items: [],
+          totalElements: 0,
+        });
+      }),
+      http.get("*/api/v1/spaces/s_1/members", () => HttpResponse.json(spaceMemberListBody([]))),
+      http.delete(
+        "*/api/v1/spaces/s_1/members/u_target",
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const { result } = renderHook(
+      () => ({
+        detail: useSpaceDetail(SPACE_ID),
+        list: usePageList({ spaceId: SPACE_ID }),
+        remove: useSpaceMemberRemove(SPACE_ID),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+    expect(spaceDetailHits).toBe(1);
+    expect(pageListHits).toBe(1);
+
+    result.current.remove.mutate(USER_ID);
+
+    await waitFor(() => expect(result.current.remove.isSuccess).toBe(true));
+    await waitFor(() => expect(spaceDetailHits).toBe(2));
+    await waitFor(() => expect(pageListHits).toBe(2));
   });
 
   it("마지막 OWNER 삭제 시도가 BE 400 으로 떨어지면 ApiError 로 전달된다", async () => {

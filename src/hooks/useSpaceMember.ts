@@ -11,6 +11,8 @@ import {
 
 import { type ApiError } from "@/lib/api/client";
 import type { SpaceId, UserId } from "@/lib/api/ids";
+import { pageKeys } from "@/lib/api/queries/page";
+import { spaceKeys } from "@/lib/api/queries/space";
 import { spaceMemberKeys, spaceMemberListOptions } from "@/lib/api/queries/spaceMember";
 import {
   changeSpaceMemberRole,
@@ -36,15 +38,24 @@ export function useSpaceMemberList(
   return useQuery({ ...spaceMemberListOptions(spaceId, params), ...overrides });
 }
 
+// 멤버 mutation 이 성공하면 파생 상태 (space canWrite / viewerRole / 페이지 가시성 필터) 도 stale 해진다.
+// useSpaceDelete 패턴처럼 세 곳을 함께 invalidate — 멤버 리스트, 스페이스 상세, 페이지 리스트.
+function invalidateMemberDerivedState(
+  queryClient: ReturnType<typeof useQueryClient>,
+  spaceId: SpaceId,
+): void {
+  queryClient.invalidateQueries({ queryKey: spaceMemberKeys.listBySpace(spaceId) });
+  queryClient.invalidateQueries({ queryKey: spaceKeys.detail(spaceId) });
+  queryClient.invalidateQueries({ queryKey: pageKeys.lists() });
+}
+
 export function useSpaceMemberInvite(
   spaceId: SpaceId,
 ): UseMutationResult<SpaceMemberJoinResult, ApiError, SpaceMemberJoinRequest> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body) => joinSpaceMember(spaceId, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: spaceMemberKeys.listBySpace(spaceId) });
-    },
+    onSuccess: () => invalidateMemberDerivedState(queryClient, spaceId),
   });
 }
 
@@ -59,9 +70,7 @@ export function useSpaceMemberRoleChange(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ userId, role }) => changeSpaceMemberRole(spaceId, userId, { role }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: spaceMemberKeys.listBySpace(spaceId) });
-    },
+    onSuccess: () => invalidateMemberDerivedState(queryClient, spaceId),
   });
 }
 
@@ -69,8 +78,6 @@ export function useSpaceMemberRemove(spaceId: SpaceId): UseMutationResult<void, 
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (userId) => removeSpaceMember(spaceId, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: spaceMemberKeys.listBySpace(spaceId) });
-    },
+    onSuccess: () => invalidateMemberDerivedState(queryClient, spaceId),
   });
 }
