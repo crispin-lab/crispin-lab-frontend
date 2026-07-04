@@ -22,6 +22,8 @@ type Props = {
   // 삭제 mutation 실패 시 dialog 안에 노출할 에러 메시지. 호출부는 toUserMessage(error) 결과를 넘긴다.
   errorMessage?: string | null;
   onConfirm: () => void;
+  // 파괴적이지 않은 confirm (예: OWNER 승격) 은 "default" 로 지정해 빨간색 강조를 뺀다.
+  confirmVariant?: "default" | "destructive";
   size?: "default" | "sm";
   className?: string;
 };
@@ -36,6 +38,7 @@ export function DeleteConfirmDialog({
   isPending,
   errorMessage,
   onConfirm,
+  confirmVariant = "destructive",
   size = "default",
   className,
 }: Props) {
@@ -59,7 +62,7 @@ export function DeleteConfirmDialog({
         )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" disabled={isPending} onClick={onConfirm}>
+          <AlertDialogAction variant={confirmVariant} disabled={isPending} onClick={onConfirm}>
             {isPending ? pendingLabel : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
