@@ -1,7 +1,7 @@
 "use client";
 
 import { XIcon } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   AlertDialog,
@@ -350,25 +350,54 @@ function UserSearchResults({
         const isActive = index === activeIndex;
         return (
           <li key={user.userId} role="none">
-            <button
-              type="button"
-              id={`invite-member-search-result-${user.userId}`}
-              role="option"
-              aria-selected={isActive}
+            <SearchResultItem
+              user={user}
+              isActive={isActive}
               disabled={disabled}
-              onClick={() => onSelect(user)}
-              onMouseEnter={() => onHover(index)}
-              className={cn(
-                "hover:bg-muted/60 focus-visible:bg-muted/60 flex w-full items-center px-3 py-2 text-left text-sm outline-none",
-                isActive && "bg-muted",
-              )}
-            >
-              <span className="text-accent-secondary">@{user.handle}</span>
-            </button>
+              onSelect={() => onSelect(user)}
+              onHover={() => onHover(index)}
+            />
           </li>
         );
       })}
     </ul>
+  );
+}
+
+function SearchResultItem({
+  user,
+  isActive,
+  disabled,
+  onSelect,
+  onHover,
+}: {
+  user: UserSummary;
+  isActive: boolean;
+  disabled: boolean;
+  onSelect: () => void;
+  onHover: () => void;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (isActive) ref.current?.scrollIntoView({ block: "nearest" });
+  }, [isActive]);
+  return (
+    <button
+      ref={ref}
+      type="button"
+      id={`invite-member-search-result-${user.userId}`}
+      role="option"
+      aria-selected={isActive}
+      disabled={disabled}
+      onClick={onSelect}
+      onMouseEnter={onHover}
+      className={cn(
+        "hover:bg-muted/40 flex w-full items-center gap-2 border-l-2 border-l-transparent px-3 py-2 text-left text-sm outline-none",
+        isActive && "bg-accent text-accent-foreground border-l-accent-foreground hover:bg-accent",
+      )}
+    >
+      <span className={isActive ? "font-medium" : "text-accent-secondary"}>@{user.handle}</span>
+    </button>
   );
 }
 
