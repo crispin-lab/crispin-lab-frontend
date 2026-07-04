@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { XIcon } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 
 import {
   AlertDialog,
@@ -12,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,46 +40,113 @@ type Props = {
   spaceId: SpaceId;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // 로컬 캐시 fallback — LAB-150 memberOfSpaceIds 로 못 잡는 100+ 멤버 스페이스 대비 이차 필터.
+  existingMemberUserIds: ReadonlySet<string>;
 };
 
-export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
+export function InviteMemberDialog({ spaceId, open, onOpenChange, existingMemberUserIds }: Props) {
   const [query, setQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
+  const [selected, setSelected] = useState<UserSummary[]>([]);
   const [role, setRole] = useState<SpaceMemberRole>("MEMBER");
-  // OWNER 초대는 즉시 실행하지 않고 별도 confirm 단계를 거친다 — 다른 관리 액션 (승격/제거) 과 대칭.
+  const [activeIndex, setActiveIndex] = useState(0);
   const [ownerConfirmOpen, setOwnerConfirmOpen] = useState(false);
+  const [batchError, setBatchError] = useState<string | null>(null);
+  const [batchPending, setBatchPending] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const searchQuery = useUserSearch(query);
   const invite = useSpaceMemberInvite(spaceId);
 
+  const selectedIds = useMemo(() => new Set(selected.map((u) => u.userId as string)), [selected]);
+
+  const results = useMemo(() => {
+    const raw = searchQuery.data?.items ?? [];
+    return raw.filter(
+      (u) =>
+        !selectedIds.has(u.userId) &&
+        !existingMemberUserIds.has(u.userId) &&
+        !u.memberOfSpaceIds.some((s) => s === spaceId),
+    );
+  }, [searchQuery.data, selectedIds, existingMemberUserIds, spaceId]);
+
+  // results 가 짧아지면 activeIndex 가 밖으로 나갈 수 있어 렌더 시 clamp.
+  const clampedIndex = results.length === 0 ? -1 : Math.min(activeIndex, results.length - 1);
+
+  const isMutating = batchPending || invite.isPending;
+
   function reset() {
     setQuery("");
-    setSelectedUser(null);
+    setSelected([]);
     setRole("MEMBER");
+    setActiveIndex(0);
     setOwnerConfirmOpen(false);
+    setBatchError(null);
     invite.reset();
   }
 
   function handleOpenChange(next: boolean) {
-    if (invite.isPending && !next) return;
+    if (isMutating && !next) return;
     onOpenChange(next);
     if (!next) reset();
   }
 
-  function actuallyInvite() {
-    if (selectedUser == null || invite.isPending) return;
-    invite.mutate(
-      { userId: selectedUser.userId, role },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
-          reset();
-        },
-      },
+  function addSelected(user: UserSummary) {
+    setSelected((prev) => [...prev, user]);
+    setQuery("");
+    setBatchError(null);
+    searchInputRef.current?.focus();
+  }
+
+  function removeSelected(userId: UserId) {
+    setSelected((prev) => prev.filter((u) => u.userId !== userId));
+  }
+
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (results.length === 0) return;
+      setActiveIndex((i) => (i + 1) % results.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (results.length === 0) return;
+      setActiveIndex((i) => (i - 1 + results.length) % results.length);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      const target = results[clampedIndex] ?? results[0];
+      if (target != null) addSelected(target);
+    } else if (event.key === "Backspace" && query === "" && selected.length > 0) {
+      // 검색어가 비어 있을 때 backspace 는 마지막 선택을 제거 — 흔한 tag input UX.
+      event.preventDefault();
+      setSelected((prev) => prev.slice(0, -1));
+    }
+  }
+
+  async function actuallyInvite() {
+    if (selected.length === 0 || batchPending) return;
+    setBatchPending(true);
+    setBatchError(null);
+    const outcomes = await Promise.allSettled(
+      selected.map((u) => invite.mutateAsync({ userId: u.userId, role })),
     );
+    const failed: { user: UserSummary; error: unknown }[] = [];
+    outcomes.forEach((outcome, i) => {
+      if (outcome.status === "rejected") {
+        const user = selected[i];
+        if (user != null) failed.push({ user, error: outcome.reason });
+      }
+    });
+    setBatchPending(false);
+    if (failed.length === 0) {
+      onOpenChange(false);
+      reset();
+      return;
+    }
+    // 성공한 사용자는 chip 에서 제거하고 실패만 유지 — 사용자가 원인을 인지하고 재시도 가능.
+    setSelected(failed.map((f) => f.user));
+    setBatchError(failed.map((f) => `@${f.user.handle}: ${toUserMessage(f.error)}`).join(" · "));
   }
 
   function handleSubmit() {
-    if (selectedUser == null || invite.isPending) return;
+    if (selected.length === 0 || isMutating) return;
     if (role === "OWNER") {
       setOwnerConfirmOpen(true);
       return;
@@ -85,37 +154,61 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
     actuallyInvite();
   }
 
-  const errorMessage = invite.isError ? toUserMessage(invite.error) : null;
-
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent size="default" className="max-w-md sm:max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>멤버 초대</AlertDialogTitle>
-          <AlertDialogDescription>초대할 사용자를 검색해 역할을 지정하세요.</AlertDialogDescription>
+          <AlertDialogDescription>
+            초대할 사용자를 검색해 역할을 지정하세요. 여러 명을 한 번에 초대할 수 있습니다.
+          </AlertDialogDescription>
         </AlertDialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="invite-member-search">사용자 검색</Label>
+            {selected.length > 0 && (
+              <ul className="flex flex-wrap gap-1.5" aria-label="선택된 사용자">
+                {selected.map((user) => (
+                  <li key={user.userId}>
+                    <SelectedUserChip
+                      user={user}
+                      disabled={isMutating}
+                      onRemove={() => removeSelected(user.userId)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
             <Input
+              ref={searchInputRef}
               id="invite-member-search"
               value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setSelectedUser(null);
-              }}
-              placeholder="handle 로 검색"
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="handle 로 검색 (↑/↓ 로 이동, Enter 로 추가)"
               autoComplete="off"
-              disabled={invite.isPending}
+              disabled={isMutating}
+              aria-autocomplete="list"
+              aria-controls="invite-member-search-results"
+              aria-activedescendant={
+                results[clampedIndex] != null
+                  ? `invite-member-search-result-${results[clampedIndex].userId}`
+                  : undefined
+              }
             />
             <UserSearchResults
+              id="invite-member-search-results"
               query={query}
               isPending={searchQuery.isFetching}
-              items={searchQuery.data?.items ?? []}
-              selectedUserId={selectedUser?.userId ?? null}
-              onSelect={setSelectedUser}
-              disabled={invite.isPending}
+              items={results}
+              activeIndex={clampedIndex}
+              hasHiddenExistingMember={
+                (searchQuery.data?.items.length ?? 0) > results.length + selected.length
+              }
+              disabled={isMutating}
+              onSelect={addSelected}
+              onHover={setActiveIndex}
             />
           </div>
 
@@ -128,7 +221,7 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
                   setRole(value);
                 }
               }}
-              disabled={invite.isPending}
+              disabled={isMutating}
             >
               <SelectTrigger id="invite-member-role-trigger" aria-label="역할">
                 <SelectValue />
@@ -149,20 +242,21 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
             )}
           </div>
 
-          {errorMessage != null && (
+          {batchError != null && (
             <p role="alert" className="text-destructive text-sm">
-              {errorMessage}
+              {batchError}
             </p>
           )}
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={invite.isPending}>취소</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={invite.isPending || selectedUser == null}
-            onClick={handleSubmit}
-          >
-            {invite.isPending ? "초대 중…" : "초대"}
+          <AlertDialogCancel disabled={isMutating}>취소</AlertDialogCancel>
+          <AlertDialogAction disabled={isMutating || selected.length === 0} onClick={handleSubmit}>
+            {batchPending
+              ? "초대 중…"
+              : selected.length === 0
+                ? "초대"
+                : `${selected.length}명 초대`}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -173,61 +267,59 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
           setOwnerConfirmOpen(false);
           actuallyInvite();
         }}
-        handle={selectedUser?.handle ?? ""}
-        isPending={invite.isPending}
+        selectedCount={selected.length}
+        isPending={isMutating}
       />
     </AlertDialog>
   );
 }
 
-function OwnerInviteConfirmDialog({
-  open,
-  onOpenChange,
-  onConfirm,
-  handle,
-  isPending,
+function SelectedUserChip({
+  user,
+  disabled,
+  onRemove,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  handle: string;
-  isPending: boolean;
+  user: UserSummary;
+  disabled: boolean;
+  onRemove: () => void;
 }) {
-  const target = handle === "" ? "선택한 사용자" : `@${handle}`;
   return (
-    <AlertDialog open={open} onOpenChange={(next) => !isPending && onOpenChange(next)}>
-      <AlertDialogContent size="sm">
-        <AlertDialogHeader>
-          <AlertDialogTitle>OWNER 로 초대할까요?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {target} 를 OWNER 로 초대합니다. OWNER 는 멤버 초대·역할 변경·제거 권한을 갖습니다.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
-          <AlertDialogAction disabled={isPending} onClick={onConfirm}>
-            {isPending ? "초대 중…" : "OWNER 로 초대"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <span className="bg-muted text-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs">
+      <span className="text-accent-secondary">@{user.handle}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        aria-label={`@${user.handle} 선택 해제`}
+        disabled={disabled}
+        onClick={onRemove}
+      >
+        <XIcon />
+      </Button>
+    </span>
   );
 }
 
 function UserSearchResults({
+  id,
   query,
   isPending,
   items,
-  selectedUserId,
-  onSelect,
+  activeIndex,
+  hasHiddenExistingMember,
   disabled,
+  onSelect,
+  onHover,
 }: {
+  id: string;
   query: string;
   isPending: boolean;
   items: UserSummary[];
-  selectedUserId: UserId | null;
-  onSelect: (user: UserSummary) => void;
+  activeIndex: number;
+  hasHiddenExistingMember: boolean;
   disabled: boolean;
+  onSelect: (user: UserSummary) => void;
+  onHover: (index: number) => void;
 }) {
   if (query.trim() === "") {
     return (
@@ -240,22 +332,35 @@ function UserSearchResults({
     return <p className="text-muted-foreground text-xs">검색 중…</p>;
   }
   if (items.length === 0) {
-    return <p className="text-muted-foreground text-xs">일치하는 사용자가 없습니다.</p>;
+    return (
+      <p className="text-muted-foreground text-xs">
+        {hasHiddenExistingMember
+          ? "일치하는 사용자가 모두 이미 참여 중이거나 선택되어 있습니다."
+          : "일치하는 사용자가 없습니다."}
+      </p>
+    );
   }
   return (
-    <ul className="border-border max-h-40 divide-y overflow-y-auto rounded-md border">
-      {items.map((user) => {
-        const isSelected = selectedUserId === user.userId;
+    <ul
+      id={id}
+      role="listbox"
+      className="border-border max-h-40 divide-y overflow-y-auto rounded-md border"
+    >
+      {items.map((user, index) => {
+        const isActive = index === activeIndex;
         return (
-          <li key={user.userId}>
+          <li key={user.userId} role="none">
             <button
               type="button"
+              id={`invite-member-search-result-${user.userId}`}
+              role="option"
+              aria-selected={isActive}
               disabled={disabled}
               onClick={() => onSelect(user)}
-              aria-pressed={isSelected}
+              onMouseEnter={() => onHover(index)}
               className={cn(
                 "hover:bg-muted/60 focus-visible:bg-muted/60 flex w-full items-center px-3 py-2 text-left text-sm outline-none",
-                isSelected && "bg-muted",
+                isActive && "bg-muted",
               )}
             >
               <span className="text-accent-secondary">@{user.handle}</span>
@@ -264,5 +369,39 @@ function UserSearchResults({
         );
       })}
     </ul>
+  );
+}
+
+function OwnerInviteConfirmDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  selectedCount,
+  isPending,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  selectedCount: number;
+  isPending: boolean;
+}) {
+  return (
+    <AlertDialog open={open} onOpenChange={(next) => !isPending && onOpenChange(next)}>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>OWNER 로 초대할까요?</AlertDialogTitle>
+          <AlertDialogDescription>
+            선택한 {selectedCount}명을 OWNER 로 초대합니다. OWNER 는 멤버 초대·역할 변경·제거 권한을
+            갖습니다.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
+          <AlertDialogAction disabled={isPending} onClick={onConfirm}>
+            {isPending ? "초대 중…" : "OWNER 로 초대"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

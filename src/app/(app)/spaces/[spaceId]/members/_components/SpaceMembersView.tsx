@@ -3,7 +3,7 @@
 import { ChevronLeftIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { PageHeading } from "@/components/PageHeading";
@@ -71,7 +71,12 @@ export function SpaceMembersView({ spaceId }: Props) {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [promotionTarget, setPromotionTarget] = useState<SpaceMemberSummary | null>(null);
 
-  const contextItems = roleContext.data?.items ?? [];
+  const contextData = roleContext.data;
+  const contextItems = useMemo(() => contextData?.items ?? [], [contextData]);
+  const existingMemberUserIds = useMemo(
+    () => new Set(contextItems.map((m) => m.userId)),
+    [contextItems],
+  );
   // meUserId · member.userId 는 응답 경계의 raw string. self 판정만 하는 지역 비교라 여기서는 lift 하지 않는다.
   // 브랜드 타입은 mutation payload (asUserId 로 lift) 로 흐를 때만 강제.
   const viewerMember =
@@ -163,7 +168,12 @@ export function SpaceMembersView({ spaceId }: Props) {
         />
       )}
 
-      <InviteMemberDialog spaceId={spaceId} open={inviteOpen} onOpenChange={setInviteOpen} />
+      <InviteMemberDialog
+        spaceId={spaceId}
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        existingMemberUserIds={existingMemberUserIds}
+      />
 
       <DeleteConfirmDialog
         open={removeTarget != null}

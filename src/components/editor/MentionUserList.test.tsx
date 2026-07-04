@@ -12,7 +12,7 @@ import {
 } from "./MentionUserList";
 
 function user(userId: string, handle: string): UserSummary {
-  return { userId: asUserId(userId), handle };
+  return { userId: asUserId(userId), handle, memberOfSpaceIds: [] };
 }
 
 function makeItems(): UserSummary[] {

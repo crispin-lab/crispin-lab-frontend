@@ -1,4 +1,4 @@
-import type { UserId } from "./ids";
+import type { SpaceId, UserId } from "./ids";
 import type { components as CompositionComponentsType } from "./schema.composition";
 import type { components as SpaceComponentsType } from "./schema.space";
 import type { components as UserComponentsType } from "./schema.user";
@@ -63,6 +63,9 @@ export type LoginInput = UserSchemas["AuthLoginRequest"];
 export type UserSummary = {
   userId: UserId;
   handle: string;
+  // 검색자가 볼 수 있는 스페이스 중 이 사용자가 소속된 것들 (LAB-150).
+  // 초대 dialog 에서 "이미 참여 중인 사용자" 를 사전 필터하는 근거.
+  memberOfSpaceIds: SpaceId[];
 };
 
 export type UserSearchResult = {
