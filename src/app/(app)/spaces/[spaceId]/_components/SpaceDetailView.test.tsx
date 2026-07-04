@@ -418,12 +418,16 @@ describe("SpaceDetailView", () => {
       );
 
       const { Wrapper } = createQueryWrapper();
-      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+      const { container } = render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, {
+        wrapper: Wrapper,
+      });
 
       await screen.findByRole("heading", { name: "공개 위키" });
-      await waitFor(() =>
-        expect(screen.queryByRole("button", { name: /^멤버$/ })).not.toBeInTheDocument(),
-      );
+      // 역할 확정 (memberList 응답 도착) 으로 skeleton 이 사라진 뒤에 부정 단언 —
+      // skeleton 단계에서 조기 통과하는 false-positive 방지.
+      const header = container.querySelector('[aria-labelledby="space-meta-heading"]');
+      await waitFor(() => expect(header?.querySelector('[data-slot="skeleton"]')).toBeNull());
+      expect(screen.queryByRole("button", { name: /^멤버$/ })).not.toBeInTheDocument();
     });
 
     it("useMe pending 상태에서는 진입점 자리에 skeleton 이 놓여 flicker 를 막는다", async () => {

@@ -39,6 +39,15 @@ export function SpaceMembersView({ spaceId }: Props) {
 
   const query = useSpaceMemberList(spaceId, { page, size }, { refetchOnMount: "always" });
 
+  // viewer role · 마지막 OWNER 방어는 pagination 과 독립이어야 한다 —
+  // 현재 페이지 items 만으로 판정하면 page 2+ 에서 자기 자신이 안 보여 관리 UI 가 통째로 숨는 회귀가 난다.
+  // page=0 size=100 별도 조회 (SpaceDetailView 의 warm-up 과 같은 캐시 키) 로 role · owner 총수를 산출.
+  const roleContext = useSpaceMemberList(
+    spaceId,
+    { page: 0, size: MEMBERS_DEFAULT_SIZE },
+    { enabled: meUserId != null },
+  );
+
   // members list 자체가 404/403 을 던지면 SpaceDetail 과 동일하게 존재 여부를 흡수.
   // `!isFetching` 가드: refetch 도중에는 판정하지 않아 stale 캐시가 회복될 기회를 남긴다.
   if (
@@ -62,17 +71,22 @@ export function SpaceMembersView({ spaceId }: Props) {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [promotionTarget, setPromotionTarget] = useState<SpaceMemberSummary | null>(null);
 
-  const items = query.data?.items ?? [];
+  const contextItems = roleContext.data?.items ?? [];
   // meUserId · member.userId 는 응답 경계의 raw string. self 판정만 하는 지역 비교라 여기서는 lift 하지 않는다.
   // 브랜드 타입은 mutation payload (asUserId 로 lift) 로 흐를 때만 강제.
-  const viewerMember = meUserId != null ? items.find((m) => m.userId === meUserId) : undefined;
+  const viewerMember =
+    meUserId != null ? contextItems.find((m) => m.userId === meUserId) : undefined;
   const viewerRole =
     viewerMember != null && isSpaceMemberRole(viewerMember.role) ? viewerMember.role : undefined;
   const canManage = viewerRole === "OWNER";
 
-  const ownerCountVisible = items.filter((m) => m.role === "OWNER").length;
-  const singleOwnerVisible =
-    query.data != null && query.data.totalPages <= 1 && ownerCountVisible <= 1;
+  // 마지막 OWNER 방어는 `roleContext` 응답 전량 (첫 페이지 size 100) 을 기준으로 산출 —
+  // BE 가 첫 페이지에 OWNER 를 모두 반환할 수 있는 규모까지 정확. totalElements 를 검사해 100 초과 시엔
+  // 방어를 UI 사전 차단으로 못 하고 BE 400 fallback 만 남는다 (LAB-159 완료 시 자연 해소).
+  const contextOwnerCount = contextItems.filter((m) => m.role === "OWNER").length;
+  const contextComplete =
+    roleContext.data != null && roleContext.data.totalElements <= contextItems.length;
+  const singleOwnerVisible = contextComplete && contextOwnerCount <= 1;
 
   const isMutating = roleChange.isPending || rowRemove.isPending || leaveRemove.isPending;
 

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useSpaceMemberInvite } from "@/hooks/useSpaceMember";
 import { useUserSearch } from "@/hooks/useUserSearch";
+import { toUserMessage } from "@/lib/api/errors";
 import type { SpaceId, UserId } from "@/lib/api/ids";
 import type { SpaceMemberRole, UserSummary } from "@/lib/api/types";
 import {
@@ -43,6 +44,8 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
   const [query, setQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
   const [role, setRole] = useState<SpaceMemberRole>("MEMBER");
+  // OWNER 초대는 즉시 실행하지 않고 별도 confirm 단계를 거친다 — 다른 관리 액션 (승격/제거) 과 대칭.
+  const [ownerConfirmOpen, setOwnerConfirmOpen] = useState(false);
   const searchQuery = useUserSearch(query);
   const invite = useSpaceMemberInvite(spaceId);
 
@@ -50,6 +53,7 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
     setQuery("");
     setSelectedUser(null);
     setRole("MEMBER");
+    setOwnerConfirmOpen(false);
     invite.reset();
   }
 
@@ -59,7 +63,7 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
     if (!next) reset();
   }
 
-  function handleSubmit() {
+  function actuallyInvite() {
     if (selectedUser == null || invite.isPending) return;
     invite.mutate(
       { userId: selectedUser.userId, role },
@@ -71,6 +75,17 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
       },
     );
   }
+
+  function handleSubmit() {
+    if (selectedUser == null || invite.isPending) return;
+    if (role === "OWNER") {
+      setOwnerConfirmOpen(true);
+      return;
+    }
+    actuallyInvite();
+  }
+
+  const errorMessage = invite.isError ? toUserMessage(invite.error) : null;
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
@@ -133,6 +148,12 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
               </p>
             )}
           </div>
+
+          {errorMessage != null && (
+            <p role="alert" className="text-destructive text-sm">
+              {errorMessage}
+            </p>
+          )}
         </div>
 
         <AlertDialogFooter>
@@ -142,6 +163,50 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange }: Props) {
             onClick={handleSubmit}
           >
             {invite.isPending ? "초대 중…" : "초대"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+      <OwnerInviteConfirmDialog
+        open={ownerConfirmOpen}
+        onOpenChange={setOwnerConfirmOpen}
+        onConfirm={() => {
+          setOwnerConfirmOpen(false);
+          actuallyInvite();
+        }}
+        handle={selectedUser?.handle ?? ""}
+        isPending={invite.isPending}
+      />
+    </AlertDialog>
+  );
+}
+
+function OwnerInviteConfirmDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  handle,
+  isPending,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  handle: string;
+  isPending: boolean;
+}) {
+  const target = handle === "" ? "선택한 사용자" : `@${handle}`;
+  return (
+    <AlertDialog open={open} onOpenChange={(next) => !isPending && onOpenChange(next)}>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>OWNER 로 초대할까요?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {target} 를 OWNER 로 초대합니다. OWNER 는 멤버 초대·역할 변경·제거 권한을 갖습니다.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
+          <AlertDialogAction disabled={isPending} onClick={onConfirm}>
+            {isPending ? "초대 중…" : "OWNER 로 초대"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
