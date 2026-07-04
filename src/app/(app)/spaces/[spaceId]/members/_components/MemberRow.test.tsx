@@ -65,7 +65,9 @@ describe("MemberRow · 마지막 OWNER 방어", () => {
 
     await user.click(screen.getByRole("button", { name: /@last 액션/ }));
 
-    const removeItem = await screen.findByRole("menuitem", { name: /제거 불가/ });
+    const removeItem = await screen.findByRole("menuitem", {
+      name: /제거.*OWNER 는 최소 한 명 유지/,
+    });
     expect(removeItem).toHaveAttribute("data-disabled");
   });
 });

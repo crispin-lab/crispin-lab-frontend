@@ -224,7 +224,13 @@ export function InviteMemberDialog({ spaceId, open, onOpenChange, existingMember
               disabled={isMutating}
             >
               <SelectTrigger id="invite-member-role-trigger" aria-label="역할">
-                <SelectValue />
+                <SelectValue>
+                  {(value) =>
+                    typeof value === "string" && isSpaceMemberRole(value)
+                      ? spaceMemberRoleLabel(value)
+                      : null
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {SPACE_MEMBER_INVITE_ROLE_ORDER.map((value) => (

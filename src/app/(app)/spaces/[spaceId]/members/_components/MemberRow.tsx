@@ -111,7 +111,14 @@ export function MemberRow({
                   disabled={isLastOwnerLock}
                   onClick={() => onRemoveRequest(member)}
                 >
-                  {isLastOwnerLock ? "제거 불가 — 유일한 OWNER" : "제거"}
+                  <div className="flex flex-col gap-0.5">
+                    <span>제거</span>
+                    {isLastOwnerLock && (
+                      <span className="text-muted-foreground text-xs">
+                        OWNER 는 최소 한 명 유지되어야 합니다
+                      </span>
+                    )}
+                  </div>
                 </DropdownMenuItem>
               </>
             )}
@@ -121,7 +128,14 @@ export function MemberRow({
                 disabled={isLastOwnerLock}
                 onClick={onLeaveRequest}
               >
-                {isLastOwnerLock ? "나갈 수 없음 — 유일한 OWNER" : "스페이스 나가기"}
+                <div className="flex flex-col gap-0.5">
+                  <span>스페이스 나가기</span>
+                  {isLastOwnerLock && (
+                    <span className="text-muted-foreground text-xs">
+                      OWNER 는 최소 한 명 유지되어야 합니다
+                    </span>
+                  )}
+                </div>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

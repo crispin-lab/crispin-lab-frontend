@@ -112,7 +112,9 @@ describe("SpaceMembersView", () => {
 
     const menu = await screen.findByRole("button", { name: /@owner 액션/ });
     await user.click(menu);
-    const leaveItem = await screen.findByRole("menuitem", { name: /유일한 OWNER/ });
+    const leaveItem = await screen.findByRole("menuitem", {
+      name: /스페이스 나가기.*OWNER 는 최소 한 명 유지/,
+    });
     expect(leaveItem).toHaveAttribute("data-disabled");
   });
 
