@@ -1,4 +1,4 @@
-import type { UserId } from "./ids";
+import type { SpaceId, UserId } from "./ids";
 import type { components as CompositionComponentsType } from "./schema.composition";
 import type { components as SpaceComponentsType } from "./schema.space";
 import type { components as UserComponentsType } from "./schema.user";
@@ -27,6 +27,18 @@ export type SpaceSummary = SpaceListResult["items"][number];
 export type SpaceCreateRequest = PageSchemas["SpaceRegisterRequest"];
 export type SpaceCreateResult = PageSchemas["SpaceRegisterResponse"];
 
+// LAB-158 이후 멤버 리스트 endpoint 가 lab-composition (BFF) 로 이관 — 응답에 handle 필드 포함.
+// mutation (Join / RoleChange / Remove) 계약은 lab-space 그대로.
+export type SpaceMemberListResult = CompositionSchemas["SpaceMemberListResponse"];
+export type SpaceMemberSummary = SpaceMemberListResult["items"][number];
+export type SpaceMemberJoinRequest = PageSchemas["SpaceMemberJoinRequest"];
+export type SpaceMemberJoinResult = PageSchemas["SpaceMemberJoinResponse"];
+export type SpaceMemberRoleChangeRequest = PageSchemas["SpaceMemberRoleChangeRequest"];
+export type SpaceMemberRoleChangeResult = PageSchemas["SpaceMemberRoleChangeResponse"];
+
+// role 상수 · guard 는 `@/lib/space/memberRole` 로 이관. 여기서는 타입만 노출한다.
+export type SpaceMemberRole = "OWNER" | "MEMBER" | "VIEWER";
+
 export type PopularTagListResult = PageSchemas["TagPopularityListResponse"];
 export type PopularTag = PopularTagListResult["items"][number];
 
@@ -51,6 +63,9 @@ export type LoginInput = UserSchemas["AuthLoginRequest"];
 export type UserSummary = {
   userId: UserId;
   handle: string;
+  // 검색자가 볼 수 있는 스페이스 중 이 사용자가 소속된 것들 (LAB-150).
+  // 초대 dialog 에서 "이미 참여 중인 사용자" 를 사전 필터하는 근거.
+  memberOfSpaceIds: SpaceId[];
 };
 
 export type UserSearchResult = {

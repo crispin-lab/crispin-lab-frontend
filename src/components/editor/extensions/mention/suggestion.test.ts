@@ -6,7 +6,7 @@ import type { UserSearchResult, UserSummary } from "@/lib/api/types";
 import { createDebouncedSearch } from "./suggestion";
 
 function user(userId: string, handle: string): UserSummary {
-  return { userId: asUserId(userId), handle };
+  return { userId: asUserId(userId), handle, memberOfSpaceIds: [] };
 }
 
 beforeEach(() => {

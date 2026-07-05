@@ -58,6 +58,13 @@ beforeEach(() => {
   notFoundMock.mockClear();
   routerPush.mockReset();
   toastError.mockReset();
+  // LAB-95 이후 SpaceDetailView 가 useMe + useSpaceMemberList 를 호출 — 각 케이스에서 override 하지 않는 한
+  // /v1/users/me 는 401 (anonymous), 멤버 리스트 fetch 는 useMe 가 null 이라 enabled=false 로 skip 된다.
+  server.use(
+    http.get("*/api/v1/users/me", () =>
+      HttpResponse.json({ code: "INVALID_SESSION", message: "no session" }, { status: 401 }),
+    ),
+  );
 });
 
 describe("SpaceDetailView", () => {
@@ -341,5 +348,138 @@ describe("SpaceDetailView", () => {
 
     expect(await screen.findByText("아직 페이지가 없습니다.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "첫 페이지 만들기" })).not.toBeInTheDocument();
+  });
+
+  describe("LAB-95 · 멤버 관리 진입점", () => {
+    it("OWNER 시점에는 '멤버' 진입점 버튼이 노출된다", async () => {
+      server.use(
+        http.get("*/api/v1/users/me", () =>
+          HttpResponse.json({ userId: "u_owner", handle: "owner", email: "o@x", role: "USER" }),
+        ),
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}/members`, () =>
+          HttpResponse.json({
+            size: 20,
+            isEmpty: false,
+            totalPages: 1,
+            hasNext: false,
+            page: 0,
+            items: [
+              {
+                spaceMemberId: "sm_1",
+                spaceId: SPACE_ID_RAW,
+                userId: "u_owner",
+                handle: "owner",
+                role: "OWNER",
+                joinedAt: "2026-01-01T00:00:00Z",
+              },
+            ],
+            totalElements: 1,
+          }),
+        ),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      const memberLink = await screen.findByRole("button", { name: /^멤버$/ });
+      expect(memberLink).toHaveAttribute("href", `/spaces/${SPACE_ID_RAW}/members`);
+    });
+
+    it("MEMBER 시점에는 '멤버' 진입점 버튼이 노출되지 않는다", async () => {
+      server.use(
+        http.get("*/api/v1/users/me", () =>
+          HttpResponse.json({ userId: "u_member", handle: "member", email: "m@x", role: "USER" }),
+        ),
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}/members`, () =>
+          HttpResponse.json({
+            size: 20,
+            isEmpty: false,
+            totalPages: 1,
+            hasNext: false,
+            page: 0,
+            items: [
+              {
+                spaceMemberId: "sm_1",
+                spaceId: SPACE_ID_RAW,
+                userId: "u_member",
+                handle: "member",
+                role: "MEMBER",
+                joinedAt: "2026-01-01T00:00:00Z",
+              },
+            ],
+            totalElements: 1,
+          }),
+        ),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const { container } = render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, {
+        wrapper: Wrapper,
+      });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      // 역할 확정 (memberList 응답 도착) 으로 skeleton 이 사라진 뒤에 부정 단언 —
+      // skeleton 단계에서 조기 통과하는 false-positive 방지.
+      const header = container.querySelector('[aria-labelledby="space-meta-heading"]');
+      await waitFor(() => expect(header?.querySelector('[data-slot="skeleton"]')).toBeNull());
+      expect(screen.queryByRole("button", { name: /^멤버$/ })).not.toBeInTheDocument();
+    });
+
+    it("useMe pending 상태에서는 진입점 자리에 skeleton 이 놓여 flicker 를 막는다", async () => {
+      // /v1/users/me 를 hang 시켜 meQuery.isPending 을 유지 → skeleton 이 유지되어야 한다.
+      server.use(
+        http.get("*/api/v1/users/me", () => new Promise<Response>(() => {})),
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const { container } = render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, {
+        wrapper: Wrapper,
+      });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      // skeleton placeholder 가 진입점 자리에 있어야 한다 — meta / page skeleton 과 구분 위해 헤더 안에서 찾는다.
+      const header = container.querySelector('[aria-labelledby="space-meta-heading"]');
+      expect(header).not.toBeNull();
+      expect(header?.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+      // 진짜 진입점 버튼은 아직 없다.
+      expect(screen.queryByRole("button", { name: /^멤버$/ })).not.toBeInTheDocument();
+    });
+
+    it("비로그인 방문자에게는 멤버 리스트 fetch 자체가 발생하지 않는다", async () => {
+      let memberListHits = 0;
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canWrite: false })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}/members`, () => {
+          memberListHits += 1;
+          return HttpResponse.json({
+            size: 20,
+            isEmpty: true,
+            totalPages: 0,
+            hasNext: false,
+            page: 0,
+            items: [],
+            totalElements: 0,
+          });
+        }),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={false} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      // useSpaceMemberList 의 enabled 가 false 라 fetch 안 됨.
+      expect(memberListHits).toBe(0);
+      expect(screen.queryByRole("button", { name: /^멤버$/ })).not.toBeInTheDocument();
+    });
   });
 });

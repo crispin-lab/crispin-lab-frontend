@@ -108,6 +108,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/spaces/{spaceId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 스페이스 멤버 목록 조회
+         * @description 스페이스 멤버 목록 조회
+         */
+        get: operations["SpaceMember \uC2A4\uD398\uC774\uC2A4 \uBA64\uBC84 \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/pages/{pageId}/comments/{commentId}": {
         parameters: {
             query?: never;
@@ -279,6 +299,36 @@ export interface components {
                 pageId: string;
                 /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
                 updatedAt: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
+        /** SpaceMemberListResponse */
+        SpaceMemberListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 멤버 목록＊ */
+            items: {
+                /** @description ⎯ 스페이스 식별자＊ */
+                spaceId: string;
+                /** @description ⎯ 역할＊ */
+                role: string;
+                /** @description ⎯ 가입 시각 (ISO)＊ */
+                joinedAt: string;
+                /** @description ⎯ 사용자 handle (사용자 조회 miss 시 빈 문자열)＊ */
+                handle: string;
+                /** @description ⎯ 멤버 식별자＊ */
+                spaceMemberId: string;
+                /** @description ⎯ 사용자 식별자＊ */
+                userId: string;
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
@@ -548,6 +598,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageInboundLinkListResponse"];
+                };
+            };
+        };
+    };
+    "SpaceMember \uC2A4\uD398\uC774\uC2A4 \uBA64\uBC84 \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: {
+                /** @description 페이지 */
+                page?: string;
+                /** @description 페이지당 항목 수 */
+                size?: string;
+            };
+            header?: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization?: string;
+            };
+            path: {
+                spaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceMemberListResponse"];
                 };
             };
         };

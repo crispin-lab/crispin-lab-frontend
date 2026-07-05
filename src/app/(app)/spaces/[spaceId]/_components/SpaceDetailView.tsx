@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,12 +19,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMe } from "@/hooks/useAuth";
 import { useSpaceDelete, useSpaceDetail } from "@/hooks/useSpace";
+import { useSpaceMemberList } from "@/hooks/useSpaceMember";
 import { usePageList } from "@/hooks/usePage";
 import { ApiError } from "@/lib/api/client";
 import { toUserMessage } from "@/lib/api/errors";
 import type { SpaceId } from "@/lib/api/ids";
 import type { PageSearchResult, Space } from "@/lib/api/types";
+import { isSpaceMemberRole } from "@/lib/space/memberRole";
 import { formatUpdatedAtKR } from "@/lib/format/date";
 import { spaceDisplayName } from "@/lib/space/displayName";
 import { cn } from "@/lib/utils";
@@ -42,6 +45,18 @@ export function SpaceDetailView({ spaceId, isAuthenticated, initialSpace }: Prop
     initialData: initialSpace,
   });
   const pageListQuery = usePageList({ spaceId }, { refetchOnMount: "always" });
+  const meQuery = useMe();
+  /*
+  todo    :: LAB-159 (SpaceGetResponse.viewerRole) 완료 후 이 warm-up fetch 제거 — 지금은 소규모 스페이스 (≤100명) 한정 정확.
+   author :: crispin
+   date   :: 2026-07-04T00:00:00KST
+   ticket :: LAB-159
+   */
+  const memberListQuery = useSpaceMemberList(
+    spaceId,
+    { page: 0, size: 100 },
+    { enabled: isAuthenticated && meQuery.data != null },
+  );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { mutate: deleteMutate, isPending: isDeleting } = useSpaceDelete();
 
@@ -66,13 +81,28 @@ export function SpaceDetailView({ spaceId, isAuthenticated, initialSpace }: Prop
 
   const canWrite = spaceQuery.data?.canWrite ?? false;
 
+  const meUserId = meQuery.data?.userId;
+  const viewerMember =
+    meUserId != null ? memberListQuery.data?.items.find((m) => m.userId === meUserId) : undefined;
+  const viewerRole =
+    viewerMember != null && isSpaceMemberRole(viewerMember.role) ? viewerMember.role : undefined;
+  const canManageMembers = viewerRole === "OWNER";
+  // 진입점 button flicker 방지 — role 판정이 확정되기 전에는 skeleton placeholder 로 자리를 잡는다.
+  // 확정 조건: 비로그인 · useMe 완료 + anonymous · member list 응답 도착 (data 나 error) 중 하나.
+  // memberListQuery 가 error 로 떨어져도 확정으로 봐 non-OWNER 흐름으로 자연 fallback — skeleton 이 무한 유지되지 않게.
+  const isViewerRoleResolved =
+    !isAuthenticated || (!meQuery.isPending && meQuery.data == null) || !memberListQuery.isPending;
+
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 px-6 py-10">
       <SpaceMetaSection
         query={spaceQuery}
+        spaceId={spaceId}
         isDeleting={isDeleting}
         onDeleteRequest={() => setDeleteOpen(true)}
         isAuthenticated={isAuthenticated}
+        canManageMembers={canManageMembers}
+        isViewerRoleResolved={isViewerRoleResolved}
       />
       <PageListSection
         query={pageListQuery}
@@ -94,14 +124,20 @@ export function SpaceDetailView({ spaceId, isAuthenticated, initialSpace }: Prop
 
 function SpaceMetaSection({
   query,
+  spaceId,
   isDeleting,
   onDeleteRequest,
   isAuthenticated,
+  canManageMembers,
+  isViewerRoleResolved,
 }: {
   query: UseQueryResult<Space, ApiError>;
+  spaceId: SpaceId;
   isDeleting: boolean;
   onDeleteRequest: () => void;
   isAuthenticated: boolean;
+  canManageMembers: boolean;
+  isViewerRoleResolved: boolean;
 }) {
   if (query.isPending) {
     return <SpaceMetaSkeleton />;
@@ -128,20 +164,38 @@ function SpaceMetaSection({
           {name.text}
         </PageHeading>
         {isAuthenticated && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="ghost" size="icon-sm" aria-label="더보기" disabled={isDeleting}>
-                  <MoreHorizontal />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem variant="destructive" onClick={onDeleteRequest}>
-                스페이스 삭제
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            {!isViewerRoleResolved ? (
+              <Skeleton className="h-7 w-16" aria-hidden="true" />
+            ) : (
+              canManageMembers && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  nativeButton={false}
+                  render={
+                    <Link href={`/spaces/${encodeURIComponent(spaceId)}/members`}>
+                      <UsersIcon /> 멤버
+                    </Link>
+                  }
+                />
+              )
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="ghost" size="icon-sm" aria-label="더보기" disabled={isDeleting}>
+                    <MoreHorizontal />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem variant="destructive" onClick={onDeleteRequest}>
+                  스페이스 삭제
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
       </div>
       {description !== "" && <p className="text-muted-foreground leading-8">{description}</p>}
