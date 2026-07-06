@@ -14,12 +14,13 @@ import {
   visibilityDescription,
   visibilityLabel,
 } from "@/lib/page/visibility";
+import type { SpaceVisibility } from "@/lib/space/visibility";
 import { cn } from "@/lib/utils";
 
 type Props = {
   value: Visibility;
   onValueChange: (next: Visibility) => void;
-  spaceVisibility?: Visibility | null;
+  spaceVisibility?: SpaceVisibility | null;
   disabled?: boolean;
   className?: string;
   id?: string;

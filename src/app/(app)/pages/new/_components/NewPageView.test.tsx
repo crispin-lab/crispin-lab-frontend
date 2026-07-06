@@ -145,7 +145,7 @@ describe("NewPageView", () => {
     });
   });
 
-  it("INTERNAL space 면 MEMBER / PUBLIC 옵션이 disabled 다", async () => {
+  it("INTERNAL space 면 PUBLIC 만 disabled — MEMBER 페이지는 허용된다", async () => {
     server.use(
       http.get("*/api/v1/spaces/:spaceId", () =>
         HttpResponse.json(spaceBody({ visibility: "INTERNAL" })),
@@ -158,19 +158,13 @@ describe("NewPageView", () => {
 
     await user.click(screen.getByLabelText("공개 범위"));
 
-    expect(await screen.findByRole("option", { name: /^멤버 공개/ })).toHaveAttribute(
+    expect(await screen.findByRole("option", { name: /^공개/ })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
-    expect(screen.getByRole("option", { name: /^공개/ })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("option", { name: /^초안$/ })).not.toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
-    expect(screen.getByRole("option", { name: /^비공개/ })).not.toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    for (const name of [/^초안$/, /^비공개$/, /^멤버 공개/]) {
+      expect(screen.getByRole("option", { name })).not.toHaveAttribute("aria-disabled", "true");
+    }
   });
 
   it("INVALID_SESSION (401) 은 글로벌 가드가 처리하므로 toast 도 navigate 도 하지 않는다", async () => {
