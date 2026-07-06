@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { SPACE_VISIBILITY_VALUES } from "@/lib/space/visibility";
+
 import {
   VISIBILITY_VALUES,
   buildCascadeBlockedReason,
@@ -7,15 +9,14 @@ import {
 } from "./visibility";
 
 describe("isVisibilityBlockedByCascade", () => {
-  // space.visibility → 차단되어야 할 option 집합. DRAFT/INTERNAL 은 rank 0 으로 동일.
-  const expected: Record<(typeof VISIBILITY_VALUES)[number], string[]> = {
+  // INTERNAL 스페이스는 space members 를 담을 수 있으므로 MEMBER 페이지 (같은 audience) 를 허용하고
+  // PUBLIC 만 차단한다.
+  const expected: Record<(typeof SPACE_VISIBILITY_VALUES)[number], string[]> = {
     PUBLIC: [],
-    MEMBER: ["PUBLIC"],
-    INTERNAL: ["MEMBER", "PUBLIC"],
-    DRAFT: ["MEMBER", "PUBLIC"],
+    INTERNAL: ["PUBLIC"],
   };
 
-  it.each(VISIBILITY_VALUES)(
+  it.each(SPACE_VISIBILITY_VALUES)(
     "space.visibility=%s 일 때 매트릭스대로 차단된다",
     (spaceVisibility) => {
       const blocked = VISIBILITY_VALUES.filter((option) =>
@@ -24,6 +25,10 @@ describe("isVisibilityBlockedByCascade", () => {
       expect(blocked).toEqual(expected[spaceVisibility]);
     },
   );
+
+  it("INTERNAL 스페이스에서 MEMBER 페이지는 허용된다", () => {
+    expect(isVisibilityBlockedByCascade("MEMBER", "INTERNAL")).toBe(false);
+  });
 });
 
 describe("buildCascadeBlockedReason", () => {
@@ -31,8 +36,8 @@ describe("buildCascadeBlockedReason", () => {
     expect(buildCascadeBlockedReason("INTERNAL")).toBe(
       "이 스페이스는 비공개 입니다. 페이지를 더 넓게 공개할 수 없습니다.",
     );
-    expect(buildCascadeBlockedReason("MEMBER")).toBe(
-      "이 스페이스는 멤버 공개 입니다. 페이지를 더 넓게 공개할 수 없습니다.",
+    expect(buildCascadeBlockedReason("PUBLIC")).toBe(
+      "이 스페이스는 공개 입니다. 페이지를 더 넓게 공개할 수 없습니다.",
     );
   });
 });

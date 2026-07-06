@@ -8,9 +8,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { PageSummary } from "@/lib/api/types";
 import {
   type Visibility,
-  buildNarrowerVisibilityWarning,
+  buildNarrowerPageVisibilityWarning,
+  isPageVisibilityNarrowerThan,
   isVisibility,
-  isVisibilityNarrowerThan,
 } from "@/lib/page/visibility";
 import { cn } from "@/lib/utils";
 
@@ -37,8 +37,8 @@ function narrowerWarningFor(
 ): string | null {
   if (source == null) return null;
   if (!isVisibility(rawTarget)) return null;
-  if (!isVisibilityNarrowerThan(rawTarget, source)) return null;
-  return buildNarrowerVisibilityWarning(rawTarget, source);
+  if (!isPageVisibilityNarrowerThan(rawTarget, source)) return null;
+  return buildNarrowerPageVisibilityWarning(rawTarget, source);
 }
 
 export const MentionList = forwardRef<MentionListHandle, Props>(function MentionList(

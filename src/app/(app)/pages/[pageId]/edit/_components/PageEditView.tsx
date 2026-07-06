@@ -28,6 +28,7 @@ import {
   writePageEditDraft,
 } from "@/lib/page/draft";
 import { type Visibility, isVisibility, visibilityDescription } from "@/lib/page/visibility";
+import { isSpaceVisibility } from "@/lib/space/visibility";
 
 import { PageTagEditor } from "./PageTagEditor";
 
@@ -128,7 +129,8 @@ function PageEditForm({
   // 미도착·에러는 cascade 미적용 — BE 가 결국 거부하므로 silently degrade.
   const { data: space } = useQuery(spaceDetailOptions(spaceId));
 
-  const spaceVisibility = space != null && isVisibility(space.visibility) ? space.visibility : null;
+  const spaceVisibility =
+    space != null && isSpaceVisibility(space.visibility) ? space.visibility : null;
   // stale draft (다른 디바이스/세션 변경) 가 보일 때는 *암묵 버리기* 가 사용자 의도와 어긋날 수 있으므로
   // banner 명시 클릭 전에는 autosave 자체를 보류해 옛 변경의 silent overwrite 를 막는다.
   const isStaleDraft = pendingDraft !== null && pendingDraft.savedAtVersion !== pinnedVersion;

@@ -212,44 +212,11 @@ describe("PageEditView", () => {
     }
   });
 
-  it("INTERNAL space 면 MEMBER / PUBLIC 옵션이 disabled + 사유가 SR 에 노출된다", async () => {
+  it("INTERNAL space 면 PUBLIC 만 disabled + 사유가 SR 에 노출된다 (MEMBER 페이지는 허용)", async () => {
     server.use(
       http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ visibility: "DRAFT" }))),
       http.get("*/api/v1/spaces/:spaceId", () =>
         HttpResponse.json(spaceBody({ visibility: "INTERNAL" })),
-      ),
-    );
-
-    const { Wrapper } = createQueryWrapper();
-    const user = userEvent.setup();
-    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
-
-    await screen.findByDisplayValue("원본 제목");
-    await user.click(screen.getByLabelText("공개 범위"));
-
-    expect(await screen.findByRole("option", { name: /^멤버 공개/ })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
-    expect(screen.getByRole("option", { name: /^공개/ })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("option", { name: /^초안$/ })).not.toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
-    expect(screen.getByRole("option", { name: /^비공개/ })).not.toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
-    expect(
-      screen.getAllByText("이 스페이스는 비공개 입니다. 페이지를 더 넓게 공개할 수 없습니다."),
-    ).toHaveLength(2);
-  });
-
-  it("MEMBER space 면 PUBLIC 만 disabled, 나머지는 enabled", async () => {
-    server.use(
-      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ visibility: "DRAFT" }))),
-      http.get("*/api/v1/spaces/:spaceId", () =>
-        HttpResponse.json(spaceBody({ visibility: "MEMBER" })),
       ),
     );
 
@@ -267,6 +234,9 @@ describe("PageEditView", () => {
     for (const name of [/^초안$/, /^비공개$/, /^멤버 공개/]) {
       expect(screen.getByRole("option", { name })).not.toHaveAttribute("aria-disabled", "true");
     }
+    expect(
+      screen.getAllByText("이 스페이스는 비공개 입니다. 페이지를 더 넓게 공개할 수 없습니다."),
+    ).toHaveLength(1);
   });
 
   it("저장 시 권한 거부 (403) 는 글로벌 mutation 에러 toast 로 흡수된다", async () => {

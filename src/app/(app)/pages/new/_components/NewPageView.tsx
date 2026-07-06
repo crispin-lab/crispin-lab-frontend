@@ -18,7 +18,8 @@ import { type SpaceId } from "@/lib/api/ids";
 import { spaceDetailOptions } from "@/lib/api/queries/space";
 import { emptyEditorContent, serializeEditorContent } from "@/lib/editor/content";
 import { clearPageDraft, type PageDraft, readPageDraft, writePageDraft } from "@/lib/page/draft";
-import { type Visibility, isVisibility, visibilityDescription } from "@/lib/page/visibility";
+import { type Visibility, visibilityDescription } from "@/lib/page/visibility";
+import { isSpaceVisibility } from "@/lib/space/visibility";
 
 import { ParentPagePicker, type ParentPagePickerValue } from "./ParentPagePicker";
 
@@ -36,7 +37,8 @@ export function NewPageView({ spaceId }: Props) {
   const { mutate, isPending } = usePageCreate();
   // 미도착·에러는 cascade 미적용 — BE 가 결국 거부하므로 silently degrade.
   const { data: space } = useQuery(spaceDetailOptions(spaceId));
-  const spaceVisibility = space != null && isVisibility(space.visibility) ? space.visibility : null;
+  const spaceVisibility =
+    space != null && isSpaceVisibility(space.visibility) ? space.visibility : null;
 
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<Visibility>(DEFAULT_VISIBILITY);
