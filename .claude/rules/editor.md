@@ -220,18 +220,34 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 
 댓글 (`CommentEditor`), 팝오버 안의 짧은 폼 (`LatexPopover`) 처럼 사용자가 짧은 텍스트를 입력하고 곧 제출하는 컨텍스트의 keydown 정책. 본문 편집기 (`Editor.tsx`) 처럼 긴 글이 흐르는 곳에는 적용하지 않는다 — 그쪽은 Enter = 문단이 자연.
 
+### 기본 분기
+
 - **Enter 단독** → 제출. `event.preventDefault()` + 콜백 발화 + return `true`.
 - **Shift+Enter** → editor default 흐름 (return `false`). StarterKit 의 hardBreak 등 컨텍스트별 기본 처리에 위임.
-- **Cmd/Ctrl+Enter** → 제출 (기존 파워유저 관례 유지). Enter 단독과 같은 경로로 통과 — 별도 분기 없음.
+- **Cmd/Ctrl+Enter** → 제출 (파워유저 관례). 아래 두 완화 조항을 우회 — 사용자가 "무조건 제출" 을 원한다는 신호로 간주.
 - **`event.isComposing` 가드 필수** — 한국어 IME 자모 확정 Enter 가 저장으로 새면 조합 중이던 텍스트가 그대로 제출되는 회귀. TipTap 의 `EditorView.props.handleKeyDown` 은 native `KeyboardEvent` 를 넘기므로 `event.isComposing` 직접 접근. React SyntheticEvent 컨텍스트 (input `onKeyDown` 등) 는 `event.nativeEvent.isComposing`.
-- **정책은 pure function 으로 추출** — 인라인 대신 named function 으로 export 해 실제 마운트 없이 unit test. IME / Shift 분기의 잦은 회귀를 잡기 위한 최소 인프라. 사용처 컴포넌트는 얇게 위임.
-- **suggestion popover 활성 시**: `@tiptap/suggestion` plugin 이 `handleKeyDown` 보다 먼저 fire. items 존재 시 Enter 를 흡수해 이중 발화 방지. items === 0 상태는 흡수하지 않아 제출이 발화됨 — popover 를 벗어나 제출하려는 흐름으로 간주.
+
+### `editorProps.handleKeyDown` 우선 순위 — 완화 필수
+
+ProseMirror `EditorView.someProp` 는 `this._props[propName]` (=`editorProps.handleKeyDown`) 를 `directPlugins` · `state.plugins` 보다 **먼저** 조회한다 (`prosemirror-view@1.41.9/dist/index.js:5638`). 즉 editorProps handler 가 Enter 를 `true` 로 삼키면 StarterKit keymap (list-item-split · blockquote-exit · heading-split) 과 `@tiptap/suggestion` plugin (popover 선택) 이 모두 손실된다.
+
+따라서 짧은 텍스트 editor 라도 아래 두 조건에서는 handler 가 return `false` 로 fall through 해 native tiptap 흐름에 위임한다:
+
+- **selection ancestor 가 `listItem` / `blockquote` / `heading`**: `view.state.selection.$from.node(depth).type.name` 을 depth 1 까지 순회. 리스트 두 번째 항목 · 인용 탈출 · heading 분리를 잃지 않게.
+- **`@tiptap/suggestion` state 의 `active === true`**: `view.state.plugins` 를 순회하며 plugin state 가 `{ active, range, ... }` 형태이고 `active` 가 참인지 확인. `active` 만 검사하면 우연히 같은 필드를 가진 다른 plugin 을 오탐하므로 `range` 도 함께 검증. `[[검색어` / `@검색어` popover 의 Enter 선택을 잃지 않게.
+
+Cmd/Ctrl 조합은 위 두 완화를 우회 — 파워유저의 "list 안에서도 지금 제출" 관례가 존중된다.
+
+### 구현 · 테스트
+
+- **정책은 pure function 으로 추출** — 인라인 대신 named function 으로 export 해 실제 마운트 없이 unit test. IME / Shift / block-context / suggestion-active 분기의 회귀를 잡기 위한 최소 인프라. 사용처 컴포넌트는 얇게 위임 (guards 계산 + 함수 호출).
+- guards 계산 helper (`isEnterConsumedByBlock`, `isSuggestionActive`) 도 export 해 EditorView / ResolvedPos 를 최소 mock 으로 unit test.
 
 현재 등장 위치:
-- `src/components/editor/CommentEditor.tsx` — `handleCommentEditorKeyDown` (댓글 저장)
-- `src/components/editor/extensions/math/LatexPopover.tsx` — 팝오버 저장
+- `src/components/editor/CommentEditor.tsx` — `handleCommentEditorKeyDown` + `isEnterConsumedByBlock` + `isSuggestionActive`
+- `src/components/editor/extensions/math/LatexPopover.tsx` — 팝오버 저장 (Portal 렌더링 컨텍스트라 someProp 순서 우려 없음, block-context / suggestion 완화 불필요)
 
-세 번째 등장이 생기면 위 목록을 갱신하고, 시그니처가 정합하면 shared util 로 승격.
+세 번째 등장이 생기면 위 목록을 갱신하고, TipTap 컨텍스트라면 CommentEditor 의 두 guard helper 를 재사용, 순수 DOM 이라면 LatexPopover 패턴을 따른다.
 
 ## 자주 빠뜨리는 것
 
