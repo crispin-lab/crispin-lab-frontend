@@ -35,7 +35,7 @@ export interface paths {
          * 사용자 검색
          * @description 사용자 검색
          */
-        get: operations["User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569\uC744 \uBC18\uD658\uD55C\uB2E4"];
+        get: operations["User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569"];
         put?: never;
         post?: never;
         delete?: never;
@@ -213,18 +213,6 @@ export interface components {
             /** @description 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
-        /** UserSearchResponse */
-        UserSearchResponse: {
-            /** @description 매칭된 사용자 목록＊ */
-            items: {
-                /** @description ⎯ 사용자가 소속된 스페이스 식별자 목록 (검색자가 볼 수 있는 스페이스만 노출, SpaceId 오름차순, 없으면 빈 배열)＊ */
-                memberOfSpaceIds: (Record<string, never> | boolean | string | number)[];
-                /** @description ⎯ 사용자 이름＊ */
-                handle: string;
-                /** @description ⎯ 사용자 식별자＊ */
-                userId: string;
-            }[];
-        };
         /** CommentListResponse */
         CommentListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -333,6 +321,20 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
+        /** UserSearchResponse */
+        UserSearchResponse: {
+            /** @description 매칭된 사용자 목록＊ */
+            items: {
+                /** @description ⎯ 사용자가 소속된 스페이스 식별자 목록 (검색자가 볼 수 있는 스페이스만 노출, SpaceId 오름차순, 없으면 빈 배열)＊ */
+                memberOfSpaceIds: (Record<string, never> | boolean | string | number)[];
+                /** @description ⎯ 요청 spaceId 에 이미 참여 중인지 여부. spaceId 미지정 또는 검색자가 해당 스페이스를 볼 수 없으면 null. */
+                alreadyMember?: boolean | null;
+                /** @description ⎯ 사용자 이름＊ */
+                handle: string;
+                /** @description ⎯ 사용자 식별자＊ */
+                userId: string;
+            }[];
+        };
         /** CommentRegisterResponse */
         CommentRegisterResponse: {
             /** @description 생성된 댓글 식별자＊ */
@@ -417,6 +419,10 @@ export interface operations {
                 tagName?: string;
                 /** @description 정렬 옵션 (CREATED_AT / UPDATED_AT / RELEVANCE / TREE, 기본값 UPDATED_AT) */
                 sort?: string;
+                /** @description 부모 페이지 ID 필터 (해당 부모의 직계 자녀만 반환, onlyRoot 와 상호 배타) */
+                parentPageId?: string;
+                /** @description 루트 페이지 (parentPageId 가 null) 만 반환. 기본값 false, parentPageId 와 상호 배타 */
+                onlyRoot?: string;
                 /** @description 페이지 */
                 page?: string;
                 /** @description 페이지당 항목 수 */
@@ -445,13 +451,15 @@ export interface operations {
             };
         };
     };
-    "User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569\uC744 \uBC18\uD658\uD55C\uB2E4": {
+    "User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569": {
         parameters: {
             query: {
                 /** @description 검색어 (handle 부분 일치, 대소문자 무시, 1~30자) */
                 query: string;
                 /** @description 결과 수 (1 ~ 20, 기본값 10) */
                 size?: string;
+                /** @description 초대 대상 스페이스 식별자. 지정 시 각 item 의 alreadyMember 가 true/false 로 채워진다. 지정 시 Long 형식이어야 하며, 빈 값이면 400. */
+                spaceId?: string;
             };
             header: {
                 /**

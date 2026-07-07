@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePageList } from "@/hooks/usePage";
 import { toUserMessage } from "@/lib/api/errors";
-import { type SpaceId } from "@/lib/api/ids";
+import { type PageId, type SpaceId } from "@/lib/api/ids";
 import type { PageSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
@@ -24,9 +24,22 @@ type Props = {
   onChange: (next: ParentPagePickerValue | null) => void;
   disabled?: boolean;
   id?: string;
+  /**
+   * 후보에서 제외할 pageId. 페이지 이동 UX 에서 자기 자신·현재 부모를 미리 걸러
+   * `PAGE_PARENT_CYCLE` / `PAGE_PARENT_UNCHANGED` 에러 회귀를 예방.
+   * 자기 *자손* 은 검색 응답에 ancestors 가 없어 클라이언트에서 판정 불가 — BE 의 cycle 검증에 위임.
+   */
+  excludePageIds?: readonly PageId[];
 };
 
-export function ParentPagePicker({ spaceId, value, onChange, disabled, id }: Props) {
+export function ParentPagePicker({
+  spaceId,
+  value,
+  onChange,
+  disabled,
+  id,
+  excludePageIds,
+}: Props) {
   // 같은 페이지에 두 picker 인스턴스가 렌더돼도 aria-controls / aria-activedescendant 가 충돌하지 않게.
   const listboxId = useId();
   const [open, setOpen] = useState(false);
@@ -57,7 +70,12 @@ export function ParentPagePicker({ spaceId, value, onChange, disabled, id }: Pro
     { enabled: open, placeholderData: undefined },
   );
 
-  const items = useMemo<ReadonlyArray<PageSummary>>(() => search.data?.items ?? [], [search.data]);
+  const items = useMemo<ReadonlyArray<PageSummary>>(() => {
+    const raw = search.data?.items ?? [];
+    if (excludePageIds === undefined || excludePageIds.length === 0) return raw;
+    const excluded = new Set<string>(excludePageIds);
+    return raw.filter((item) => !excluded.has(item.pageId));
+  }, [search.data, excludePageIds]);
 
   // 새 검색 결과가 도착하면 cursor 를 맨 위로. React docs 의 "previous value 비교 후 render 중 reset" 패턴.
   const [lastItems, setLastItems] = useState(items);
