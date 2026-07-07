@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import type { PageSummary } from "@/lib/api/types";
-import { formatUpdatedAtKR } from "@/lib/format/date";
 
 type Props = {
   page: PageSummary;
@@ -20,7 +20,7 @@ export function SearchResultRow({ page, spaceName }: Props) {
       <span className="text-muted-foreground flex items-center gap-2 text-xs">
         {spaceName !== null && <span className="truncate">{spaceName}</span>}
         {spaceName !== null && <span aria-hidden>·</span>}
-        <time dateTime={page.updatedAt}>{formatUpdatedAtKR(page.updatedAt)}</time>
+        <FormattedTime iso={page.updatedAt} />
       </span>
     </Link>
   );

@@ -18,12 +18,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePageList, usePageMove, usePageReorder } from "@/hooks/usePage";
 import { toUserMessage } from "@/lib/api/errors";
 import { asPageId, type PageId, type SpaceId } from "@/lib/api/ids";
 import type { PageSummary } from "@/lib/api/types";
-import { formatUpdatedAtKR } from "@/lib/format/date";
 
 const CHILD_LIST_SIZE = 100;
 
@@ -132,7 +132,7 @@ function ChildPageRow({ child, index, total, isBusy, onReorder, onDetach }: RowP
           {child.title}
         </Link>
         <p className="text-muted-foreground mt-1 text-xs">
-          <time dateTime={child.updatedAt}>수정 {formatUpdatedAtKR(child.updatedAt)}</time>
+          수정 <FormattedTime iso={child.updatedAt} />
         </p>
       </div>
       <DropdownMenu>

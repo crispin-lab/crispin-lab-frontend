@@ -2,6 +2,7 @@
 
 import { MoreHorizontalIcon } from "lucide-react";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { MemberUserLabel, memberDisplayHandle } from "@/components/space/MemberUserLabel";
 import { RoleBadge } from "@/components/space/RoleBadge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { SpaceMemberRole, SpaceMemberSummary } from "@/lib/api/types";
-import { formatUpdatedAtKR } from "@/lib/format/date";
 import {
   isSpaceMemberRole,
   SPACE_MEMBER_ROLE_DISPLAY_ORDER,
@@ -60,13 +60,10 @@ export function MemberRow({
         <MemberUserLabel handle={member.handle} />
       </div>
       <RoleBadge role={member.role} />
-      <time
-        dateTime={member.joinedAt}
-        className="text-muted-foreground hidden text-xs sm:inline"
-        aria-label={`가입 ${formatUpdatedAtKR(member.joinedAt)}`}
-      >
-        {formatUpdatedAtKR(member.joinedAt)}
-      </time>
+      <span className="text-muted-foreground hidden text-xs sm:inline">
+        <span className="sr-only">가입 </span>
+        <FormattedTime iso={member.joinedAt} />
+      </span>
       {(canManage || isSelf) && (
         <DropdownMenu>
           <DropdownMenuTrigger

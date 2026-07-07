@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePageInboundLinks } from "@/hooks/usePageInboundLinks";
@@ -11,7 +12,6 @@ import { toUserMessage } from "@/lib/api/errors";
 import type { PageId } from "@/lib/api/ids";
 import { INBOUND_LIST_SIZE } from "@/lib/api/page";
 import type { PageInboundLink } from "@/lib/api/types";
-import { formatUpdatedAtKR } from "@/lib/format/date";
 import { SPACE_LIST_SIZE } from "@/lib/search/searchParams";
 import { cn } from "@/lib/utils";
 
@@ -106,7 +106,7 @@ function InboundLinkRow({
           <span className="text-accent-secondary">@{source.authorHandle}</span>
         )}
         <span aria-hidden>·</span>
-        <time dateTime={source.updatedAt}>{formatUpdatedAtKR(source.updatedAt)}</time>
+        <FormattedTime iso={source.updatedAt} />
       </span>
     </Link>
   );

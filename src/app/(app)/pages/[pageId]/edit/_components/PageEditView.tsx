@@ -1,19 +1,22 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Editor } from "@/components/editor/Editor";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
 import type { ParentPagePickerValue } from "@/components/page/ParentPagePicker";
 import { StickyFormFooter } from "@/components/page/StickyFormFooter";
 import { TitleInput } from "@/components/page/TitleInput";
-import { VisibilitySelect } from "@/components/page/VisibilitySelect";
+import { VisibilityBadge } from "@/components/page/VisibilityBadge";
+import { VisibilitySelectPopover } from "@/components/page/VisibilitySelectPopover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePage, usePageDelete, usePageUpdate } from "@/hooks/usePage";
 import { useSubmitShortcut } from "@/hooks/useSubmitShortcut";
@@ -28,7 +31,7 @@ import {
   readPageEditDraft,
   writePageEditDraft,
 } from "@/lib/page/draft";
-import { type Visibility, isVisibility, visibilityDescription } from "@/lib/page/visibility";
+import { type Visibility, isVisibility } from "@/lib/page/visibility";
 import { isSpaceVisibility } from "@/lib/space/visibility";
 
 import { ChildPagesSection } from "./ChildPagesSection";
@@ -190,6 +193,13 @@ function PageEditForm({
         onSuccess: (result) => {
           clearPageEditDraft(pageId);
           setPinnedVersion(result.version);
+          toast.success("저장했어요", {
+            id: `page-edit-save-${pageId}`,
+            action: {
+              label: "페이지로 이동",
+              onClick: () => router.push(`/pages/${encodeURIComponent(pageId)}`),
+            },
+          });
         },
       },
     );
@@ -247,13 +257,14 @@ function PageEditForm({
       {/* 새 페이지 화면과 같은 hero 사다리 — TitleInput 이 시각 hero, h1 은 sr-only landmark. */}
       <h1 className="sr-only">페이지 편집</h1>
 
-      <header>
+      <header className="space-y-2">
         <PageBreadcrumb
           mode="detail"
           space={space ?? { spaceId, name: "" }}
           ancestors={ancestors}
           currentTitle={breadcrumbTitle}
         />
+        <VisibilityBadge visibility={visibility} />
       </header>
 
       {pendingDraft !== null && (
@@ -318,30 +329,11 @@ function PageEditForm({
       </Card>
 
       <Card>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label
-              htmlFor="page-edit-visibility-trigger"
-              className="text-muted-foreground text-xs uppercase"
-            >
-              공개 범위
-            </Label>
-            <VisibilitySelect
-              id="page-edit-visibility-trigger"
-              value={visibility}
-              onValueChange={handleVisibilityChange}
-              spaceVisibility={spaceVisibility}
-              disabled={busy}
-            />
-            <p className="text-muted-foreground text-xs">{visibilityDescription(visibility)}</p>
-          </div>
-
-          <div className="border-border space-y-1 border-t pt-3">
-            <h2 className="text-muted-foreground text-xs uppercase">버전 정보</h2>
-            <p className="text-muted-foreground text-xs">
-              v{currentVersion} · {formatPageTimestamp(updatedAt)}
-            </p>
-          </div>
+        <CardContent className="space-y-1">
+          <h2 className="text-muted-foreground text-xs uppercase">버전 정보</h2>
+          <p className="text-muted-foreground text-xs">
+            v{currentVersion} · <FormattedTime iso={updatedAt} variant="datetime" />
+          </p>
         </CardContent>
       </Card>
 
@@ -357,6 +349,23 @@ function PageEditForm({
         >
           페이지 삭제
         </Button>
+        {busy ? (
+          <Button type="button" variant="outline" disabled>
+            편집 완료
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href={`/pages/${encodeURIComponent(pageId)}`}>편집 완료</Link>}
+          />
+        )}
+        <VisibilitySelectPopover
+          value={visibility}
+          onValueChange={handleVisibilityChange}
+          spaceVisibility={spaceVisibility}
+          disabled={busy}
+        />
         <Button type="button" onClick={handleSave} disabled={!canSave}>
           {isPending ? "저장 중…" : "저장"}
         </Button>
@@ -390,18 +399,6 @@ function PageEditSkeleton() {
       </div>
     </div>
   );
-}
-
-function formatPageTimestamp(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
 }
 
 // ancestors 는 [root, ..., direct_parent] 순서 (BE 계약). parentPageId 가 있으면 마지막 원소가 직계 부모.
