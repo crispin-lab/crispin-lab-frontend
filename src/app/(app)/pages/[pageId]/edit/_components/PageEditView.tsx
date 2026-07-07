@@ -1,8 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Editor } from "@/components/editor/Editor";
@@ -183,6 +185,13 @@ function PageEditForm({
         onSuccess: (result) => {
           clearPageEditDraft(pageId);
           setPinnedVersion(result.version);
+          toast.success("저장했어요", {
+            id: `page-edit-save-${pageId}`,
+            action: {
+              label: "페이지로 이동",
+              onClick: () => router.push(`/pages/${encodeURIComponent(pageId)}`),
+            },
+          });
         },
       },
     );
@@ -334,6 +343,17 @@ function PageEditForm({
         >
           페이지 삭제
         </Button>
+        {busy ? (
+          <Button type="button" variant="outline" disabled>
+            편집 완료
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href={`/pages/${encodeURIComponent(pageId)}`}>편집 완료</Link>}
+          />
+        )}
         <Button type="button" onClick={handleSave} disabled={!canSave}>
           {isPending ? "저장 중…" : "저장"}
         </Button>
