@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Editor } from "@/components/editor/Editor";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
+import { ParentPagePicker, type ParentPagePickerValue } from "@/components/page/ParentPagePicker";
 import { StickyFormFooter } from "@/components/page/StickyFormFooter";
 import { TitleInput } from "@/components/page/TitleInput";
 import { VisibilitySelect } from "@/components/page/VisibilitySelect";
@@ -20,8 +21,6 @@ import { emptyEditorContent, serializeEditorContent } from "@/lib/editor/content
 import { clearPageDraft, type PageDraft, readPageDraft, writePageDraft } from "@/lib/page/draft";
 import { type Visibility, visibilityDescription } from "@/lib/page/visibility";
 import { isSpaceVisibility } from "@/lib/space/visibility";
-
-import { ParentPagePicker, type ParentPagePickerValue } from "./ParentPagePicker";
 
 type Props = {
   spaceId: SpaceId;

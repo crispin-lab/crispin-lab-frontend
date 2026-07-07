@@ -9,12 +9,21 @@ import {
 
 import { type ApiError } from "@/lib/api/client";
 import type { PageId } from "@/lib/api/ids";
-import { createPage, deletePage, type PageSearchParams, updatePage } from "@/lib/api/page";
+import {
+  createPage,
+  deletePage,
+  movePage,
+  type PageSearchParams,
+  reorderPage,
+  updatePage,
+} from "@/lib/api/page";
 import { pageDetailOptions, pageKeys, pageListOptions } from "@/lib/api/queries/page";
 import type {
   Page,
   PageCreateRequest,
   PageCreateResult,
+  PageMoveRequest,
+  PageReorderRequest,
   PageSearchResult,
   PageUpdateRequest,
   PageUpdateResult,
@@ -73,6 +82,39 @@ export function usePageDelete(): UseMutationResult<void, ApiError, PageId> {
     onSuccess: (_result, pageId) => {
       // active observer (편집 화면) 의 refetch → 404 race 를 피하려고 refetchType: 'none'. 다음 mount 에서 stale 로 인식돼 다시 fetch 된다.
       queryClient.invalidateQueries({ queryKey: pageKeys.detail(pageId), refetchType: "none" });
+      queryClient.invalidateQueries({ queryKey: pageKeys.lists() });
+    },
+  });
+}
+
+export type PageMoveVariables = {
+  pageId: PageId;
+  body: PageMoveRequest;
+};
+
+export function usePageMove(): UseMutationResult<void, ApiError, PageMoveVariables> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ pageId, body }) => movePage(pageId, body),
+    onSuccess: (_result, { pageId }) => {
+      // lists() 로 broad invalidate — 이전/새 부모의 자녀 목록이 서로 다른 queryKey 라 개별 지목이 어렵기 때문.
+      queryClient.invalidateQueries({ queryKey: pageKeys.detail(pageId) });
+      queryClient.invalidateQueries({ queryKey: pageKeys.lists() });
+    },
+  });
+}
+
+export type PageReorderVariables = {
+  pageId: PageId;
+  body: PageReorderRequest;
+};
+
+export function usePageReorder(): UseMutationResult<void, ApiError, PageReorderVariables> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ pageId, body }) => reorderPage(pageId, body),
+    onSuccess: (_result, { pageId }) => {
+      queryClient.invalidateQueries({ queryKey: pageKeys.detail(pageId) });
       queryClient.invalidateQueries({ queryKey: pageKeys.lists() });
     },
   });

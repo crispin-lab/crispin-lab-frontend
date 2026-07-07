@@ -11,13 +11,16 @@ type CompositionSchemas = CompositionComponentsType["schemas"];
 type PageSchemas = SpaceComponentsType["schemas"];
 type UserSchemas = UserComponentsType["schemas"];
 
-export type Page = PageSchemas["PageGetResponse"];
+// PageGetting endpoint 는 BFF (lab-composition) 로 이관 — canEdit / canComment / ancestors 는 composition 응답에만 포함.
+export type Page = CompositionSchemas["PageGetResponse"];
 export type PageSearchResult = PageSchemas["PageSearchResponse"];
 export type PageSummary = PageSearchResult["items"][number];
 export type PageCreateRequest = PageSchemas["PageRegisterRequest"];
 export type PageCreateResult = PageSchemas["PageRegisterResponse"];
 export type PageUpdateRequest = PageSchemas["PageEditRequest"];
 export type PageUpdateResult = PageSchemas["PageEditResponse"];
+export type PageMoveRequest = PageSchemas["PageMoveRequest"];
+export type PageReorderRequest = PageSchemas["PageReorderRequest"];
 export type PageInboundLinkListResult = PageSchemas["PageInboundLinkListResponse"];
 export type PageInboundLink = PageInboundLinkListResult["items"][number];
 

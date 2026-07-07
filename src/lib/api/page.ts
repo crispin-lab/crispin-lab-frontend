@@ -5,6 +5,8 @@ import type {
   PageCreateRequest,
   PageCreateResult,
   PageInboundLinkListResult,
+  PageMoveRequest,
+  PageReorderRequest,
   PageSearchResult,
   PageUpdateRequest,
   PageUpdateResult,
@@ -18,6 +20,11 @@ export type PageSearchParams = {
   tag?: string[];
   /** cross-space 같은 이름의 모든 태그 중 하나 이상 보유 (BE LAB-126). landing TagCloud chip 의 navigation 경로. */
   tagName?: string;
+  /**
+   * 직계 자녀 필터. `undefined` 는 필터 미적용, `null` 은 루트 페이지 (부모 없음) 만, `PageId` 는 해당 부모의 직계 자녀만.
+   * BE 는 이 값을 `parentPageId=<id>` 또는 `onlyRoot=true` 로 상호 배타 매핑한다 (LAB-181).
+   */
+  parentPageId?: PageId | null;
   sort?: PageSort;
   page?: number;
   size?: number;
@@ -77,6 +84,20 @@ export function deletePage(pageId: PageId): Promise<void> {
   });
 }
 
+export function movePage(pageId: PageId, body: PageMoveRequest): Promise<void> {
+  return apiFetch<void>(`/api/v1/pages/${encodeURIComponent(pageId)}/parent`, {
+    method: "PUT",
+    body,
+  });
+}
+
+export function reorderPage(pageId: PageId, body: PageReorderRequest): Promise<void> {
+  return apiFetch<void>(`/api/v1/pages/${encodeURIComponent(pageId)}/order`, {
+    method: "PUT",
+    body,
+  });
+}
+
 export function buildInboundLinksQuery(params: PageInboundLinkParams): string {
   const search = new URLSearchParams();
   if (params.page !== undefined) {
@@ -103,6 +124,11 @@ export function buildSearchPagesQuery(params: PageSearchParams): string {
   }
   if (params.tagName !== undefined && params.tagName !== "") {
     search.append("tagName", params.tagName);
+  }
+  if (params.parentPageId === null) {
+    search.append("onlyRoot", "true");
+  } else if (params.parentPageId !== undefined) {
+    search.append("parentPageId", params.parentPageId);
   }
   if (params.sort !== undefined) {
     search.append("sort", params.sort);

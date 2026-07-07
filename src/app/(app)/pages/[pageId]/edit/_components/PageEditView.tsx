@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Editor } from "@/components/editor/Editor";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
+import type { ParentPagePickerValue } from "@/components/page/ParentPagePicker";
 import { StickyFormFooter } from "@/components/page/StickyFormFooter";
 import { TitleInput } from "@/components/page/TitleInput";
 import { VisibilitySelect } from "@/components/page/VisibilitySelect";
@@ -17,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePage, usePageDelete, usePageUpdate } from "@/hooks/usePage";
 import { useSubmitShortcut } from "@/hooks/useSubmitShortcut";
 import { ApiError } from "@/lib/api/client";
-import { type PageId, type SpaceId, asSpaceId } from "@/lib/api/ids";
+import { asPageId, type PageId, type SpaceId, asSpaceId } from "@/lib/api/ids";
 import { toUserMessage } from "@/lib/api/errors";
 import { spaceDetailOptions } from "@/lib/api/queries/space";
 import type { Page } from "@/lib/api/types";
@@ -30,7 +31,10 @@ import {
 import { type Visibility, isVisibility, visibilityDescription } from "@/lib/page/visibility";
 import { isSpaceVisibility } from "@/lib/space/visibility";
 
+import { ChildPagesSection } from "./ChildPagesSection";
+import { MoveToParentAction } from "./MoveToParentAction";
 import { PageTagEditor } from "./PageTagEditor";
+import { SiblingOrderActions } from "./SiblingOrderActions";
 
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
 
@@ -74,6 +78,7 @@ export function PageEditView({ pageId, initialPage }: Props) {
       initialContent={page.content}
       initialVisibility={initialVisibility}
       spaceId={asSpaceId(page.spaceId)}
+      parentPageId={page.parentPageId != null ? asPageId(page.parentPageId) : null}
       ancestors={page.ancestors}
       currentVersion={page.currentVersion}
       updatedAt={page.updatedAt}
@@ -87,6 +92,7 @@ type FormProps = {
   initialContent: string;
   initialVisibility: Visibility;
   spaceId: SpaceId;
+  parentPageId: PageId | null;
   ancestors: Page["ancestors"];
   currentVersion: number;
   updatedAt: string;
@@ -98,6 +104,7 @@ function PageEditForm({
   initialContent,
   initialVisibility,
   spaceId,
+  parentPageId,
   ancestors,
   currentVersion,
   updatedAt,
@@ -297,6 +304,20 @@ function PageEditForm({
       />
 
       <Card>
+        <CardContent className="space-y-2">
+          <h2 className="text-muted-foreground text-xs uppercase">위치</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <SiblingOrderActions pageId={pageId} spaceId={spaceId} parentPageId={parentPageId} />
+            <MoveToParentAction
+              pageId={pageId}
+              spaceId={spaceId}
+              currentParent={currentParentValue(parentPageId, ancestors)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label
@@ -316,13 +337,15 @@ function PageEditForm({
           </div>
 
           <div className="border-border space-y-1 border-t pt-3">
-            <p className="text-muted-foreground text-xs uppercase">버전 정보</p>
+            <h2 className="text-muted-foreground text-xs uppercase">버전 정보</h2>
             <p className="text-muted-foreground text-xs">
               v{currentVersion} · {formatPageTimestamp(updatedAt)}
             </p>
           </div>
         </CardContent>
       </Card>
+
+      <ChildPagesSection pageId={pageId} spaceId={spaceId} />
 
       <StickyFormFooter>
         <Button
@@ -379,4 +402,15 @@ function formatPageTimestamp(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+// ancestors 는 [root, ..., direct_parent] 순서 (BE 계약). parentPageId 가 있으면 마지막 원소가 직계 부모.
+function currentParentValue(
+  parentPageId: PageId | null,
+  ancestors: Page["ancestors"],
+): ParentPagePickerValue | null {
+  if (parentPageId === null) return null;
+  const direct = ancestors[ancestors.length - 1];
+  if (direct === undefined) return null;
+  return { pageId: direct.pageId, title: direct.title };
 }

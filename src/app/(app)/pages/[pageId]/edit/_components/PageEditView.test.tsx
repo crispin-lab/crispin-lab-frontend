@@ -60,6 +60,21 @@ beforeEach(() => {
   localStorage.clear();
   // 모든 테스트의 디폴트 — PUBLIC space (cascade 미적용, 기존 회귀 보호). cascade 케이스는 각자 override.
   server.use(http.get("*/api/v1/spaces/:spaceId", () => HttpResponse.json(spaceBody())));
+  // SiblingOrderActions / ChildPagesSection 이 /api/v1/pages 를 검색 — 위치 UI 회귀 테스트는 별도.
+  // 저장·삭제 흐름 테스트는 빈 목록으로 충분.
+  server.use(
+    http.get("*/api/v1/pages", () =>
+      HttpResponse.json({
+        items: [],
+        page: 0,
+        size: 100,
+        totalElements: 0,
+        hasNext: false,
+        totalPages: 0,
+        isEmpty: true,
+      }),
+    ),
+  );
 });
 
 describe("PageEditView", () => {

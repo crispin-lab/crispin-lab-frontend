@@ -11,11 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 사용자 검색
-         * @description 사용자 검색
-         */
-        get: operations["User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC\uB97C \uBC18\uD658\uD55C\uB2E4"];
+        get?: never;
         put?: never;
         /**
          * 회원가입
@@ -42,6 +38,26 @@ export interface paths {
          * @description 로그인
          */
         post: operations["Auth \uB85C\uADF8\uC778 \uC815\uC0C1 \uB85C\uADF8\uC778 \uC2DC 200 \uACFC userId/token \uC744 \uBC18\uD658\uD55C\uB2E4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 로그아웃
+         * @description 로그아웃
+         */
+        post: operations["Auth \uB85C\uADF8\uC544\uC6C3 \uC815\uC0C1 \uD1A0\uD070\uC744 \uBC1B\uC73C\uBA74 204 \uB97C \uBC18\uD658\uD55C\uB2E4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -106,15 +122,10 @@ export interface components {
             /** @description 발급된 세션 토큰＊ */
             token: string;
         };
-        /** UserSearchResponse */
-        UserSearchResponse: {
-            /** @description 매칭된 사용자 목록＊ */
-            items: {
-                /** @description ⎯ 사용자 이름＊ */
-                handle: string;
-                /** @description ⎯ 사용자 식별자＊ */
-                userId: string;
-            }[];
+        /** AuthLogoutRequest */
+        AuthLogoutRequest: {
+            /** @description revoke 대상 세션 토큰＊ */
+            token: string;
         };
         /** AuthLoginRequest */
         AuthLoginRequest: {
@@ -152,37 +163,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    "User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC\uB97C \uBC18\uD658\uD55C\uB2E4": {
-        parameters: {
-            query: {
-                /** @description 검색어 (handle 부분 일치, 대소문자 무시, 1~30자) */
-                query: string;
-                /** @description 결과 수 (1 ~ 20, 기본값 10) */
-                size?: string;
-            };
-            header: {
-                /**
-                 * @description 세션 토큰 (`Bearer {token}`)
-                 * @example Bearer 100:USER
-                 */
-                Authorization: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 200 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserSearchResponse"];
-                };
-            };
-        };
-    };
     "User \uD68C\uC6D0\uAC00\uC785 \uC815\uC0C1 \uAC00\uC785 \uC2DC 201 \uACFC userId/token \uC744 \uBC18\uD658\uD55C\uB2E4": {
         parameters: {
             query?: never;
@@ -228,6 +208,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuthLoginResponse"];
                 };
+            };
+        };
+    };
+    "Auth \uB85C\uADF8\uC544\uC6C3 \uC815\uC0C1 \uD1A0\uD070\uC744 \uBC1B\uC73C\uBA74 204 \uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json;charset=UTF-8": components["schemas"]["AuthLogoutRequest"];
+            };
+        };
+        responses: {
+            /** @description 204 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

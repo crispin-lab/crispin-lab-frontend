@@ -11,7 +11,15 @@ import { createQueryWrapper } from "@/test/queryWrapper";
 
 import type { PageSearchResult, PageSummary } from "@/lib/api/types";
 
-import { usePage, usePageCreate, usePageDelete, usePageList, usePageUpdate } from "./usePage";
+import {
+  usePage,
+  usePageCreate,
+  usePageDelete,
+  usePageList,
+  usePageMove,
+  usePageReorder,
+  usePageUpdate,
+} from "./usePage";
 
 function pageSummary(overrides: Partial<PageSummary> = {}): PageSummary {
   return {
@@ -276,5 +284,130 @@ describe("usePageDelete", () => {
     expect(result.current.delete.error?.code).toBe("FORBIDDEN");
     expect(result.current.delete.error?.message).toBe("삭제 권한이 없습니다.");
     expect(result.current.detail.data?.title).toBe("원본 제목");
+  });
+});
+
+describe("usePageMove", () => {
+  it("성공 시 detail 과 모든 list 가 refetch 되어 새 부모 값으로 갱신된다", async () => {
+    const initialBody = pageBody({ parentPageId: null });
+    const updatedBody = pageBody({ parentPageId: "p_parent" });
+
+    let detailHits = 0;
+    let listHits = 0;
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => {
+        detailHits += 1;
+        return HttpResponse.json(detailHits === 1 ? initialBody : updatedBody);
+      }),
+      http.get("*/api/v1/pages", () => {
+        listHits += 1;
+        return HttpResponse.json(listBody([pageSummary()]));
+      }),
+      http.put("*/api/v1/pages/p_1/parent", () => new HttpResponse(null, { status: 204 })),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const { result } = renderHook(
+      () => ({
+        detail: usePage(asPageId("p_1")),
+        list: usePageList({ spaceId: asSpaceId("s_1") }),
+        move: usePageMove(),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+    expect(result.current.detail.data?.parentPageId).toBeNull();
+
+    result.current.move.mutate({
+      pageId: asPageId("p_1"),
+      body: { parentPageId: "p_parent" },
+    });
+
+    await waitFor(() => expect(result.current.move.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.detail.data?.parentPageId).toBe("p_parent"));
+    expect(detailHits).toBe(2);
+    expect(listHits).toBe(2);
+  });
+
+  it("PAGE_PARENT_CYCLE 은 ApiError.code 로 전달돼 호출부가 분기 가능하다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.put("*/api/v1/pages/p_1/parent", () =>
+        HttpResponse.json(
+          {
+            code: "PAGE_PARENT_CYCLE",
+            message: "자기 자신 또는 자손 페이지를 부모로 설정할 수 없습니다.",
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const { result } = renderHook(
+      () => ({
+        detail: usePage(asPageId("p_1")),
+        move: usePageMove(),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+
+    result.current.move.mutate({
+      pageId: asPageId("p_1"),
+      body: { parentPageId: "p_descendant" },
+    });
+
+    await waitFor(() => expect(result.current.move.isError).toBe(true));
+    expect(result.current.move.error).toBeInstanceOf(ApiError);
+    expect(result.current.move.error?.code).toBe("PAGE_PARENT_CYCLE");
+  });
+});
+
+describe("usePageReorder", () => {
+  it("성공 시 detail 과 형제 list 가 refetch 되어 새 순서로 갱신된다", async () => {
+    const initialBody = pageBody({ displayOrder: 2 });
+    const updatedBody = pageBody({ displayOrder: 0 });
+
+    let detailHits = 0;
+    let listHits = 0;
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => {
+        detailHits += 1;
+        return HttpResponse.json(detailHits === 1 ? initialBody : updatedBody);
+      }),
+      http.get("*/api/v1/pages", () => {
+        listHits += 1;
+        return HttpResponse.json(listBody([pageSummary({ displayOrder: 0 })]));
+      }),
+      http.put("*/api/v1/pages/p_1/order", () => new HttpResponse(null, { status: 204 })),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const { result } = renderHook(
+      () => ({
+        detail: usePage(asPageId("p_1")),
+        list: usePageList({ spaceId: asSpaceId("s_1") }),
+        reorder: usePageReorder(),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+    expect(result.current.detail.data?.displayOrder).toBe(2);
+
+    result.current.reorder.mutate({
+      pageId: asPageId("p_1"),
+      body: { displayOrder: 0 },
+    });
+
+    await waitFor(() => expect(result.current.reorder.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.detail.data?.displayOrder).toBe(0));
+    expect(detailHits).toBe(2);
+    expect(listHits).toBe(2);
   });
 });
