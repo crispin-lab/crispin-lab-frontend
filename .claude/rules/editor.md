@@ -216,6 +216,23 @@ paragraph / heading 1-3 / bullet list / ordered list / task list / blockquote / 
 - details: native `<details>` + `<summary>` 사용. editor 측은 `extensions/details/index.ts` 의 NodeView 가 summary 클릭을 가로채 `setNodeAttribute(pos, "open", !current)` 로 PM state 단일 출처 — native disclosure 토글은 `event.preventDefault()` 로 차단. viewer 는 static-renderer 라 NodeView 없이 native 토글 그대로.
 - callout 은 NodeView 없이 prose CSS 책임. details 는 NodeView 가 있어도 시각 자체는 native `<details>` + prose CSS (`src/styles/code-highlight.css` 의 `.prose-page .details`) 가 담당 — NodeView 는 *동기* 책임만 진다.
 
+## Enter 저장 계약 — 짧은 텍스트 입력 editor 한정
+
+댓글 (`CommentEditor`), 팝오버 안의 짧은 폼 (`LatexPopover`) 처럼 사용자가 짧은 텍스트를 입력하고 곧 제출하는 컨텍스트의 keydown 정책. 본문 편집기 (`Editor.tsx`) 처럼 긴 글이 흐르는 곳에는 적용하지 않는다 — 그쪽은 Enter = 문단이 자연.
+
+- **Enter 단독** → 제출. `event.preventDefault()` + 콜백 발화 + return `true`.
+- **Shift+Enter** → editor default 흐름 (return `false`). StarterKit 의 hardBreak 등 컨텍스트별 기본 처리에 위임.
+- **Cmd/Ctrl+Enter** → 제출 (기존 파워유저 관례 유지). Enter 단독과 같은 경로로 통과 — 별도 분기 없음.
+- **`event.isComposing` 가드 필수** — 한국어 IME 자모 확정 Enter 가 저장으로 새면 조합 중이던 텍스트가 그대로 제출되는 회귀. TipTap 의 `EditorView.props.handleKeyDown` 은 native `KeyboardEvent` 를 넘기므로 `event.isComposing` 직접 접근. React SyntheticEvent 컨텍스트 (input `onKeyDown` 등) 는 `event.nativeEvent.isComposing`.
+- **정책은 pure function 으로 추출** — 인라인 대신 named function 으로 export 해 실제 마운트 없이 unit test. IME / Shift 분기의 잦은 회귀를 잡기 위한 최소 인프라. 사용처 컴포넌트는 얇게 위임.
+- **suggestion popover 활성 시**: `@tiptap/suggestion` plugin 이 `handleKeyDown` 보다 먼저 fire. items 존재 시 Enter 를 흡수해 이중 발화 방지. items === 0 상태는 흡수하지 않아 제출이 발화됨 — popover 를 벗어나 제출하려는 흐름으로 간주.
+
+현재 등장 위치:
+- `src/components/editor/CommentEditor.tsx` — `handleCommentEditorKeyDown` (댓글 저장)
+- `src/components/editor/extensions/math/LatexPopover.tsx` — 팝오버 저장
+
+세 번째 등장이 생기면 위 목록을 갱신하고, 시그니처가 정합하면 shared util 로 승격.
+
 ## 자주 빠뜨리는 것
 
 - **`@tiptap/extension-mention` 의 default trigger `@` 를 그대로 사용** — 본 프로젝트는 `[[` 가 위키 링크 트리거. mention 의 `suggestion.char` 를 `[[` 로 명시.

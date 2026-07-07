@@ -25,6 +25,19 @@ type Props = {
   className?: string;
 };
 
+export function handleCommentEditorKeyDown(
+  event: KeyboardEvent,
+  onSubmitShortcut: (() => void) | undefined,
+): boolean {
+  if (event.key !== "Enter") return false;
+  if (event.isComposing) return false;
+  if (event.shiftKey) return false;
+  if (onSubmitShortcut === undefined) return false;
+  event.preventDefault();
+  onSubmitShortcut();
+  return true;
+}
+
 // 본문 에디터의 축소판. 댓글 길이 / 빈도를 고려해 무거운 확장 (CodeMirror codeBlock, table, math,
 // footnote, callout, details, taskList, slashMenu) 은 제외. StarterKit + PageLink + Placeholder 만.
 // BubbleMenu 도 의도적으로 제외 — 댓글 단축 텍스트 컨텍스트에서 mark toolbar 의 시각 노이즈가 본문 reading 분위기를 깬다.
@@ -81,16 +94,8 @@ export function CommentEditor({
         ),
         "aria-label": placeholder ?? "댓글 본문",
       },
-      handleKeyDown: (_view, event) => {
-        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-          if (onSubmitShortcutRef.current !== undefined) {
-            event.preventDefault();
-            onSubmitShortcutRef.current();
-            return true;
-          }
-        }
-        return false;
-      },
+      handleKeyDown: (_view, event) =>
+        handleCommentEditorKeyDown(event, onSubmitShortcutRef.current),
     },
     onUpdate: ({ editor }) => {
       onChange?.(serializeEditorContent(editor.getJSON()), editor.isEmpty);
