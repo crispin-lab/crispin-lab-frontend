@@ -34,12 +34,8 @@ export function isVisibility(value: string): value is Visibility {
   return (VISIBILITY_VALUES as readonly string[]).includes(value);
 }
 
-// 아이콘·색 매핑 단일 출처 — badge (정적 표시) / popover trigger (인터랙티브) 두 소비처가 참조.
-// PUBLIC 만 accent — MEMBER cyan 은 메타 줄 author handle 과 accent 한도 충돌 (design.md).
-// Record 를 그대로 노출하는 이유: ESLint react-hooks/static-components 룰이 함수 호출 반환값을
-// 컴포넌트로 렌더하는 패턴을 "render 중 컴포넌트 생성" 으로 오탐하므로, 직접 lookup 이 정합.
-// LucideIcon 타입을 사용해 aria-* / svg 속성까지 render 시 허용 — 좁은 { className? } 만 두면
-// covariant 캐스팅으로 대입은 되지만 render 시 aria-hidden 등이 타입 안전하지 않게 된다.
+// Record 를 factory 없이 그대로 노출 — ESLint react-hooks/static-components 가 함수 반환값을 render 하는 패턴을 오탐.
+// LucideIcon 타입 유지 — 좁은 { className? } 는 covariant 로 대입은 통과하나 render 시 aria-* 타입 안전이 깨진다.
 export const VISIBILITY_ICON: Record<Visibility, LucideIcon> = {
   DRAFT: PencilLineIcon,
   INTERNAL: LockIcon,
