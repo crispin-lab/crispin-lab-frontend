@@ -1,3 +1,6 @@
+import { GlobeIcon, LockIcon, PencilLineIcon, UsersIcon } from "lucide-react";
+import type { ComponentType } from "react";
+
 import { type SpaceVisibility, spaceVisibilityLabel } from "@/lib/space/visibility";
 
 // 백엔드 PageRegisterRequest.visibility 는 string 으로 와 있지만 실제 허용값은
@@ -31,6 +34,24 @@ export function visibilityDescription(value: Visibility): string {
 export function isVisibility(value: string): value is Visibility {
   return (VISIBILITY_VALUES as readonly string[]).includes(value);
 }
+
+// 아이콘·색 매핑 단일 출처 — badge (정적 표시) / popover trigger (인터랙티브) 두 소비처가 참조.
+// PUBLIC 만 accent — MEMBER cyan 은 메타 줄 author handle 과 accent 한도 충돌 (design.md).
+// Record 를 그대로 노출하는 이유: ESLint react-hooks/static-components 룰이 함수 호출 반환값을
+// 컴포넌트로 렌더하는 패턴을 "render 중 컴포넌트 생성" 으로 오탐하므로, 직접 lookup 이 정합.
+export const VISIBILITY_ICON: Record<Visibility, ComponentType<{ className?: string }>> = {
+  DRAFT: PencilLineIcon,
+  INTERNAL: LockIcon,
+  MEMBER: UsersIcon,
+  PUBLIC: GlobeIcon,
+};
+
+export const VISIBILITY_ICON_COLOR: Record<Visibility, string> = {
+  DRAFT: "text-muted-foreground",
+  INTERNAL: "text-muted-foreground",
+  MEMBER: "text-muted-foreground",
+  PUBLIC: "text-accent",
+};
 
 // audience 축 (0=author only, 1=space members, 2=anyone) 위에 space/page 를 각각 매핑.
 // DRAFT/INTERNAL 은 페이지 문맥에서 author 한 명 → 같은 rank. INTERNAL 스페이스는 space members 를

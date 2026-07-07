@@ -1,28 +1,19 @@
 "use client";
 
-import { ChevronDownIcon, GlobeIcon, LockIcon, PencilLineIcon, UsersIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { type Visibility, visibilityDescription, visibilityLabel } from "@/lib/page/visibility";
+import {
+  VISIBILITY_ICON,
+  VISIBILITY_ICON_COLOR,
+  type Visibility,
+  visibilityDescription,
+  visibilityLabel,
+} from "@/lib/page/visibility";
 import type { SpaceVisibility } from "@/lib/space/visibility";
 import { cn } from "@/lib/utils";
 
 import { VisibilitySelect } from "./VisibilitySelect";
-
-// 아이콘·색 매핑은 VisibilityBadge 와 짝. 셋 변경 시 두 곳 동기.
-const ICON_MAP: Record<Visibility, React.ComponentType<{ className?: string }>> = {
-  DRAFT: PencilLineIcon,
-  INTERNAL: LockIcon,
-  MEMBER: UsersIcon,
-  PUBLIC: GlobeIcon,
-};
-
-const ICON_COLOR_CLASS: Record<Visibility, string> = {
-  DRAFT: "text-muted-foreground",
-  INTERNAL: "text-muted-foreground",
-  MEMBER: "text-muted-foreground",
-  PUBLIC: "text-accent",
-};
 
 type Props = {
   value: Visibility;
@@ -39,8 +30,8 @@ export function VisibilitySelectPopover({
   disabled,
   className,
 }: Props) {
-  const Icon = ICON_MAP[value];
-  const iconColor = ICON_COLOR_CLASS[value];
+  const Icon = VISIBILITY_ICON[value];
+  const iconColor = VISIBILITY_ICON_COLOR[value];
   const label = visibilityLabel(value);
 
   return (
