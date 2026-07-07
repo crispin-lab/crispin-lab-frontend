@@ -10,9 +10,16 @@ import { spaceBody } from "@/test/fixtures/space";
 import { redirectModuleMock } from "@/test/mocks/redirect";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
-const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
+type ToastSuccessOptions = {
+  id?: string;
+  action?: { label: string; onClick: () => void };
+};
+const { toastError, toastSuccess } = vi.hoisted(() => ({
+  toastError: vi.fn<(message: string) => void>(),
+  toastSuccess: vi.fn<(message: string, options?: ToastSuccessOptions) => void>(),
+}));
 vi.mock("sonner", () => ({
-  toast: { error: toastError },
+  toast: { error: toastError, success: toastSuccess },
 }));
 
 const { redirectToLoginMock } = vi.hoisted(() => ({ redirectToLoginMock: vi.fn() }));
@@ -54,6 +61,7 @@ import { PageEditView } from "./PageEditView";
 
 beforeEach(() => {
   toastError.mockReset();
+  toastSuccess.mockReset();
   redirectToLoginMock.mockReset();
   notFoundMock.mockClear();
   routerPush.mockReset();
@@ -347,6 +355,73 @@ describe("PageEditView", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("서버 오류입니다.");
     expect(notFoundMock).not.toHaveBeenCalled();
+  });
+
+  it("편집 완료 버튼은 상세 화면으로 향하는 링크로 렌더된다", async () => {
+    server.use(http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())));
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    const done = await screen.findByRole("button", { name: "편집 완료" });
+    expect(done).toHaveAttribute("href", "/pages/p_1");
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("저장 성공 시 '페이지로 이동' 액션이 담긴 toast 가 뜨고, 액션을 누르면 상세로 이동한다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.put("*/api/v1/pages/p_1", () =>
+        HttpResponse.json({
+          title: "원본 제목",
+          pageId: "p_1",
+          version: 4,
+          updatedAt: "2026-05-27T00:00:00Z",
+        }),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() =>
+      expect(toastSuccess).toHaveBeenCalledWith(
+        "저장했어요",
+        expect.objectContaining({
+          action: expect.objectContaining({ label: "페이지로 이동" }),
+        }),
+      ),
+    );
+
+    const options = toastSuccess.mock.calls[0][1];
+    expect(routerPush).not.toHaveBeenCalled();
+    options?.action?.onClick();
+    expect(routerPush).toHaveBeenCalledWith("/pages/p_1");
+  });
+
+  it("저장 중에는 편집 완료 버튼이 비활성 버튼으로 전환되어 이탈을 막는다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.put("*/api/v1/pages/p_1", () => new Promise<never>(() => {})),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => {
+      const done = screen.getByRole("button", { name: "편집 완료" });
+      expect(done).toBeDisabled();
+      expect(done).not.toHaveAttribute("href");
+    });
   });
 
   it("페이지 삭제 → 확인 시 DELETE 호출 + 소속 스페이스로 이동", async () => {
