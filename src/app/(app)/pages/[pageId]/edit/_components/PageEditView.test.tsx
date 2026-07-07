@@ -63,14 +63,15 @@ beforeEach(() => {
 });
 
 describe("PageEditView", () => {
-  it("페이지 조회 성공 시 제목과 visibility 가 노출된다", async () => {
+  it("페이지 조회 성공 시 제목과 visibility (상단 chip + footer chip) 가 노출된다", async () => {
     server.use(http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())));
 
     const { Wrapper } = createQueryWrapper();
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
     expect(await screen.findByDisplayValue("원본 제목")).toBeInTheDocument();
-    expect(screen.getByLabelText(/공개 범위/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/공개 범위: /)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /공개 범위 변경/ })).toBeInTheDocument();
     expect(screen.getByText(/v3/)).toBeInTheDocument();
   });
 
@@ -152,6 +153,7 @@ describe("PageEditView", () => {
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
     await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
     await user.click(screen.getByLabelText("공개 범위"));
     await user.click(await screen.findByRole("option", { name: /비공개/ }));
     await user.click(screen.getByRole("button", { name: "저장" }));
@@ -182,6 +184,7 @@ describe("PageEditView", () => {
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
     await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
     await user.click(screen.getByLabelText("공개 범위"));
     await user.click(await screen.findByRole("option", { name: /멤버 공개/ }));
     await user.click(screen.getByRole("button", { name: "저장" }));
@@ -204,6 +207,7 @@ describe("PageEditView", () => {
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
     await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
     await user.click(screen.getByLabelText("공개 범위"));
 
     for (const name of [/^초안$/, /^비공개$/, /^멤버 공개$/, /^공개$/]) {
@@ -225,6 +229,7 @@ describe("PageEditView", () => {
     render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
 
     await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
     await user.click(screen.getByLabelText("공개 범위"));
 
     expect(await screen.findByRole("option", { name: /^공개/ })).toHaveAttribute(
@@ -518,6 +523,40 @@ describe("PageEditView — hero / breadcrumb", () => {
 
     const nav = await screen.findByRole("navigation", { name: "현재 페이지 경로" });
     expect(nav).toHaveTextContent("수정된 제목");
+  });
+});
+
+describe("PageEditView — visibility chip", () => {
+  it("footer popover 에서 visibility 를 바꾸면 상단 chip 이 즉시 갱신된다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody({ visibility: "DRAFT" }))),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    expect(screen.getByLabelText("공개 범위: 초안")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
+    await user.click(screen.getByLabelText("공개 범위"));
+    await user.click(await screen.findByRole("option", { name: /^공개$/ }));
+
+    expect(await screen.findByLabelText("공개 범위: 공개")).toBeInTheDocument();
+  });
+
+  it("하단 카드에는 공개 범위 select 가 더 이상 노출되지 않는다 (footer 로 이동)", async () => {
+    server.use(http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())));
+
+    const { Wrapper } = createQueryWrapper();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    // 화면 전체에서 "공개 범위" 로 접근 가능한 select combobox 는 footer 팝오버 안 하나뿐.
+    // label tag 부재만 검사하면 select 만 남기고 label 이 사라지는 우연 회귀를 놓친다.
+    expect(screen.queryAllByRole("combobox", { name: "공개 범위" })).toHaveLength(0);
+    expect(screen.getByText("버전 정보")).toBeInTheDocument();
   });
 });
 
