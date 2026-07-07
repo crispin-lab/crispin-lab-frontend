@@ -49,12 +49,12 @@ export function CommentRow({ comment, pageId, spaceId, sourceVisibility }: Props
           <span className="text-accent-secondary">@{comment.authorHandle}</span>
         )}
         <span aria-hidden>·</span>
-        <FormattedTime iso={comment.createdAt} />
+        <FormattedTime iso={comment.createdAt} variant="datetime" />
         {comment.updatedAt !== comment.createdAt && (
           <>
             <span aria-hidden>·</span>
             <span>
-              수정 <FormattedTime iso={comment.updatedAt} />
+              수정 <FormattedTime iso={comment.updatedAt} variant="datetime" />
             </span>
           </>
         )}

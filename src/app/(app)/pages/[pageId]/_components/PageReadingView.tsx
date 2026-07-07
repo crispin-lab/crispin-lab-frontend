@@ -83,12 +83,12 @@ export function PageReadingView({
                 <span className="text-accent-secondary">@{page.authorHandle}</span>
               )}
               <span aria-hidden>·</span>
-              <FormattedTime iso={page.createdAt} />
+              <FormattedTime iso={page.createdAt} variant="datetime" />
               {showUpdatedAt && (
                 <>
                   <span aria-hidden>·</span>
                   <span>
-                    수정 <FormattedTime iso={page.updatedAt} />
+                    수정 <FormattedTime iso={page.updatedAt} variant="datetime" />
                   </span>
                 </>
               )}

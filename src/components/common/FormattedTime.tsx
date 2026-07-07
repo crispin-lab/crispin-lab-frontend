@@ -18,20 +18,30 @@ const FORMATTERS: Record<Variant, Intl.DateTimeFormat> = {
     month: "2-digit",
     day: "2-digit",
   }),
+  // hourCycle "h23" 명시 — ko-KR 기본 h12 는 오전/오후 접두를 붙여 placeholder 폭과 어긋난다.
   datetime: new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   }),
 };
 
 // hydration 시 폭 급변으로 인한 layout shift 를 최종 포맷과 같은 폭의 invisible placeholder 로 예약.
+// formatter 옵션이 바뀌어도 placeholder 폭이 자동으로 맞도록 formatToParts 로 파생 — 숫자 파트는 자리수만큼 "0" 채움.
 const PLACEHOLDERS: Record<Variant, string> = {
-  date: "0000. 00. 00.",
-  datetime: "0000. 00. 00. 00:00",
+  date: derivePlaceholder(FORMATTERS.date),
+  datetime: derivePlaceholder(FORMATTERS.datetime),
 };
+
+function derivePlaceholder(fmt: Intl.DateTimeFormat): string {
+  return fmt
+    .formatToParts(new Date(0))
+    .map((part) => (part.type === "literal" ? part.value : "0".repeat(part.value.length)))
+    .join("");
+}
 
 export function FormattedTime({ iso, variant = "date", className }: Props) {
   const hydrated = useHydrated();

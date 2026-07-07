@@ -20,7 +20,7 @@ describe("FormattedTime", () => {
     expect(time?.textContent).toBe(expected);
   });
 
-  it("datetime variant 는 시각까지 포함해 포맷한다", () => {
+  it("datetime variant 는 24시간제 시각까지 포함해 포맷한다", () => {
     const { container } = render(<FormattedTime iso={SAMPLE_ISO} variant="datetime" />);
     const expected = new Intl.DateTimeFormat("ko-KR", {
       year: "numeric",
@@ -28,8 +28,11 @@ describe("FormattedTime", () => {
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
+      hourCycle: "h23",
     }).format(new Date(SAMPLE_ISO));
     expect(container.querySelector("time")?.textContent).toBe(expected);
+    // ko-KR 의 h12 접두 (오전/오후) 가 붙지 않는지 명시 검증 — placeholder 폭 정합의 전제.
+    expect(container.querySelector("time")?.textContent).not.toMatch(/오전|오후/);
   });
 
   it("tabular-nums className 을 항상 붙이고 외부 className 을 뒤에 머지한다", () => {
@@ -70,5 +73,16 @@ describe("FormattedTime", () => {
   it("SSR 렌더의 datetime variant 는 시각까지 포함한 placeholder 를 사용한다", () => {
     const html = renderToString(<FormattedTime iso={SAMPLE_ISO} variant="datetime" />);
     expect(html).toContain("0000. 00. 00. 00:00");
+  });
+
+  it("각 variant 의 SSR placeholder 폭이 hydration 후 실제 렌더 폭과 같다", () => {
+    for (const variant of ["date", "datetime"] as const) {
+      const ssrHtml = renderToString(<FormattedTime iso={SAMPLE_ISO} variant={variant} />);
+      const placeholderMatch = ssrHtml.match(/<span[^>]*invisible[^>]*>([^<]*)<\/span>/);
+      expect(placeholderMatch, `${variant} placeholder 미검출`).not.toBeNull();
+      const { container } = render(<FormattedTime iso={SAMPLE_ISO} variant={variant} />);
+      const rendered = container.querySelector("time")?.textContent ?? "";
+      expect(placeholderMatch![1].length, `${variant} placeholder 폭 불일치`).toBe(rendered.length);
+    }
   });
 });

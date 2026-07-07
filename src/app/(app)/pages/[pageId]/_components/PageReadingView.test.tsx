@@ -107,7 +107,8 @@ describe("PageReadingView", () => {
       screen.getByRole("heading", { level: 1, name: "TipTap 위키 링크 구현 메모" }),
     ).toBeInTheDocument();
     expect(screen.getByText("@crispin")).toBeInTheDocument();
-    expect(screen.getByText("2026. 05. 22.")).toBeInTheDocument();
+    // createdAt "2026-05-22T10:00:00Z" — KST (Asia/Seoul 고정) 로 렌더.
+    expect(screen.getByText("2026. 05. 22. 19:00")).toBeInTheDocument();
     expect(screen.getByLabelText(/공개 범위/)).toBeInTheDocument();
   });
 
