@@ -37,7 +37,7 @@ test.describe("페이지 생애주기 — /pages/new 진입 게이트", () => {
     await page.goto(`/pages/new?spaceId=${spaceId}`);
 
     await expect(page.getByPlaceholder("제목을 입력해 주세요")).toBeVisible();
-    await expect(page.getByLabel("공개 범위")).toBeVisible();
+    await expect(page.getByRole("button", { name: /공개 범위 변경/ })).toBeVisible();
   });
 
   test("canWrite=false 스페이스로 직접 진입하면 notFound 로 흡수된다", async ({

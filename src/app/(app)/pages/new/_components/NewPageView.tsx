@@ -8,7 +8,8 @@ import { Editor } from "@/components/editor/Editor";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
 import { StickyFormFooter } from "@/components/page/StickyFormFooter";
 import { TitleInput } from "@/components/page/TitleInput";
-import { VisibilitySelect } from "@/components/page/VisibilitySelect";
+import { VisibilityBadge } from "@/components/page/VisibilityBadge";
+import { VisibilitySelectPopover } from "@/components/page/VisibilitySelectPopover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -18,7 +19,7 @@ import { type SpaceId } from "@/lib/api/ids";
 import { spaceDetailOptions } from "@/lib/api/queries/space";
 import { emptyEditorContent, serializeEditorContent } from "@/lib/editor/content";
 import { clearPageDraft, type PageDraft, readPageDraft, writePageDraft } from "@/lib/page/draft";
-import { type Visibility, visibilityDescription } from "@/lib/page/visibility";
+import { type Visibility } from "@/lib/page/visibility";
 import { isSpaceVisibility } from "@/lib/space/visibility";
 
 import { ParentPagePicker, type ParentPagePickerValue } from "./ParentPagePicker";
@@ -206,13 +207,14 @@ export function NewPageView({ spaceId }: Props) {
       {/* TitleInput 자체가 text-3xl hero 역할이라 시각 h1 제거. landmark / 스크린 리더 정합을 위해 sr-only h1 한 줄. */}
       <h1 className="sr-only">새 페이지 작성</h1>
 
-      <header>
+      <header className="space-y-2">
         <PageBreadcrumb
           mode="create"
           space={space ?? { spaceId, name: "" }}
           parent={parent ?? undefined}
           currentTitle={breadcrumbTitle}
         />
+        <VisibilityBadge visibility={visibility} />
       </header>
 
       {pendingDraft !== null && (
@@ -260,40 +262,21 @@ export function NewPageView({ spaceId }: Props) {
       />
 
       <Card>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label
-              htmlFor="new-page-visibility-trigger"
-              className="text-muted-foreground text-xs uppercase"
-            >
-              공개 범위
-            </Label>
-            <VisibilitySelect
-              id="new-page-visibility-trigger"
-              value={visibility}
-              onValueChange={handleVisibilityChange}
-              spaceVisibility={spaceVisibility}
-              disabled={isPending}
-            />
-            <p className="text-muted-foreground text-xs">{visibilityDescription(visibility)}</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="new-page-parent-trigger"
-              className="text-muted-foreground text-xs uppercase"
-            >
-              부모 페이지
-            </Label>
-            <ParentPagePicker
-              id="new-page-parent-trigger"
-              spaceId={spaceId}
-              value={parent}
-              onChange={handleParentChange}
-              disabled={isPending}
-            />
-            <p className="text-muted-foreground text-xs">비워 두면 스페이스 루트에 만들어집니다.</p>
-          </div>
+        <CardContent className="space-y-2">
+          <Label
+            htmlFor="new-page-parent-trigger"
+            className="text-muted-foreground text-xs uppercase"
+          >
+            부모 페이지
+          </Label>
+          <ParentPagePicker
+            id="new-page-parent-trigger"
+            spaceId={spaceId}
+            value={parent}
+            onChange={handleParentChange}
+            disabled={isPending}
+          />
+          <p className="text-muted-foreground text-xs">비워 두면 스페이스 루트에 만들어집니다.</p>
         </CardContent>
       </Card>
 
@@ -301,6 +284,12 @@ export function NewPageView({ spaceId }: Props) {
         <Button type="button" variant="outline" onClick={handleCancel} disabled={isPending}>
           취소
         </Button>
+        <VisibilitySelectPopover
+          value={visibility}
+          onValueChange={handleVisibilityChange}
+          spaceVisibility={spaceVisibility}
+          disabled={isPending}
+        />
         <Button type="submit" disabled={!canSubmit}>
           {isPending ? "만드는 중..." : "만들기"}
         </Button>

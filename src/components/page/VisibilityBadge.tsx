@@ -1,6 +1,11 @@
-import { CircleHelpIcon, GlobeIcon, LockIcon, PencilLineIcon, UsersIcon } from "lucide-react";
+import { CircleHelpIcon } from "lucide-react";
 
-import { type Visibility, isVisibility, visibilityLabel } from "@/lib/page/visibility";
+import {
+  VISIBILITY_ICON,
+  VISIBILITY_ICON_COLOR,
+  isVisibility,
+  visibilityLabel,
+} from "@/lib/page/visibility";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -8,26 +13,11 @@ type Props = {
   className?: string;
 };
 
-const ICON_MAP: Record<Visibility, React.ComponentType<{ className?: string }>> = {
-  DRAFT: PencilLineIcon,
-  INTERNAL: LockIcon,
-  MEMBER: UsersIcon,
-  PUBLIC: GlobeIcon,
-};
-
-// PUBLIC 만 accent — MEMBER cyan 은 메타 줄 author handle 과 한 포인트 한도 충돌 (design.md).
-const ICON_COLOR_CLASS: Record<Visibility, string> = {
-  DRAFT: "text-muted-foreground",
-  INTERNAL: "text-muted-foreground",
-  MEMBER: "text-muted-foreground",
-  PUBLIC: "text-accent",
-};
-
 export function VisibilityBadge({ visibility, className }: Props) {
   const known = isVisibility(visibility);
-  const Icon = known ? ICON_MAP[visibility] : CircleHelpIcon;
+  const Icon = known ? VISIBILITY_ICON[visibility] : CircleHelpIcon;
   const label = known ? visibilityLabel(visibility) : visibility;
-  const iconColor = known ? ICON_COLOR_CLASS[visibility] : "text-muted-foreground";
+  const iconColor = known ? VISIBILITY_ICON_COLOR[visibility] : "text-muted-foreground";
   return (
     <span
       className={cn(

@@ -85,6 +85,7 @@ describe("NewPageView", () => {
     render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
 
     await user.type(screen.getByPlaceholderText("제목을 입력해 주세요"), "새 글");
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
     await user.click(screen.getByLabelText("공개 범위"));
     await user.click(await screen.findByRole("option", { name: "공개" }));
     await user.click(screen.getByRole("button", { name: "만들기" }));
@@ -133,6 +134,7 @@ describe("NewPageView", () => {
     render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
 
     await user.type(screen.getByPlaceholderText("제목을 입력해 주세요"), "멤버 글");
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
     await user.click(screen.getByLabelText("공개 범위"));
     await user.click(await screen.findByRole("option", { name: "멤버 공개" }));
     await user.click(screen.getByRole("button", { name: "만들기" }));
@@ -156,6 +158,7 @@ describe("NewPageView", () => {
     const user = userEvent.setup();
     render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
 
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
     await user.click(screen.getByLabelText("공개 범위"));
 
     expect(await screen.findByRole("option", { name: /^공개/ })).toHaveAttribute(
@@ -187,6 +190,32 @@ describe("NewPageView", () => {
     await waitFor(() => expect(redirectToLoginMock).toHaveBeenCalledTimes(1));
     expect(routerPush).not.toHaveBeenCalled();
     expect(toastError).not.toHaveBeenCalled();
+  });
+});
+
+describe("NewPageView — visibility chip", () => {
+  it("footer popover 에서 visibility 를 바꾸면 상단 chip 이 즉시 갱신된다", async () => {
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
+
+    expect(screen.getByLabelText("공개 범위: 초안")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /공개 범위 변경/ }));
+    await user.click(screen.getByLabelText("공개 범위"));
+    await user.click(await screen.findByRole("option", { name: /^공개$/ }));
+
+    expect(await screen.findByLabelText("공개 범위: 공개")).toBeInTheDocument();
+  });
+
+  it("하단 카드에는 공개 범위 select 가 더 이상 노출되지 않는다 (부모 페이지만 남음)", () => {
+    const { Wrapper } = createQueryWrapper();
+    render(<NewPageView spaceId={asSpaceId("s_1")} />, { wrapper: Wrapper });
+
+    // 진입 직후엔 popover 가 닫혀 있어 combobox 는 화면에 없어야 한다.
+    // label tag 부재만 검사하면 select 만 남기고 label 이 사라지는 우연 회귀를 놓친다.
+    expect(screen.queryAllByRole("combobox", { name: "공개 범위" })).toHaveLength(0);
+    expect(screen.getByText("부모 페이지")).toBeInTheDocument();
   });
 });
 

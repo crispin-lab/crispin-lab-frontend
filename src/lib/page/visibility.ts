@@ -1,3 +1,5 @@
+import { GlobeIcon, type LucideIcon, LockIcon, PencilLineIcon, UsersIcon } from "lucide-react";
+
 import { type SpaceVisibility, spaceVisibilityLabel } from "@/lib/space/visibility";
 
 // 백엔드 PageRegisterRequest.visibility 는 string 으로 와 있지만 실제 허용값은
@@ -31,6 +33,22 @@ export function visibilityDescription(value: Visibility): string {
 export function isVisibility(value: string): value is Visibility {
   return (VISIBILITY_VALUES as readonly string[]).includes(value);
 }
+
+// Record 를 factory 없이 그대로 노출 — ESLint react-hooks/static-components 가 함수 반환값을 render 하는 패턴을 오탐.
+// LucideIcon 타입 유지 — 좁은 { className? } 는 covariant 로 대입은 통과하나 render 시 aria-* 타입 안전이 깨진다.
+export const VISIBILITY_ICON: Record<Visibility, LucideIcon> = {
+  DRAFT: PencilLineIcon,
+  INTERNAL: LockIcon,
+  MEMBER: UsersIcon,
+  PUBLIC: GlobeIcon,
+};
+
+export const VISIBILITY_ICON_COLOR: Record<Visibility, string> = {
+  DRAFT: "text-muted-foreground",
+  INTERNAL: "text-muted-foreground",
+  MEMBER: "text-muted-foreground",
+  PUBLIC: "text-accent",
+};
 
 // audience 축 (0=author only, 1=space members, 2=anyone) 위에 space/page 를 각각 매핑.
 // DRAFT/INTERNAL 은 페이지 문맥에서 author 한 명 → 같은 rank. INTERNAL 스페이스는 space members 를
