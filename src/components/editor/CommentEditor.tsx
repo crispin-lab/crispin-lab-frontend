@@ -1,6 +1,8 @@
 "use client";
 
 import Placeholder from "@tiptap/extension-placeholder";
+import type { ResolvedPos } from "@tiptap/pm/model";
+import type { EditorView } from "@tiptap/pm/view";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useRef } from "react";
@@ -24,6 +26,56 @@ type Props = {
   autoFocus?: boolean;
   className?: string;
 };
+
+type EnterSubmitGuards = {
+  suggestionActive: boolean;
+  enterConsumedByBlock: boolean;
+};
+
+export function handleCommentEditorKeyDown(
+  event: KeyboardEvent,
+  onSubmitShortcut: (() => void) | undefined,
+  guards: EnterSubmitGuards,
+): boolean {
+  if (event.key !== "Enter") return false;
+  if (event.isComposing) return false;
+  if (event.shiftKey) return false;
+  if (onSubmitShortcut === undefined) return false;
+  const withModifier = event.metaKey || event.ctrlKey;
+  if (!withModifier && (guards.suggestionActive || guards.enterConsumedByBlock)) {
+    return false;
+  }
+  event.preventDefault();
+  onSubmitShortcut();
+  return true;
+}
+
+const ENTER_CONSUMING_BLOCKS: ReadonlySet<string> = new Set(["listItem", "blockquote", "heading"]);
+
+export function isEnterConsumedByBlock($from: ResolvedPos): boolean {
+  for (let depth = $from.depth; depth > 0; depth--) {
+    if (ENTER_CONSUMING_BLOCKS.has($from.node(depth).type.name)) return true;
+  }
+  return false;
+}
+
+// @tiptap/suggestion 의 plugin state 는 `{ active, range, query, ... }` 형태 —
+// active 만 검사하면 우연히 같은 필드를 가진 다른 plugin state 를 오탐할 수 있어 range 도 함께 검증.
+export function isSuggestionActive(view: EditorView): boolean {
+  for (const plugin of view.state.plugins) {
+    const state: unknown = plugin.getState(view.state);
+    if (
+      state !== null &&
+      typeof state === "object" &&
+      "active" in state &&
+      "range" in state &&
+      (state as { active: unknown }).active === true
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // 본문 에디터의 축소판. 댓글 길이 / 빈도를 고려해 무거운 확장 (CodeMirror codeBlock, table, math,
 // footnote, callout, details, taskList, slashMenu) 은 제외. StarterKit + PageLink + Placeholder 만.
@@ -81,16 +133,11 @@ export function CommentEditor({
         ),
         "aria-label": placeholder ?? "댓글 본문",
       },
-      handleKeyDown: (_view, event) => {
-        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-          if (onSubmitShortcutRef.current !== undefined) {
-            event.preventDefault();
-            onSubmitShortcutRef.current();
-            return true;
-          }
-        }
-        return false;
-      },
+      handleKeyDown: (view, event) =>
+        handleCommentEditorKeyDown(event, onSubmitShortcutRef.current, {
+          suggestionActive: isSuggestionActive(view),
+          enterConsumedByBlock: isEnterConsumedByBlock(view.state.selection.$from),
+        }),
     },
     onUpdate: ({ editor }) => {
       onChange?.(serializeEditorContent(editor.getJSON()), editor.isEmpty);
