@@ -407,7 +407,7 @@ describe("PageEditView", () => {
   it("저장 중에는 편집 완료 버튼이 비활성 버튼으로 전환되어 이탈을 막는다", async () => {
     server.use(
       http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
-      http.put("*/api/v1/pages/p_1", () => new Promise<HttpResponse>(() => {})),
+      http.put("*/api/v1/pages/p_1", () => new Promise<never>(() => {})),
     );
 
     const { Wrapper } = createQueryWrapper();
