@@ -58,7 +58,7 @@ export function MoveToParentAction({ pageId, spaceId, currentParent }: Props) {
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => setOpen(true)}
+        onClick={() => handleOpenChange(true)}
         disabled={move.isPending}
       >
         부모 페이지 변경…

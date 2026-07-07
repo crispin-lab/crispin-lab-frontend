@@ -316,7 +316,7 @@ function PageEditForm({
 
       <Card>
         <CardContent className="space-y-2">
-          <h2 className="text-muted-foreground text-xs uppercase">위치</h2>
+          <p className="text-muted-foreground text-xs uppercase">위치</p>
           <div className="flex flex-wrap items-center gap-2">
             <SiblingOrderActions pageId={pageId} spaceId={spaceId} parentPageId={parentPageId} />
             <MoveToParentAction
@@ -330,7 +330,7 @@ function PageEditForm({
 
       <Card>
         <CardContent className="space-y-1">
-          <h2 className="text-muted-foreground text-xs uppercase">버전 정보</h2>
+          <p className="text-muted-foreground text-xs uppercase">버전 정보</p>
           <p className="text-muted-foreground text-xs">
             v{currentVersion} · <FormattedTime iso={updatedAt} variant="datetime" />
           </p>

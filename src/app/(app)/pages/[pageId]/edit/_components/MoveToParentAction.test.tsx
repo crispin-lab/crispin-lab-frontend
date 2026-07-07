@@ -142,6 +142,35 @@ describe("MoveToParentAction", () => {
     expect(screen.queryByRole("option", { name: "알파" })).not.toBeInTheDocument();
   });
 
+  it("취소 후 재열기 시 picker 가 currentParent 로 리셋된다 (선택이 남지 않음)", async () => {
+    const user = userEvent.setup();
+    const { Wrapper } = createQueryWrapper();
+    render(
+      <MoveToParentAction
+        pageId={SELF}
+        spaceId={SPACE}
+        currentParent={{ pageId: "p_alpha", title: "알파" }}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    // 1) dialog 열고 picker 에서 다른 값 선택.
+    await user.click(screen.getByRole("button", { name: "부모 페이지 변경…" }));
+    await screen.findByRole("alertdialog");
+    await user.click(screen.getByRole("button", { name: "부모 페이지 선택" }));
+    await user.click(await screen.findByRole("option", { name: "베타" }));
+    expect(screen.getByRole("button", { name: "부모 페이지 선택" })).toHaveTextContent("베타");
+
+    // 2) 취소.
+    await user.click(screen.getByRole("button", { name: "취소" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    // 3) 재열기 시 picker 는 currentParent (알파) 로 리셋. "베타" 가 그대로 남지 않아야 함.
+    await user.click(screen.getByRole("button", { name: "부모 페이지 변경…" }));
+    await screen.findByRole("alertdialog");
+    expect(screen.getByRole("button", { name: "부모 페이지 선택" })).toHaveTextContent("알파");
+  });
+
   it("새 부모 선택 후 이동 확인 시 parentPageId 로 mutation 이 나가고 dialog 가 닫힌다", async () => {
     const user = userEvent.setup();
     let sentParentPageId: string | null | undefined;
