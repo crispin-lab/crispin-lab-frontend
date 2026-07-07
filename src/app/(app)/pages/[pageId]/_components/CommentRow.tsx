@@ -3,6 +3,7 @@
 import { renderToHTMLString } from "@tiptap/static-renderer/pm/html-string";
 import { useMemo, useState } from "react";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { Button } from "@/components/ui/button";
 import { CommentEditor } from "@/components/editor/CommentEditor";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
@@ -16,7 +17,6 @@ import {
   parseEditorContent,
   serializeEditorContent,
 } from "@/lib/editor/content";
-import { formatUpdatedAtKR } from "@/lib/format/date";
 import type { Visibility } from "@/lib/page/visibility";
 import { cn } from "@/lib/utils";
 
@@ -49,17 +49,19 @@ export function CommentRow({ comment, pageId, spaceId, sourceVisibility }: Props
           <span className="text-accent-secondary">@{comment.authorHandle}</span>
         )}
         <span aria-hidden>·</span>
-        <time dateTime={comment.createdAt}>{formatUpdatedAtKR(comment.createdAt)}</time>
+        <FormattedTime iso={comment.createdAt} />
         {comment.updatedAt !== comment.createdAt && (
           <>
             <span aria-hidden>·</span>
-            <time dateTime={comment.updatedAt}>수정 {formatUpdatedAtKR(comment.updatedAt)}</time>
+            <span>
+              수정 <FormattedTime iso={comment.updatedAt} />
+            </span>
           </>
         )}
         {comment.canEdit && !isEditing && (
           <span className="ml-auto flex items-center gap-1">
             <Button type="button" variant="ghost" size="xs" onClick={() => setIsEditing(true)}>
-              수정
+              편집
             </Button>
             <Button type="button" variant="ghost" size="xs" onClick={() => setDeleteOpen(true)}>
               삭제

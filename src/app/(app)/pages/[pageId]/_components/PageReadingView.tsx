@@ -2,6 +2,7 @@ import type { JSONContent } from "@tiptap/react";
 import { renderToHTMLString } from "@tiptap/static-renderer/pm/html-string";
 import Link from "next/link";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { viewerExtensions } from "@/components/editor/extensions/viewer";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
 import { SpaceChip } from "@/components/page/SpaceChip";
@@ -82,11 +83,13 @@ export function PageReadingView({
                 <span className="text-accent-secondary">@{page.authorHandle}</span>
               )}
               <span aria-hidden>·</span>
-              <time dateTime={page.createdAt}>{formatDate(page.createdAt)}</time>
+              <FormattedTime iso={page.createdAt} />
               {showUpdatedAt && (
                 <>
                   <span aria-hidden>·</span>
-                  <time dateTime={page.updatedAt}>수정 {formatDate(page.updatedAt)}</time>
+                  <span>
+                    수정 <FormattedTime iso={page.updatedAt} />
+                  </span>
                 </>
               )}
               <span aria-hidden>·</span>
@@ -203,15 +206,4 @@ function hasAnyText(node: JSONContent): boolean {
   if (typeof node.text === "string" && node.text !== "") return true;
   if (typeof node.type === "string" && NON_TEXT_BODY_NODE_TYPES.has(node.type)) return true;
   return (node.content ?? []).some(hasAnyText);
-}
-
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "Asia/Seoul",
-  }).format(date);
 }

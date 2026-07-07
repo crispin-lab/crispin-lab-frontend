@@ -39,7 +39,9 @@ describe("SpaceListView", () => {
     expect(await screen.findByText("공개 스페이스")).toBeInTheDocument();
     expect(screen.getByText("설명")).toBeInTheDocument();
     expect(screen.getByLabelText(/공개 범위: 공개/)).toBeInTheDocument();
-    expect(screen.getByText(/^수정 /)).toBeInTheDocument();
+    const time = document.querySelector('time[datetime="2026-06-01T00:00:00Z"]');
+    expect(time).not.toBeNull();
+    expect(time?.parentElement?.textContent).toMatch(/^수정 \d{4}\. \d{2}\. \d{2}\./);
     expect(screen.getByRole("link", { name: /공개 스페이스 스페이스로 이동/ })).toHaveAttribute(
       "href",
       "/spaces/s_1",

@@ -86,19 +86,12 @@ describe("CommentThread", () => {
 
     expect(await screen.findByText("첫 댓글")).toBeInTheDocument();
     expect(screen.getByText("@alice")).toBeInTheDocument();
-    // 시간 메타 — formatUpdatedAtKR 결과. createdAt 과 updatedAt 이 다르면 두 줄 모두 노출.
-    const created = screen.getByText(
-      (_, node) =>
-        node?.tagName === "TIME" && node.getAttribute("datetime") === "2026-03-01T00:00:00Z",
-    );
-    expect(created).toBeInTheDocument();
-    expect(created.textContent).toMatch(/2026/);
-    const updated = screen.getByText(
-      (_, node) =>
-        node?.tagName === "TIME" && node.getAttribute("datetime") === "2026-03-05T00:00:00Z",
-    );
-    expect(updated).toBeInTheDocument();
-    expect(updated.textContent).toMatch(/수정/);
+    const created = document.querySelector('time[datetime="2026-03-01T00:00:00Z"]');
+    expect(created).not.toBeNull();
+    expect(created?.textContent).toMatch(/2026/);
+    const updated = document.querySelector('time[datetime="2026-03-05T00:00:00Z"]');
+    expect(updated).not.toBeNull();
+    expect(updated?.parentElement?.textContent).toMatch(/수정/);
   });
 
   it("빈 결과면 '아직 댓글이 없습니다' 안내가 나온다", async () => {
@@ -150,11 +143,11 @@ describe("CommentThread", () => {
     renderThread();
 
     await screen.findByText("@tester");
-    expect(screen.queryByRole("button", { name: "수정" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "편집" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "삭제" })).not.toBeInTheDocument();
   });
 
-  it("canEdit = true 인 댓글은 수정 / 삭제 버튼이 노출된다", async () => {
+  it("canEdit = true 인 댓글은 편집 / 삭제 버튼이 노출된다", async () => {
     server.use(
       http.get(`*/api/v1/pages/${PAGE_ID_RAW}/comments`, () =>
         HttpResponse.json(commentListBody([commentSummary({ canEdit: true })])),
@@ -164,7 +157,7 @@ describe("CommentThread", () => {
     renderThread();
 
     await screen.findByText("@tester");
-    expect(screen.getByRole("button", { name: "수정" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "편집" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "삭제" })).toBeInTheDocument();
   });
 
@@ -259,7 +252,7 @@ describe("CommentThread", () => {
     renderThread();
 
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "수정" }));
+    await user.click(await screen.findByRole("button", { name: "편집" }));
     await user.type(screen.getByLabelText("댓글 본문"), "수정된 댓글");
     await user.click(screen.getByRole("button", { name: "저장" }));
 

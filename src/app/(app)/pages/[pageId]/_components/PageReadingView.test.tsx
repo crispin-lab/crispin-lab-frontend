@@ -210,7 +210,9 @@ describe("PageReadingView", () => {
       isAuthenticated: false,
     });
 
-    expect(screen.getByText(/수정 2026\. 05\. 30\./)).toBeInTheDocument();
+    const updated = document.querySelector('time[datetime^="2026-05-30"]');
+    expect(updated).not.toBeNull();
+    expect(updated?.parentElement?.textContent).toMatch(/^수정 2026\. 05\. 30\./);
   });
 
   it("updatedAt 이 createdAt 과 같으면 '수정' 줄은 노출되지 않는다", () => {
