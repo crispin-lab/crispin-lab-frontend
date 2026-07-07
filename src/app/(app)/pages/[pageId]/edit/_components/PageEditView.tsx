@@ -1,9 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Editor } from "@/components/editor/Editor";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
@@ -183,6 +186,13 @@ function PageEditForm({
         onSuccess: (result) => {
           clearPageEditDraft(pageId);
           setPinnedVersion(result.version);
+          toast.success("저장했어요", {
+            id: `page-edit-save-${pageId}`,
+            action: {
+              label: "페이지로 이동",
+              onClick: () => router.push(`/pages/${encodeURIComponent(pageId)}`),
+            },
+          });
         },
       },
     );
@@ -301,7 +311,7 @@ function PageEditForm({
         <CardContent className="space-y-1">
           <p className="text-muted-foreground text-xs uppercase">버전 정보</p>
           <p className="text-muted-foreground text-xs">
-            v{currentVersion} · {formatPageTimestamp(updatedAt)}
+            v{currentVersion} · <FormattedTime iso={updatedAt} variant="datetime" />
           </p>
         </CardContent>
       </Card>
@@ -316,6 +326,17 @@ function PageEditForm({
         >
           페이지 삭제
         </Button>
+        {busy ? (
+          <Button type="button" variant="outline" disabled>
+            편집 완료
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href={`/pages/${encodeURIComponent(pageId)}`}>편집 완료</Link>}
+          />
+        )}
         <VisibilitySelectPopover
           value={visibility}
           onValueChange={handleVisibilityChange}
@@ -355,16 +376,4 @@ function PageEditSkeleton() {
       </div>
     </div>
   );
-}
-
-function formatPageTimestamp(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
 }

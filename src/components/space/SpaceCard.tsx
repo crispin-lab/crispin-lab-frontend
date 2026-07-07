@@ -1,7 +1,7 @@
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SpaceSummary } from "@/lib/api/types";
-import { formatUpdatedAtKR } from "@/lib/format/date";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -11,7 +11,6 @@ type Props = {
 
 export function SpaceCard({ space, className }: Props) {
   const description = space.description.trim();
-  const updatedAtLabel = formatUpdatedAtKR(space.updatedAt);
   // PUBLIC 은 베이스 ring 색을 violet 으로 올려 공개 콘텐츠를 시각적으로 우선시.
   // INTERNAL 은 베이스 ring (ring-foreground/10) 유지. Card primitive 가 ring 기반이라 border 가 아닌 ring color 로 분기.
   const visibilityRing = space.visibility === "PUBLIC" ? "ring-accent/30" : null;
@@ -33,9 +32,9 @@ export function SpaceCard({ space, className }: Props) {
         )}
         <div className="text-muted-foreground flex items-center justify-between gap-2 text-xs">
           <VisibilityBadge visibility={space.visibility} />
-          <time dateTime={space.updatedAt} aria-label={`마지막 수정 ${updatedAtLabel}`}>
-            수정 {updatedAtLabel}
-          </time>
+          <span>
+            수정 <FormattedTime iso={space.updatedAt} />
+          </span>
         </div>
       </CardContent>
     </Card>

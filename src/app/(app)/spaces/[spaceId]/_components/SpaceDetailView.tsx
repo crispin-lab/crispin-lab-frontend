@@ -6,6 +6,7 @@ import { notFound, useRouter } from "next/navigation";
 import { useState } from "react";
 import { type UseQueryResult } from "@tanstack/react-query";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
 import { PageHeading } from "@/components/PageHeading";
@@ -28,7 +29,6 @@ import { toUserMessage } from "@/lib/api/errors";
 import type { SpaceId } from "@/lib/api/ids";
 import type { PageSearchResult, Space } from "@/lib/api/types";
 import { isSpaceMemberRole } from "@/lib/space/memberRole";
-import { formatUpdatedAtKR } from "@/lib/format/date";
 import { spaceDisplayName } from "@/lib/space/displayName";
 import { cn } from "@/lib/utils";
 
@@ -154,7 +154,6 @@ function SpaceMetaSection({
 
   const space = query.data;
   const description = space.description.trim();
-  const updatedAtLabel = formatUpdatedAtKR(space.updatedAt);
   const name = spaceDisplayName(space);
 
   return (
@@ -201,9 +200,9 @@ function SpaceMetaSection({
       {description !== "" && <p className="text-muted-foreground leading-8">{description}</p>}
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <VisibilityBadge visibility={space.visibility} />
-        <time dateTime={space.updatedAt} aria-label={`마지막 수정 ${updatedAtLabel}`}>
-          수정 {updatedAtLabel}
-        </time>
+        <span>
+          수정 <FormattedTime iso={space.updatedAt} />
+        </span>
       </div>
     </header>
   );
@@ -262,22 +261,19 @@ function PageListSection({
 
       {hasItems && (
         <ul className="divide-border divide-y overflow-hidden rounded-lg border">
-          {query.data.items.map((page) => {
-            const updatedAtLabel = formatUpdatedAtKR(page.updatedAt);
-            return (
-              <li key={page.pageId}>
-                <Link
-                  href={`/pages/${encodeURIComponent(page.pageId)}`}
-                  className="hover:bg-muted/60 hover:shadow-accent-glow focus-visible:bg-muted/60 block px-4 py-3 transition-shadow duration-200 ease-out focus-visible:outline-none"
-                >
-                  <p className="font-medium">{page.title}</p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    <time dateTime={page.updatedAt}>수정 {updatedAtLabel}</time>
-                  </p>
-                </Link>
-              </li>
-            );
-          })}
+          {query.data.items.map((page) => (
+            <li key={page.pageId}>
+              <Link
+                href={`/pages/${encodeURIComponent(page.pageId)}`}
+                className="hover:bg-muted/60 hover:shadow-accent-glow focus-visible:bg-muted/60 block px-4 py-3 transition-shadow duration-200 ease-out focus-visible:outline-none"
+              >
+                <p className="font-medium">{page.title}</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  수정 <FormattedTime iso={page.updatedAt} />
+                </p>
+              </Link>
+            </li>
+          ))}
         </ul>
       )}
     </section>
