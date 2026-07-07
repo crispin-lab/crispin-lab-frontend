@@ -404,6 +404,26 @@ describe("PageEditView", () => {
     expect(routerPush).toHaveBeenCalledWith("/pages/p_1");
   });
 
+  it("저장 중에는 편집 완료 버튼이 비활성 버튼으로 전환되어 이탈을 막는다", async () => {
+    server.use(
+      http.get("*/api/v1/pages/p_1", () => HttpResponse.json(pageBody())),
+      http.put("*/api/v1/pages/p_1", () => new Promise<HttpResponse>(() => {})),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const user = userEvent.setup();
+    render(<PageEditView pageId={asPageId("p_1")} />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue("원본 제목");
+    await user.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => {
+      const done = screen.getByRole("button", { name: "편집 완료" });
+      expect(done).toBeDisabled();
+      expect(done).not.toHaveAttribute("href");
+    });
+  });
+
   it("페이지 삭제 → 확인 시 DELETE 호출 + 소속 스페이스로 이동", async () => {
     let deleted = false;
     server.use(
