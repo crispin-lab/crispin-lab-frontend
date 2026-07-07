@@ -6,6 +6,7 @@ import { notFound, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { FormattedTime } from "@/components/common/FormattedTime";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Editor } from "@/components/editor/Editor";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
@@ -327,7 +328,7 @@ function PageEditForm({
           <div className="border-border space-y-1 border-t pt-3">
             <p className="text-muted-foreground text-xs uppercase">버전 정보</p>
             <p className="text-muted-foreground text-xs">
-              v{currentVersion} · {formatPageTimestamp(updatedAt)}
+              v{currentVersion} · <FormattedTime iso={updatedAt} variant="datetime" />
             </p>
           </div>
         </CardContent>
@@ -387,16 +388,4 @@ function PageEditSkeleton() {
       </div>
     </div>
   );
-}
-
-function formatPageTimestamp(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
 }
