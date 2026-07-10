@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CommentEditor } from "@/components/editor/CommentEditor";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { viewerExtensions } from "@/components/editor/extensions/viewer";
+import { UserHandleLabel } from "@/components/UserHandleLabel";
 import { useCommentDelete, useCommentEdit } from "@/hooks/useComment";
 import { toUserMessage } from "@/lib/api/errors";
 import { asCommentId, type CommentId, type PageId, type SpaceId, type UserId } from "@/lib/api/ids";
@@ -53,11 +54,7 @@ export function CommentRow({
   return (
     <li className="py-4">
       <header className="text-muted-foreground mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-        {comment.authorHandle === "" ? (
-          <span className="italic">삭제된 사용자</span>
-        ) : (
-          <span className="text-accent-secondary">@{comment.authorHandle}</span>
-        )}
+        <UserHandleLabel handle={comment.authorHandle} />
         <span aria-hidden>·</span>
         <FormattedTime iso={comment.createdAt} variant="datetime" />
         {comment.updatedAt !== comment.createdAt && (

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/mocks/server";
 
 import { asPageId, asSpaceId } from "./ids";
-import { createPage, fetchInboundLinks, fetchPage, searchPages, updatePage } from "./page";
+import { createPage, fetchInboundLinks, fetchPage, searchPages, editPage } from "./page";
 
 describe("fetchPage", () => {
   it("GET /api/v1/pages/{pageId} 를 호출하고 응답을 그대로 반환한다", async () => {
@@ -128,7 +128,7 @@ describe("searchPages", () => {
   });
 });
 
-describe("updatePage", () => {
+describe("editPage", () => {
   it("PUT /api/v1/pages/{pageId} 로 body 를 전송하고 응답을 반환한다", async () => {
     let receivedBody: unknown;
     server.use(
@@ -143,7 +143,7 @@ describe("updatePage", () => {
       }),
     );
 
-    const result = await updatePage(asPageId("p_1"), {
+    const result = await editPage(asPageId("p_1"), {
       title: "수정됨",
       content: "새 본문",
     });

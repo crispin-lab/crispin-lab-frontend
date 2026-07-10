@@ -12,21 +12,21 @@ import type { PageId } from "@/lib/api/ids";
 import {
   createPage,
   deletePage,
+  editPage,
   movePage,
   type PageSearchParams,
   reorderPage,
-  updatePage,
 } from "@/lib/api/page";
 import { pageDetailOptions, pageKeys, pageListOptions } from "@/lib/api/queries/page";
 import type {
   Page,
   PageCreateRequest,
   PageCreateResult,
+  PageEditRequest,
+  PageEditResult,
   PageMoveRequest,
   PageReorderRequest,
   PageSearchResult,
-  PageUpdateRequest,
-  PageUpdateResult,
 } from "@/lib/api/types";
 
 type QueryOverrides<TData> = Omit<UseQueryOptions<TData, ApiError, TData>, "queryKey" | "queryFn">;
@@ -45,19 +45,15 @@ export function usePageList(
   return useQuery({ ...pageListOptions(params), ...overrides });
 }
 
-export type PageUpdateVariables = {
+export type PageEditVariables = {
   pageId: PageId;
-  body: PageUpdateRequest;
+  body: PageEditRequest;
 };
 
-export function usePageUpdate(): UseMutationResult<
-  PageUpdateResult,
-  ApiError,
-  PageUpdateVariables
-> {
+export function usePageEdit(): UseMutationResult<PageEditResult, ApiError, PageEditVariables> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ pageId, body }) => updatePage(pageId, body),
+    mutationFn: ({ pageId, body }) => editPage(pageId, body),
     onSuccess: (_result, { pageId }) => {
       queryClient.invalidateQueries({ queryKey: pageKeys.detail(pageId) });
       queryClient.invalidateQueries({ queryKey: pageKeys.lists() });

@@ -148,6 +148,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/spaces/{spaceId}/audit-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 스페이스 감사 이력 조회
+         * @description 스페이스 감사 이력 조회
+         */
+        get: operations["SpaceAudit \uC2A4\uD398\uC774\uC2A4 \uAC10\uC0AC \uC774\uB825 \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uCD5C\uC2E0\uC21C \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/spaces/{spaceId}/members": {
         parameters: {
             query?: never;
@@ -236,6 +256,36 @@ export interface components {
             }[];
             /** @description 최근 갱신 시각 (ISO)＊ */
             updatedAt: string;
+        };
+        /** SpaceAuditEntryListResponse */
+        SpaceAuditEntryListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 감사 이력 목록＊ */
+            items: {
+                /** @description ⎯ 발생 시각 (ISO)＊ */
+                createdAt: string;
+                /** @description ⎯ 변경 주체 사용자 식별자＊ */
+                actorUserId: string;
+                /** @description ⎯ 변경 유형 (REGISTERED / EDITED / DELETED)＊ */
+                action: string;
+                /** @description ⎯ 감사 이력 식별자＊ */
+                id: string;
+                /** @description ⎯ 변경 요약 JSON 문자열＊ */
+                changeSummary: string;
+                /** @description ⎯ 변경 주체 handle (조회 miss 시 빈 문자열)＊ */
+                actorHandle: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
         };
         /** PageSearchResponse */
         PageSearchResponse: {
@@ -779,6 +829,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageInboundLinkListResponse"];
+                };
+            };
+        };
+    };
+    "SpaceAudit \uC2A4\uD398\uC774\uC2A4 \uAC10\uC0AC \uC774\uB825 \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uCD5C\uC2E0\uC21C \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: {
+                /** @description 페이지 */
+                page?: string;
+                /** @description 페이지당 항목 수 */
+                size?: string;
+            };
+            header: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization: string;
+            };
+            path: {
+                spaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceAuditEntryListResponse"];
                 };
             };
         };

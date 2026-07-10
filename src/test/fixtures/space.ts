@@ -9,6 +9,7 @@ export function spaceBody(overrides: Partial<Space> = {}): Space {
     description: "",
     updatedAt: "2026-01-01T00:00:00Z",
     canWrite: true,
+    canEdit: false,
     ...overrides,
   };
 }

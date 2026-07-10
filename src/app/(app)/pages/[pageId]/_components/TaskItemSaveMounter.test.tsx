@@ -9,7 +9,7 @@ import { createQueryWrapper } from "@/test/queryWrapper";
 
 import { TaskItemSaveMounter } from "./TaskItemSaveMounter";
 
-// usePageUpdate (TanStack Query mutation) 를 사용하므로 QueryClientProvider 가 필요 — handleMutationError 도 같이 묶여 들어와 글로벌 정책 검증.
+// usePageEdit (TanStack Query mutation) 를 사용하므로 QueryClientProvider 가 필요 — handleMutationError 도 같이 묶여 들어와 글로벌 정책 검증.
 function renderWithClient(node: ReactElement) {
   const { Wrapper } = createQueryWrapper();
   return render(node, { wrapper: Wrapper });

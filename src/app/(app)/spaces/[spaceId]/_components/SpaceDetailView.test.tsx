@@ -4,9 +4,10 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { asSpaceId } from "@/lib/api/ids";
-import type { Space } from "@/lib/api/types";
 import { server } from "@/mocks/server";
+import { spaceBody as baseSpaceBody } from "@/test/fixtures/space";
 import { createQueryWrapper } from "@/test/queryWrapper";
+import type { Space } from "@/lib/api/types";
 
 const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
 vi.mock("sonner", () => ({
@@ -30,16 +31,13 @@ const SPACE_ID_RAW = "s_1";
 const SPACE_ID = asSpaceId(SPACE_ID_RAW);
 
 function spaceBody(overrides: Partial<Space> = {}): Space {
-  return {
-    createdAt: "2026-01-01T00:00:00Z",
+  return baseSpaceBody({
     spaceId: SPACE_ID_RAW,
-    visibility: "PUBLIC",
     name: "공개 위키",
     description: "공개 위키 설명",
     updatedAt: "2026-06-01T00:00:00Z",
-    canWrite: true,
     ...overrides,
-  };
+  });
 }
 
 function pageListBody(items: Array<{ pageId: string; title: string; updatedAt: string }>) {
@@ -350,6 +348,54 @@ describe("SpaceDetailView", () => {
     expect(screen.queryByRole("button", { name: "첫 페이지 만들기" })).not.toBeInTheDocument();
   });
 
+  describe("LAB-172 · 편집 이력 진입 액션", () => {
+    it("canEdit 이면 ⋯ 더보기 안에 '편집 이력' 링크가 audit-log 로 노출된다 (편집 이력 → 삭제 순)", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canEdit: true })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const user = userEvent.setup();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await user.click(screen.getByRole("button", { name: "더보기" }));
+
+      const auditLink = await screen.findByRole("menuitem", { name: "편집 이력" });
+      expect(auditLink).toHaveAttribute("href", `/spaces/${SPACE_ID_RAW}/audit-log`);
+
+      // 순서 검증 — 편집 이력이 스페이스 삭제보다 위.
+      const menuItems = screen.getAllByRole("menuitem");
+      const auditIndex = menuItems.findIndex((item) => item.textContent === "편집 이력");
+      const deleteIndex = menuItems.findIndex((item) => item.textContent === "스페이스 삭제");
+      expect(auditIndex).toBeGreaterThanOrEqual(0);
+      expect(deleteIndex).toBeGreaterThan(auditIndex);
+    });
+
+    it("canEdit 이 false 이면 '편집 이력' 액션이 노출되지 않는다", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canEdit: false })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const user = userEvent.setup();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await user.click(screen.getByRole("button", { name: "더보기" }));
+
+      // menu 는 열렸지만 편집 이력 항목은 없어야 한다.
+      expect(await screen.findByRole("menuitem", { name: "스페이스 삭제" })).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "편집 이력" })).not.toBeInTheDocument();
+    });
+  });
+
   describe("LAB-95 · 멤버 관리 진입점", () => {
     it("OWNER 시점에는 '멤버' 진입점 버튼이 노출된다", async () => {
       server.use(
@@ -480,6 +526,48 @@ describe("SpaceDetailView", () => {
       // useSpaceMemberList 의 enabled 가 false 라 fetch 안 됨.
       expect(memberListHits).toBe(0);
       expect(screen.queryByRole("button", { name: /^멤버$/ })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("DropdownMenu — 스페이스 편집 액션 (canEdit gate)", () => {
+    it("canEdit: true 면 '스페이스 편집' 항목이 노출되고 클릭 시 /edit 로 이동", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canEdit: true })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const user = userEvent.setup();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await user.click(screen.getByRole("button", { name: "더보기" }));
+
+      const editItem = await screen.findByRole("menuitem", { name: "스페이스 편집" });
+      await user.click(editItem);
+
+      expect(routerPush).toHaveBeenCalledWith(`/spaces/${SPACE_ID_RAW}/edit`);
+    });
+
+    it("canEdit: false 면 '스페이스 편집' 항목이 숨는다 — '스페이스 삭제' 는 유지 (기존 회귀 방지)", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canEdit: false })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const user = userEvent.setup();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await user.click(screen.getByRole("button", { name: "더보기" }));
+
+      expect(await screen.findByRole("menuitem", { name: "스페이스 삭제" })).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "스페이스 편집" })).not.toBeInTheDocument();
     });
   });
 });

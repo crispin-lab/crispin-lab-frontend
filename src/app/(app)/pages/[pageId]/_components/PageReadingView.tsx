@@ -7,6 +7,7 @@ import { viewerExtensions } from "@/components/editor/extensions/viewer";
 import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
 import { SpaceChip } from "@/components/page/SpaceChip";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
+import { UserHandleLabel } from "@/components/UserHandleLabel";
 import { asSpaceId, asUserId, type PageId } from "@/lib/api/ids";
 import type { Page, Space } from "@/lib/api/types";
 import { parseEditorContent } from "@/lib/editor/content";
@@ -78,11 +79,7 @@ export function PageReadingView({
             <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               <SpaceChip space={space} />
               <span aria-hidden>·</span>
-              {page.authorHandle === "" ? (
-                <span className="text-muted-foreground italic">삭제된 사용자</span>
-              ) : (
-                <span className="text-accent-secondary">@{page.authorHandle}</span>
-              )}
+              <UserHandleLabel handle={page.authorHandle} />
               <span aria-hidden>·</span>
               <FormattedTime iso={page.createdAt} variant="datetime" />
               {showUpdatedAt && (

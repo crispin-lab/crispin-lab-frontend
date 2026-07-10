@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { FormattedTime } from "@/components/common/FormattedTime";
 import { ErrorRetryCard } from "@/components/ErrorRetryCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserHandleLabel } from "@/components/UserHandleLabel";
 import { usePageInboundLinks } from "@/hooks/usePageInboundLinks";
 import { useSpaceList } from "@/hooks/useSpace";
 import { toUserMessage } from "@/lib/api/errors";
@@ -100,11 +101,7 @@ function InboundLinkRow({
             <span aria-hidden>·</span>
           </>
         )}
-        {source.authorHandle === "" ? (
-          <span className="italic">삭제된 사용자</span>
-        ) : (
-          <span className="text-accent-secondary">@{source.authorHandle}</span>
-        )}
+        <UserHandleLabel handle={source.authorHandle} />
         <span aria-hidden>·</span>
         <FormattedTime iso={source.updatedAt} />
       </span>
