@@ -41,6 +41,9 @@ export function SpaceListToolbar({ current, totalElements, className }: Props) {
     currentRef.current = current;
   }, [current]);
   const debounceTimer = useRef<number | null>(null);
+  // 우리가 방금 commit 한 keyword — self-echo (router.replace / push 의 결과로 되돌아온 urlKeyword) 를 구분한다.
+  // Self-echo 인데도 draft 를 리셋하면 그 사이 사용자가 이어서 친 입력을 잃는다.
+  const lastCommittedKeywordRef = useRef<string | null>(null);
 
   function cancelDebounce() {
     if (debounceTimer.current !== null) {
@@ -49,19 +52,16 @@ export function SpaceListToolbar({ current, totalElements, className }: Props) {
     }
   }
 
-  // urlKeyword 가 외부에서 바뀌면 (뒤로가기 · hydrate) draft 를 그 값으로 리셋. React 공식 "Adjusting state
-  // while rendering" 패턴 — useEffect 를 쓰지 않아 cascading render 회피.
-  const [lastUrlKeyword, setLastUrlKeyword] = useState(urlKeyword);
-  if (lastUrlKeyword !== urlKeyword) {
-    setLastUrlKeyword(urlKeyword);
-    setDraft(urlKeyword);
-  }
-
-  // urlKeyword 변경 시 진행 중이던 debounce timer 도 취소 — 살려두면 방금 완료된 외부 navigation 을 stale draft
-  // 로 덮어쓰는 회귀. useLayoutEffect 로 commit 직후 browser task 를 yield 하기 전에 clear (일반 useEffect 는
-  // render 와 effect 사이에 timer 가 발화할 여지가 남음).
+  // urlKeyword 가 외부에서 바뀌면 (뒤로가기 · hydrate) draft 를 그 값으로 리셋 + 진행 중이던 debounce timer 취소.
+  // Timer 를 살려두면 방금 완료된 외부 navigation 을 stale draft 로 덮어쓰는 회귀.
+  // useLayoutEffect 로 commit 직후 browser task 를 yield 하기 전에 clear (일반 useEffect 는 render 와 effect
+  // 사이에 timer 가 발화할 여지가 남음). Self-echo (우리가 방금 commit 한 keyword) 는 draft 를 덮지 않는다 —
+  // 사용자가 이어서 친 draft 를 잃지 않게, 새로 예약된 debounce 도 살려둔다.
   useLayoutEffect(() => {
-    cancelDebounce();
+    if (urlKeyword !== lastCommittedKeywordRef.current) {
+      setDraft(urlKeyword);
+      cancelDebounce();
+    }
   }, [urlKeyword]);
 
   useEffect(() => cancelDebounce, []);
@@ -73,6 +73,7 @@ export function SpaceListToolbar({ current, totalElements, className }: Props) {
     debounceTimer.current = window.setTimeout(() => {
       // debounced 키워드 커밋은 history 를 오염시키지 않도록 replace — 뒤로가기가 keyword 입력 이전 화면
       // (정렬 · 페이지 이동) 으로 바로 돌아가게 한다. push 는 정렬 · 페이지네이션 등 명시 액션에만.
+      lastCommittedKeywordRef.current = next;
       router.replace(buildSpacesUrl(currentRef.current, { keyword: next }));
     }, KEYWORD_DEBOUNCE_MS);
   }
@@ -81,6 +82,8 @@ export function SpaceListToolbar({ current, totalElements, className }: Props) {
     if (typeof next !== "string" || !isSpaceSortKey(next)) return;
     cancelDebounce();
     const patch = buildSortChangePatch(currentRef.current.keyword ?? "", draft, next);
+    // sort 클릭이 draft 를 함께 push 하는 경우 self-echo 판별에 포함.
+    if (patch.keyword !== undefined) lastCommittedKeywordRef.current = patch.keyword;
     router.push(buildSpacesUrl(currentRef.current, patch));
   }
 

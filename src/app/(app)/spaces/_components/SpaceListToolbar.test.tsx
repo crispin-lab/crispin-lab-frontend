@@ -58,6 +58,35 @@ describe("SpaceListToolbar", () => {
     expect(routerPush).not.toHaveBeenCalled();
   });
 
+  it("router.replace 로 되돌아온 self-echo 는 draft 를 리셋하지 않는다 — 이어 친 입력을 잃지 않게", async () => {
+    vi.useFakeTimers();
+    const { rerender } = render(<SpaceListToolbar current={{}} totalElements={0} />);
+
+    const input = screen.getByLabelText("스페이스 이름 검색") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "위" } });
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    // Self-echo 재-렌더 전에 사용자가 이어서 입력.
+    fireEvent.change(input, { target: { value: "위키" } });
+
+    // Parent 가 self-echo (첫 commit 결과) 로 re-render 되는 시점을 시뮬레이션.
+    rerender(<SpaceListToolbar current={{ keyword: "위" }} totalElements={0} />);
+
+    // Draft 가 self-echo 로 "위" 로 되돌아가지 않고 "위키" 를 유지.
+    expect(input.value).toBe("위키");
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    // 두 번째 debounce 도 정상 발화.
+    expect(routerReplace).toHaveBeenLastCalledWith(`/spaces?keyword=${encodeURIComponent("위키")}`);
+    expect(routerReplace).toHaveBeenCalledTimes(2);
+  });
+
   it("정렬 옵션 선택 시 즉시 URL push (디바운스 없음)", async () => {
     const user = userEvent.setup();
 
