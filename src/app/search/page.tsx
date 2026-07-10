@@ -3,6 +3,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { searchPagesServer } from "@/lib/api/page.server";
 import { pageKeys } from "@/lib/api/queries/page";
 import { makeServerQueryClient } from "@/lib/queryClient";
+import { toURLSearchParams } from "@/lib/routing/searchParams";
 import { parseSearchParams } from "@/lib/search/searchParams";
 
 import { SearchResultsView } from "./_components/SearchResultsView";
@@ -28,16 +29,4 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <SearchResultsView />
     </HydrationBoundary>
   );
-}
-
-// `?tag=A&tag=B` 처럼 같은 키가 반복되는 케이스를 보존해 array 값을 silently drop 하지 않는다.
-function toURLSearchParams(raw: Record<string, string | string[] | undefined>): URLSearchParams {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(raw)) {
-    if (typeof value === "string") search.set(key, value);
-    else if (Array.isArray(value)) {
-      for (const item of value) search.append(key, item);
-    }
-  }
-  return search;
 }

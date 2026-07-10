@@ -75,7 +75,7 @@ export interface paths {
          * 사용자 검색
          * @description 사용자 검색
          */
-        get: operations["User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569 + alreadyMember \uB97C \uBC18\uD658\uD55C\uB2E4"];
+        get: operations["User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569"];
         put?: never;
         post?: never;
         delete?: never;
@@ -366,6 +366,20 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
+        /** UserSearchResponse */
+        UserSearchResponse: {
+            /** @description 매칭된 사용자 목록＊ */
+            items: {
+                /** @description ⎯ 사용자가 소속된 스페이스 식별자 목록 (검색자가 볼 수 있는 스페이스만 노출, SpaceId 오름차순, 없으면 빈 배열)＊ */
+                memberOfSpaceIds: (Record<string, never> | boolean | string | number)[];
+                /** @description ⎯ 요청 spaceId 에 이미 참여 중인지 여부. spaceId 미지정 또는 검색자가 해당 스페이스를 볼 수 없으면 null. */
+                alreadyMember?: boolean | null;
+                /** @description ⎯ 사용자 이름＊ */
+                handle: string;
+                /** @description ⎯ 사용자 식별자＊ */
+                userId: string;
+            }[];
+        };
         /** PageInboundLinkListResponse */
         PageInboundLinkListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -401,20 +415,6 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
-        };
-        /** UserSearchResponse */
-        UserSearchResponse: {
-            /** @description 매칭된 사용자 목록＊ */
-            items: {
-                /** @description ⎯ 사용자가 소속된 스페이스 식별자 목록 (검색자가 볼 수 있는 스페이스만 노출, SpaceId 오름차순, 없으면 빈 배열)＊ */
-                memberOfSpaceIds: (Record<string, never> | boolean | string | number)[];
-                /** @description ⎯ 요청 spaceId 에 이미 참여 중인지 여부. spaceId 미지정 또는 검색자가 해당 스페이스를 볼 수 없으면 null. */
-                alreadyMember?: boolean | null;
-                /** @description ⎯ 사용자 이름＊ */
-                handle: string;
-                /** @description ⎯ 사용자 식별자＊ */
-                userId: string;
-            }[];
         };
         /** CommentEditRequest */
         CommentEditRequest: {
@@ -507,7 +507,7 @@ export interface components {
                 name: string;
                 /** @description ⎯ 스페이스 설명＊ */
                 description: string;
-                /** @description ⎯ MAX(space.updatedAt, latestPage.updatedAt), 페이지 없으면 space.updatedAt (ISO)＊ */
+                /** @description ⎯ 정렬 값 (COALESCE(MAX(pages.updated_at), space.updated_at) — 삭제되지 않은 모든 페이지 기준. viewer 가 볼 수 없는 페이지도 포함될 수 있어 latestPage 와 다를 수 있음) (ISO)＊ */
                 lastActivityAt: string;
                 /** @description ⎯ viewer 가 볼 수 있는 최근 편집 페이지 (없거나 lookup 실패 시 null) */
                 latestPage?: {
@@ -646,6 +646,12 @@ export interface operations {
     "Space \uC2A4\uD398\uC774\uC2A4 \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uC870\uB9BD\uB41C \uBAA9\uB85D\uC744 \uBC18\uD658\uD55C\uB2E4": {
         parameters: {
             query?: {
+                /** @description 스페이스 이름 부분 일치 (case-insensitive, 공백은 필터 미적용) */
+                keyword?: string;
+                /** @description 정렬 옵션 (LAST_ACTIVITY_AT / CREATED_AT / NAME, 기본 LAST_ACTIVITY_AT) */
+                sort?: string;
+                /** @description 정렬 방향 (ASC / DESC). 미지정 시 sort 별 자연 default */
+                direction?: string;
                 /** @description 페이지 */
                 page?: string;
                 /** @description 페이지당 항목 수 */
@@ -674,7 +680,7 @@ export interface operations {
             };
         };
     };
-    "User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569 + alreadyMember \uB97C \uBC18\uD658\uD55C\uB2E4": {
+    "User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569": {
         parameters: {
             query: {
                 /** @description 검색어 (handle 부분 일치, 대소문자 무시, 1~30자) */

@@ -1,5 +1,8 @@
+import { FileTextIcon, UsersIcon } from "lucide-react";
+
 import { FormattedTime } from "@/components/common/FormattedTime";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
+import { RoleBadge } from "@/components/space/RoleBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SpaceSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -26,14 +29,29 @@ export function SpaceCard({ space, className }: Props) {
       <CardHeader>
         <CardTitle>{space.name}</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-2">
+      <CardContent className="flex flex-col gap-3">
         {description !== "" && (
           <p className="text-muted-foreground line-clamp-1 text-sm">{description}</p>
         )}
-        <div className="text-muted-foreground flex items-center justify-between gap-2 text-xs">
+        <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
           <VisibilityBadge visibility={space.visibility} />
-          <span>
-            수정 <FormattedTime iso={space.updatedAt} />
+          {space.myRole != null && <RoleBadge role={space.myRole} />}
+          <span
+            className="inline-flex items-center gap-1"
+            aria-label={`페이지 수: ${space.pageCount}`}
+          >
+            <FileTextIcon className="size-3" />
+            {space.pageCount}
+          </span>
+          <span
+            className="inline-flex items-center gap-1"
+            aria-label={`멤버 수: ${space.memberCount}`}
+          >
+            <UsersIcon className="size-3" />
+            {space.memberCount}
+          </span>
+          <span className="ml-auto">
+            최근 활동 <FormattedTime iso={space.lastActivityAt} />
           </span>
         </div>
       </CardContent>

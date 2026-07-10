@@ -25,5 +25,8 @@ export function spaceListOptions(params: SpaceListParams = {}) {
   return queryOptions<SpaceListResult, ApiError>({
     queryKey: spaceKeys.list(params),
     queryFn: ({ signal }) => listSpaces(params, signal),
+    // SpaceListView 가 refetchOnMount: "always" 로 override 하므로 mount 재요청은 못 막고, window focus /
+    // reconnect 시의 재요청 억제에만 실효. 그 정도가 원하는 정책.
+    staleTime: 30_000,
   });
 }
