@@ -37,6 +37,21 @@ describe("formatAuditChangeLines", () => {
     expect(formatAuditChangeLines("EDITED", raw)).toEqual(["이름을 “A” → “B”로 변경"]);
   });
 
+  it("EDITED — ㄹ 받침 (인덱스 8) 은 관례상 로", () => {
+    const raw = JSON.stringify({
+      // 길 → ㄹ 종성 → "로"
+      name: { before: "예전 스페이스", after: "길" },
+    });
+    expect(formatAuditChangeLines("EDITED", raw)).toEqual(["이름을 “예전 스페이스” → “길”로 변경"]);
+  });
+
+  it("EDITED — ㄹ 받침 예외 (서울) 도 로", () => {
+    const raw = JSON.stringify({
+      description: { before: "예전 설명", after: "서울" },
+    });
+    expect(formatAuditChangeLines("EDITED", raw)).toEqual(["설명을 “예전 설명” → “서울”로 변경"]);
+  });
+
   it("REGISTERED — snapshot 을 필드 순서대로 한 줄씩", () => {
     const raw = JSON.stringify({
       name: "새 스페이스",

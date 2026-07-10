@@ -151,4 +151,57 @@ describe("SpaceAuditLogView", () => {
 
     await waitFor(() => expect(notFoundMock).toHaveBeenCalled());
   });
+
+  describe("parseAuditLogParams — URL 파라미터 fallback", () => {
+    it("유효한 page/size 쿼리는 그대로 전달된다", async () => {
+      mockSearchParams = new URLSearchParams({ page: "2", size: "50" });
+      let capturedPage: string | null = null;
+      let capturedSize: string | null = null;
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}/audit-entries`, ({ request }) => {
+          const url = new URL(request.url);
+          capturedPage = url.searchParams.get("page");
+          capturedSize = url.searchParams.get("size");
+          return HttpResponse.json(spaceAuditListBody([]));
+        }),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      render(<SpaceAuditLogView spaceId={SPACE_ID} space={testSpace()} />, { wrapper: Wrapper });
+
+      await waitFor(() => expect(capturedPage).toBe("2"));
+      expect(capturedSize).toBe("50");
+    });
+
+    it.each([
+      ["음수 page", { page: "-1", size: "20" }, "0", "20"],
+      ["비정수 page", { page: "abc", size: "20" }, "0", "20"],
+      ["소수 page", { page: "1.5", size: "20" }, "0", "20"],
+      ["음수 size", { page: "0", size: "-5" }, "0", "20"],
+      ["0 size", { page: "0", size: "0" }, "0", "20"],
+      ["범위 초과 size (>100)", { page: "0", size: "500" }, "0", "20"],
+      ["비정수 size", { page: "0", size: "abc" }, "0", "20"],
+    ])(
+      "%s → 기본값 (page=0, size=20) 으로 fallback",
+      async (_label, params, expectedPage, expectedSize) => {
+        mockSearchParams = new URLSearchParams(params);
+        let capturedPage: string | null = null;
+        let capturedSize: string | null = null;
+        server.use(
+          http.get(`*/api/v1/spaces/${SPACE_ID_RAW}/audit-entries`, ({ request }) => {
+            const url = new URL(request.url);
+            capturedPage = url.searchParams.get("page");
+            capturedSize = url.searchParams.get("size");
+            return HttpResponse.json(spaceAuditListBody([]));
+          }),
+        );
+
+        const { Wrapper } = createQueryWrapper();
+        render(<SpaceAuditLogView spaceId={SPACE_ID} space={testSpace()} />, { wrapper: Wrapper });
+
+        await waitFor(() => expect(capturedPage).toBe(expectedPage));
+        expect(capturedSize).toBe(expectedSize);
+      },
+    );
+  });
 });

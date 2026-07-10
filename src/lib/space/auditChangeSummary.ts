@@ -79,24 +79,27 @@ function renderSnapshotLine(key: FieldKey, value: string): string {
 }
 
 function objectParticle(word: string): "을" | "를" {
-  return hasFinalConsonant(word) ? "을" : "를";
+  return finalConsonantIndex(word) !== FINAL_NONE ? "을" : "를";
 }
 
-// 방향 조사: 종성 있으면 "으로", 없으면 "로". 종성이 ㄹ 인 경우도 관례상 "로" 를 쓰지만
-// 스페이스 이름 · description 은 임의 문자열이라 ㄹ 예외를 단순 rule 로 잡기 어려워 일반 규칙만 적용.
+// 방향 조사: 종성 없으면 "로", ㄹ (인덱스 8) 도 관례상 "로", 그 외 종성이면 "으로".
 function directionParticle(word: string): "으로" | "로" {
-  return hasFinalConsonant(word) ? "으로" : "로";
+  const index = finalConsonantIndex(word);
+  return index === FINAL_NONE || index === FINAL_RIEUL ? "로" : "으로";
 }
 
-// 한글 음절이 아니면 종성 없음으로 취급 — 라틴 알파벳·숫자 등은 "로" fallback.
-function hasFinalConsonant(word: string): boolean {
+const FINAL_NONE = 0;
+const FINAL_RIEUL = 8;
+
+// 한글 음절의 종성 인덱스 (0=없음, 1..27=종성). 한글이 아니면 종성 없음 (0) 으로 취급.
+function finalConsonantIndex(word: string): number {
   const last = word.at(-1);
-  if (last === undefined) return false;
+  if (last === undefined) return FINAL_NONE;
   const code = last.charCodeAt(0);
   const HANGUL_BASE = 0xac00;
   const HANGUL_LAST = 0xd7a3;
-  if (code < HANGUL_BASE || code > HANGUL_LAST) return false;
-  return (code - HANGUL_BASE) % 28 !== 0;
+  if (code < HANGUL_BASE || code > HANGUL_LAST) return FINAL_NONE;
+  return (code - HANGUL_BASE) % 28;
 }
 
 function formatValue(key: FieldKey, value: string): string {

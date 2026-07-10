@@ -1,6 +1,6 @@
 import { UserIcon } from "lucide-react";
 
-import { UserHandleLabel } from "@/components/UserHandleLabel";
+import { formatUserHandle, UserHandleLabel } from "@/components/UserHandleLabel";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -17,7 +17,4 @@ export function MemberUserLabel({ handle, className }: Props) {
   );
 }
 
-// 대상 사용자를 한 문자열로 인지시켜야 하는 경계 (dialog description, aria-label 등) 에서 사용.
-export function memberDisplayHandle(handle: string): string {
-  return handle === "" ? "삭제된 사용자" : `@${handle}`;
-}
+export const memberDisplayHandle = formatUserHandle;
