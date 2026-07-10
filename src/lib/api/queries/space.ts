@@ -25,5 +25,6 @@ export function spaceListOptions(params: SpaceListParams = {}) {
   return queryOptions<SpaceListResult, ApiError>({
     queryKey: spaceKeys.list(params),
     queryFn: ({ signal }) => listSpaces(params, signal),
+    staleTime: 30_000,
   });
 }

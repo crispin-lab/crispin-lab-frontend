@@ -7,9 +7,14 @@ import type {
   SpaceEditRequest,
   SpaceEditResult,
   SpaceListResult,
+  SpaceSortKey,
+  SortDirection,
 } from "./types";
 
 export type SpaceListParams = {
+  keyword?: string;
+  sort?: SpaceSortKey;
+  direction?: SortDirection;
   page?: number;
   size?: number;
 };
@@ -47,8 +52,17 @@ export function deleteSpace(spaceId: SpaceId): Promise<void> {
   });
 }
 
-function buildListSpacesQuery(params: SpaceListParams): string {
+export function buildListSpacesQuery(params: SpaceListParams): string {
   const search = new URLSearchParams();
+  if (params.keyword !== undefined && params.keyword.trim() !== "") {
+    search.append("keyword", params.keyword.trim());
+  }
+  if (params.sort !== undefined) {
+    search.append("sort", params.sort);
+  }
+  if (params.direction !== undefined) {
+    search.append("direction", params.direction);
+  }
   if (params.page !== undefined) {
     search.append("page", String(params.page));
   }

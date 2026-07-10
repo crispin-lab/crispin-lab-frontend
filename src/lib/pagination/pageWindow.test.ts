@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildPageWindow } from "./SearchPagination";
+import { buildPageWindow } from "./pageWindow";
 
 describe("buildPageWindow", () => {
   it("totalPages=2 / current=0 → [0, 1]", () => {

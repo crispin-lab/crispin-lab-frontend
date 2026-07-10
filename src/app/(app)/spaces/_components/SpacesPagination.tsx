@@ -3,28 +3,29 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import type { SpaceListParams } from "@/lib/api/space";
 import { buildPageWindow } from "@/lib/pagination/pageWindow";
-import { buildSearchUrl, type SearchUrlParams } from "@/lib/search/searchParams";
+import { buildSpacesUrl } from "@/lib/space/listParams";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  current: SearchUrlParams;
+  current: SpaceListParams;
   page: number;
   totalPages: number;
   hasNext: boolean;
   className?: string;
 };
 
-export function SearchPagination({ current, page, totalPages, hasNext, className }: Props) {
+export function SpacesPagination({ current, page, totalPages, hasNext, className }: Props) {
   if (totalPages <= 1) return null;
 
   const entries = buildPageWindow(page, totalPages);
   const isFirst = page <= 0;
-  const hrefFor = (nextPage: number) => buildSearchUrl(current, { page: nextPage });
+  const hrefFor = (nextPage: number) => buildSpacesUrl(current, { page: nextPage });
 
   return (
     <nav
-      aria-label="검색 결과 페이지"
+      aria-label="스페이스 목록 페이지"
       className={cn("flex items-center justify-center gap-1 pt-2", className)}
     >
       {isFirst ? (
@@ -52,7 +53,6 @@ export function SearchPagination({ current, page, totalPages, hasNext, className
           );
         }
         const isCurrent = entry === page;
-        // 현재 페이지: disabled 면 focus 가 빠져 위치 인지가 어려워 aria-disabled + tabIndex=-1.
         if (isCurrent) {
           return (
             <Button

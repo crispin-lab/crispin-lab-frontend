@@ -33,6 +33,10 @@ export type SpaceCreateResult = PageSchemas["SpaceRegisterResponse"];
 export type SpaceEditRequest = PageSchemas["SpaceEditRequest"];
 export type SpaceEditResult = PageSchemas["SpaceEditResponse"];
 
+// LAB-182 백엔드 계약. 미지정 시 백엔드 default 는 LAST_ACTIVITY_AT + sort 별 자연 direction.
+export type SpaceSortKey = "LAST_ACTIVITY_AT" | "CREATED_AT" | "NAME";
+export type SortDirection = "ASC" | "DESC";
+
 // LAB-158 이후 멤버 리스트 endpoint 가 lab-composition (BFF) 로 이관 — 응답에 handle 필드 포함.
 // mutation (Join / RoleChange / Remove) 계약은 lab-space 그대로.
 export type SpaceMemberListResult = CompositionSchemas["SpaceMemberListResponse"];
