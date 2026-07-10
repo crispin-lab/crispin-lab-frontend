@@ -1,6 +1,13 @@
 import { apiFetch } from "./client";
 import type { SpaceId } from "./ids";
-import type { Space, SpaceCreateRequest, SpaceCreateResult, SpaceListResult } from "./types";
+import type {
+  Space,
+  SpaceCreateRequest,
+  SpaceCreateResult,
+  SpaceEditRequest,
+  SpaceEditResult,
+  SpaceListResult,
+} from "./types";
 
 export type SpaceListParams = {
   page?: number;
@@ -23,6 +30,13 @@ export function listSpaces(
 export function createSpace(body: SpaceCreateRequest): Promise<SpaceCreateResult> {
   return apiFetch<SpaceCreateResult>("/api/v1/spaces", {
     method: "POST",
+    body,
+  });
+}
+
+export function editSpace(spaceId: SpaceId, body: SpaceEditRequest): Promise<SpaceEditResult> {
+  return apiFetch<SpaceEditResult>(`/api/v1/spaces/${encodeURIComponent(spaceId)}`, {
+    method: "PUT",
     body,
   });
 }

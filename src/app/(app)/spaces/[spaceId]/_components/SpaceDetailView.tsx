@@ -144,6 +144,7 @@ function SpaceMetaSection({
   canManageMembers: boolean;
   isViewerRoleResolved: boolean;
 }) {
+  const router = useRouter();
   if (query.isPending) {
     return <SpaceMetaSkeleton />;
   }
@@ -195,13 +196,20 @@ function SpaceMetaSection({
               />
               <DropdownMenuContent align="end">
                 {canEdit && (
-                  <DropdownMenuLinkItem
-                    render={
-                      <Link href={`/spaces/${encodeURIComponent(spaceId)}/audit-log`}>
-                        편집 이력
-                      </Link>
-                    }
-                  />
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => router.push(`/spaces/${encodeURIComponent(spaceId)}/edit`)}
+                    >
+                      스페이스 편집
+                    </DropdownMenuItem>
+                    <DropdownMenuLinkItem
+                      render={
+                        <Link href={`/spaces/${encodeURIComponent(spaceId)}/audit-log`}>
+                          편집 이력
+                        </Link>
+                      }
+                    />
+                  </>
                 )}
                 <DropdownMenuItem variant="destructive" onClick={onDeleteRequest}>
                   스페이스 삭제

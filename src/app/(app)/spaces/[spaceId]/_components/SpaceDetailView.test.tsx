@@ -4,9 +4,10 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { asSpaceId } from "@/lib/api/ids";
-import type { Space } from "@/lib/api/types";
 import { server } from "@/mocks/server";
+import { spaceBody as baseSpaceBody } from "@/test/fixtures/space";
 import { createQueryWrapper } from "@/test/queryWrapper";
+import type { Space } from "@/lib/api/types";
 
 const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
 vi.mock("sonner", () => ({
@@ -30,17 +31,13 @@ const SPACE_ID_RAW = "s_1";
 const SPACE_ID = asSpaceId(SPACE_ID_RAW);
 
 function spaceBody(overrides: Partial<Space> = {}): Space {
-  return {
-    createdAt: "2026-01-01T00:00:00Z",
+  return baseSpaceBody({
     spaceId: SPACE_ID_RAW,
-    visibility: "PUBLIC",
     name: "공개 위키",
     description: "공개 위키 설명",
     updatedAt: "2026-06-01T00:00:00Z",
-    canWrite: true,
-    canEdit: true,
     ...overrides,
-  };
+  });
 }
 
 function pageListBody(items: Array<{ pageId: string; title: string; updatedAt: string }>) {
@@ -529,6 +526,48 @@ describe("SpaceDetailView", () => {
       // useSpaceMemberList 의 enabled 가 false 라 fetch 안 됨.
       expect(memberListHits).toBe(0);
       expect(screen.queryByRole("button", { name: /^멤버$/ })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("DropdownMenu — 스페이스 편집 액션 (canEdit gate)", () => {
+    it("canEdit: true 면 '스페이스 편집' 항목이 노출되고 클릭 시 /edit 로 이동", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canEdit: true })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const user = userEvent.setup();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await user.click(screen.getByRole("button", { name: "더보기" }));
+
+      const editItem = await screen.findByRole("menuitem", { name: "스페이스 편집" });
+      await user.click(editItem);
+
+      expect(routerPush).toHaveBeenCalledWith(`/spaces/${SPACE_ID_RAW}/edit`);
+    });
+
+    it("canEdit: false 면 '스페이스 편집' 항목이 숨는다 — '스페이스 삭제' 는 유지 (기존 회귀 방지)", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canEdit: false })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const user = userEvent.setup();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await user.click(screen.getByRole("button", { name: "더보기" }));
+
+      expect(await screen.findByRole("menuitem", { name: "스페이스 삭제" })).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "스페이스 편집" })).not.toBeInTheDocument();
     });
   });
 });

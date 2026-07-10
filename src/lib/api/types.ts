@@ -18,8 +18,8 @@ export type PageSearchResult = CompositionSchemas["PageSearchResponse"];
 export type PageSummary = PageSearchResult["items"][number];
 export type PageCreateRequest = PageSchemas["PageRegisterRequest"];
 export type PageCreateResult = PageSchemas["PageRegisterResponse"];
-export type PageUpdateRequest = PageSchemas["PageEditRequest"];
-export type PageUpdateResult = PageSchemas["PageEditResponse"];
+export type PageEditRequest = PageSchemas["PageEditRequest"];
+export type PageEditResult = PageSchemas["PageEditResponse"];
 export type PageMoveRequest = PageSchemas["PageMoveRequest"];
 export type PageReorderRequest = PageSchemas["PageReorderRequest"];
 export type PageInboundLinkListResult = CompositionSchemas["PageInboundLinkListResponse"];
@@ -30,6 +30,8 @@ export type SpaceListResult = CompositionSchemas["SpaceListResponse"];
 export type SpaceSummary = SpaceListResult["items"][number];
 export type SpaceCreateRequest = PageSchemas["SpaceRegisterRequest"];
 export type SpaceCreateResult = PageSchemas["SpaceRegisterResponse"];
+export type SpaceEditRequest = PageSchemas["SpaceEditRequest"];
+export type SpaceEditResult = PageSchemas["SpaceEditResponse"];
 
 // LAB-158 이후 멤버 리스트 endpoint 가 lab-composition (BFF) 로 이관 — 응답에 handle 필드 포함.
 // mutation (Join / RoleChange / Remove) 계약은 lab-space 그대로.
