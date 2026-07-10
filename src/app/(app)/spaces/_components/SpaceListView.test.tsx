@@ -103,7 +103,8 @@ describe("SpaceListView", () => {
     expect(await screen.findByText(/존재하지-않는/)).toBeInTheDocument();
     expect(screen.getByText(/일치하는 스페이스가 없습니다/)).toBeInTheDocument();
     // 검색 결과 없음은 '첫 스페이스 만들기' 를 노출하지 않는다 (검색어 조정이 다음 액션).
-    expect(screen.queryByRole("button", { name: "첫 스페이스 만들기" })).not.toBeInTheDocument();
+    // 텍스트 기반 negative — CTA 가 button role 이든 link role 이든 관계없이 "미노출" 을 검증한다.
+    expect(screen.queryByText("첫 스페이스 만들기")).not.toBeInTheDocument();
   });
 
   it("에러면 백엔드 메시지를 노출하고 다시 시도 버튼을 보여준다", async () => {
@@ -139,7 +140,7 @@ describe("SpaceListView", () => {
     render(<SpaceListView isAuthenticated={false} />, { wrapper: Wrapper });
 
     expect(await screen.findByRole("heading", { name: "공개 스페이스" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "새 스페이스 만들기" })).not.toBeInTheDocument();
+    expect(screen.queryByText("새 스페이스 만들기")).not.toBeInTheDocument();
   });
 
   it("비로그인 + 빈 결과면 카피가 '공개된 스페이스가 없습니다' 로 바뀌고 CTA 가 안 나온다", async () => {
@@ -149,7 +150,8 @@ describe("SpaceListView", () => {
     render(<SpaceListView isAuthenticated={false} />, { wrapper: Wrapper });
 
     expect(await screen.findByText("아직 공개된 스페이스가 없습니다.")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "첫 스페이스 만들기" })).not.toBeInTheDocument();
+    // 텍스트 기반 negative — CTA 가 button role 이든 link role 이든 관계없이 "미노출" 을 검증한다.
+    expect(screen.queryByText("첫 스페이스 만들기")).not.toBeInTheDocument();
   });
 
   it("총 N개 카운트가 노출된다 (결과 요약 요구)", async () => {

@@ -114,28 +114,6 @@ describe("listSpaces", () => {
     expect(capturedUrl?.searchParams.get("direction")).toBe("ASC");
   });
 
-  it("공백만 있는 keyword 는 전송하지 않는다 (BE 계약: 공백은 필터 미적용, URL 을 깨끗이 유지)", async () => {
-    let capturedUrl: URL | undefined;
-    server.use(
-      http.get("*/api/v1/spaces", ({ request }) => {
-        capturedUrl = new URL(request.url);
-        return HttpResponse.json({
-          size: 20,
-          isEmpty: true,
-          totalPages: 0,
-          hasNext: false,
-          page: 0,
-          items: [],
-          totalElements: 0,
-        });
-      }),
-    );
-
-    await listSpaces({ keyword: "   " });
-
-    expect(capturedUrl?.searchParams.has("keyword")).toBe(false);
-  });
-
   it("empty 응답을 그대로 패스스루한다", async () => {
     server.use(
       http.get("*/api/v1/spaces", () =>

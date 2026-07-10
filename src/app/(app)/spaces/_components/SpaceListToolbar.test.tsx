@@ -2,9 +2,12 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
+const { routerPush, routerReplace } = vi.hoisted(() => ({
+  routerPush: vi.fn(),
+  routerReplace: vi.fn(),
+}));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: routerPush }),
+  useRouter: () => ({ push: routerPush, replace: routerReplace }),
 }));
 
 import { SpaceListToolbar } from "./SpaceListToolbar";
@@ -12,10 +15,11 @@ import { SpaceListToolbar } from "./SpaceListToolbar";
 describe("SpaceListToolbar", () => {
   beforeEach(() => {
     routerPush.mockReset();
+    routerReplace.mockReset();
     vi.useRealTimers();
   });
 
-  it("키워드 입력을 300ms 디바운스 후 URL push", async () => {
+  it("키워드 입력은 300ms 디바운스 후 router.replace — 타이핑 pause 마다 history 오염을 방지", async () => {
     vi.useFakeTimers();
     // fake timer 환경에서 userEvent.type 의 내부 지연이 stall — fireEvent 로 native change 이벤트 직접 발화.
     render(<SpaceListToolbar current={{}} totalElements={0} />);
@@ -23,7 +27,7 @@ describe("SpaceListToolbar", () => {
     const input = screen.getByLabelText("스페이스 이름 검색") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "위키" } });
 
-    // 아직 디바운스가 끝나지 않아 push 미발화.
+    expect(routerReplace).not.toHaveBeenCalled();
     expect(routerPush).not.toHaveBeenCalled();
 
     act(() => {
@@ -31,7 +35,27 @@ describe("SpaceListToolbar", () => {
     });
 
     // URLSearchParams 가 한글을 percent-encode. 백엔드는 decode 해서 받는다.
-    expect(routerPush).toHaveBeenCalledWith(`/spaces?keyword=${encodeURIComponent("위키")}`);
+    expect(routerReplace).toHaveBeenCalledWith(`/spaces?keyword=${encodeURIComponent("위키")}`);
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("외부에서 URL 이 바뀌면 pending debounce timer 도 취소 — stale draft 로 방금 완료된 navigation 을 덮지 않는다", async () => {
+    vi.useFakeTimers();
+    const { rerender } = render(<SpaceListToolbar current={{}} totalElements={0} />);
+
+    const input = screen.getByLabelText("스페이스 이름 검색") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "B" } });
+
+    // 300ms 내에 외부 URL 변경 (뒤로가기 등) 이 발생.
+    rerender(<SpaceListToolbar current={{ keyword: "A" }} totalElements={0} />);
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    // Timer 가 취소돼 replace 는 발화하지 않는다.
+    expect(routerReplace).not.toHaveBeenCalled();
+    expect(routerPush).not.toHaveBeenCalled();
   });
 
   it("정렬 옵션 선택 시 즉시 URL push (디바운스 없음)", async () => {

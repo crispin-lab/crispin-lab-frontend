@@ -54,20 +54,11 @@ export function deleteSpace(spaceId: SpaceId): Promise<void> {
 
 export function buildListSpacesQuery(params: SpaceListParams): string {
   const search = new URLSearchParams();
-  if (params.keyword !== undefined && params.keyword.trim() !== "") {
-    search.append("keyword", params.keyword.trim());
-  }
-  if (params.sort !== undefined) {
-    search.append("sort", params.sort);
-  }
-  if (params.direction !== undefined) {
-    search.append("direction", params.direction);
-  }
-  if (params.page !== undefined) {
-    search.append("page", String(params.page));
-  }
-  if (params.size !== undefined) {
-    search.append("size", String(params.size));
-  }
+  // 경계 (parseSpaceListSearchParams) 에서 이미 trim + 빈 문자열 필터가 끝나 여기서는 값을 그대로 신뢰.
+  if (params.keyword !== undefined) search.append("keyword", params.keyword);
+  if (params.sort !== undefined) search.append("sort", params.sort);
+  if (params.direction !== undefined) search.append("direction", params.direction);
+  if (params.page !== undefined) search.append("page", String(params.page));
+  if (params.size !== undefined) search.append("size", String(params.size));
   return search.toString();
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { SearchInput } from "@/components/SearchInput";
@@ -33,13 +33,6 @@ export function SpaceListToolbar({ current, totalElements, className }: Props) {
   const router = useRouter();
   const urlKeyword = current.keyword ?? "";
   const [draft, setDraft] = useState(urlKeyword);
-  // urlKeyword 가 외부에서 바뀌면 (뒤로가기 · hydrate) draft 를 그 값으로 리셋. React 공식 "Adjusting state
-  // while rendering" 패턴 — useEffect 를 쓰지 않아 cascading render 회피.
-  const [lastUrlKeyword, setLastUrlKeyword] = useState(urlKeyword);
-  if (lastUrlKeyword !== urlKeyword) {
-    setLastUrlKeyword(urlKeyword);
-    setDraft(urlKeyword);
-  }
 
   // Timer 콜백 · handleSortChange 가 최신 current 를 참조하도록 ref 로 보관. closure 로 잡으면 정렬 · 뒤로가기로
   // URL 이 바뀐 뒤 debounce 가 발화할 때 stale current 로 push 해 방금 변경한 상태가 덮인다.
@@ -56,6 +49,21 @@ export function SpaceListToolbar({ current, totalElements, className }: Props) {
     }
   }
 
+  // urlKeyword 가 외부에서 바뀌면 (뒤로가기 · hydrate) draft 를 그 값으로 리셋. React 공식 "Adjusting state
+  // while rendering" 패턴 — useEffect 를 쓰지 않아 cascading render 회피.
+  const [lastUrlKeyword, setLastUrlKeyword] = useState(urlKeyword);
+  if (lastUrlKeyword !== urlKeyword) {
+    setLastUrlKeyword(urlKeyword);
+    setDraft(urlKeyword);
+  }
+
+  // urlKeyword 변경 시 진행 중이던 debounce timer 도 취소 — 살려두면 방금 완료된 외부 navigation 을 stale draft
+  // 로 덮어쓰는 회귀. useLayoutEffect 로 commit 직후 browser task 를 yield 하기 전에 clear (일반 useEffect 는
+  // render 와 effect 사이에 timer 가 발화할 여지가 남음).
+  useLayoutEffect(() => {
+    cancelDebounce();
+  }, [urlKeyword]);
+
   useEffect(() => cancelDebounce, []);
 
   function handleKeywordInput(event: React.ChangeEvent<HTMLInputElement>) {
@@ -63,7 +71,9 @@ export function SpaceListToolbar({ current, totalElements, className }: Props) {
     setDraft(next);
     cancelDebounce();
     debounceTimer.current = window.setTimeout(() => {
-      router.push(buildSpacesUrl(currentRef.current, { keyword: next }));
+      // debounced 키워드 커밋은 history 를 오염시키지 않도록 replace — 뒤로가기가 keyword 입력 이전 화면
+      // (정렬 · 페이지 이동) 으로 바로 돌아가게 한다. push 는 정렬 · 페이지네이션 등 명시 액션에만.
+      router.replace(buildSpacesUrl(currentRef.current, { keyword: next }));
     }, KEYWORD_DEBOUNCE_MS);
   }
 

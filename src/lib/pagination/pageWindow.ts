@@ -8,8 +8,11 @@ export function buildPageWindow(
   totalPages: number,
 ): ReadonlyArray<PageWindowEntry> {
   const entries: PageWindowEntry[] = [];
-  const start = Math.max(0, current - WINDOW_RADIUS);
-  const end = Math.min(totalPages - 1, current + WINDOW_RADIUS);
+  // URL 조작 (?page=999 등) 으로 범위 밖 current 가 들어와도 마지막 페이지 링크가 살아 있어 사용자가 되돌아갈
+  // 수 있게 clamp. totalPages=0 인 화면에서는 caller 가 이미 early return.
+  const normalizedCurrent = totalPages > 0 ? Math.min(Math.max(current, 0), totalPages - 1) : 0;
+  const start = Math.max(0, normalizedCurrent - WINDOW_RADIUS);
+  const end = Math.min(totalPages - 1, normalizedCurrent + WINDOW_RADIUS);
 
   if (start > 0) {
     entries.push(0);

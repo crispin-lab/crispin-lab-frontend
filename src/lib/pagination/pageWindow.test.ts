@@ -48,4 +48,16 @@ describe("buildPageWindow", () => {
   it("앞 가려진 페이지가 정확히 1 개면 그 페이지를 직접 노출", () => {
     expect(buildPageWindow(4, 10)).toEqual([0, 1, 2, 3, 4, 5, 6, "ellipsis-end", 9]);
   });
+
+  it("범위 밖 current 는 마지막 페이지로 clamp — URL 조작 (?page=999) 회귀 방지", () => {
+    expect(buildPageWindow(999, 3)).toEqual([0, 1, 2]);
+  });
+
+  it("음수 current 는 0 으로 clamp", () => {
+    expect(buildPageWindow(-5, 5)).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it("totalPages=0 이면 빈 배열 반환 (caller 가 early return 하지만 방어)", () => {
+    expect(buildPageWindow(0, 0)).toEqual([]);
+  });
 });
