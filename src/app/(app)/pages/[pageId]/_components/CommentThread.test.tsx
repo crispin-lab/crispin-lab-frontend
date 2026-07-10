@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { asPageId, asSpaceId } from "@/lib/api/ids";
+import { asPageId, asSpaceId, asUserId } from "@/lib/api/ids";
 import { server } from "@/mocks/server";
 import { commentListBody, commentSummary } from "@/test/fixtures/comment";
 import { createQueryWrapper } from "@/test/queryWrapper";
@@ -53,6 +53,8 @@ function renderThread({ canComment = true }: { canComment?: boolean } = {}) {
       pageId={PAGE_ID}
       spaceId={SPACE_ID}
       sourceVisibility="PUBLIC"
+      spaceVisibility="PUBLIC"
+      pageAuthorId={asUserId("u_author")}
       canComment={canComment}
     />,
     { wrapper: Wrapper },

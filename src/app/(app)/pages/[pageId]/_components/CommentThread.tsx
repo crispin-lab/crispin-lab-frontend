@@ -6,8 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCommentList } from "@/hooks/useComment";
 import { COMMENT_LIST_SIZE } from "@/lib/api/comment";
 import { toUserMessage } from "@/lib/api/errors";
-import type { PageId, SpaceId } from "@/lib/api/ids";
+import type { PageId, SpaceId, UserId } from "@/lib/api/ids";
 import type { Visibility } from "@/lib/page/visibility";
+import type { SpaceVisibility } from "@/lib/space/visibility";
 import { cn } from "@/lib/utils";
 
 import { CommentComposeForm } from "./CommentComposeForm";
@@ -18,11 +19,21 @@ type Props = {
   pageId: PageId;
   spaceId: SpaceId;
   sourceVisibility: Visibility;
+  spaceVisibility: SpaceVisibility | null;
+  pageAuthorId: UserId;
   canComment: boolean;
   className?: string;
 };
 
-export function CommentThread({ pageId, spaceId, sourceVisibility, canComment, className }: Props) {
+export function CommentThread({
+  pageId,
+  spaceId,
+  sourceVisibility,
+  spaceVisibility,
+  pageAuthorId,
+  canComment,
+  className,
+}: Props) {
   // BE 의 comment list endpoint 가 auth 필수 — 비로그인 사용자에게는 호출하면 401 → "세션이 유효하지 않습니다" 노이즈.
   // canComment === false 의 한 경우가 비로그인이라 같은 게이트로 흡수.
   const query = useCommentList(pageId, { size: COMMENT_LIST_SIZE }, { enabled: canComment });
@@ -39,11 +50,15 @@ export function CommentThread({ pageId, spaceId, sourceVisibility, canComment, c
             pageId={pageId}
             spaceId={spaceId}
             sourceVisibility={sourceVisibility}
+            spaceVisibility={spaceVisibility}
+            pageAuthorId={pageAuthorId}
           />
           <CommentListBody
             pageId={pageId}
             spaceId={spaceId}
             sourceVisibility={sourceVisibility}
+            spaceVisibility={spaceVisibility}
+            pageAuthorId={pageAuthorId}
             query={query}
           />
         </>
@@ -60,11 +75,20 @@ type ListBodyProps = {
   pageId: PageId;
   spaceId: SpaceId;
   sourceVisibility: Visibility;
+  spaceVisibility: SpaceVisibility | null;
+  pageAuthorId: UserId;
   // TanStack Query 의 infinite result 타입 chain (UseInfiniteQueryResult<InfiniteData<...>, ApiError>) 을 직접 적으면 generic 인퍼런스와 충돌해 깨진다. hook 의 추론된 타입을 그대로 빌려온다.
   query: ReturnType<typeof useCommentList>;
 };
 
-function CommentListBody({ pageId, spaceId, sourceVisibility, query }: ListBodyProps) {
+function CommentListBody({
+  pageId,
+  spaceId,
+  sourceVisibility,
+  spaceVisibility,
+  pageAuthorId,
+  query,
+}: ListBodyProps) {
   if (query.isPending) {
     return <CommentListSkeleton />;
   }
@@ -95,6 +119,8 @@ function CommentListBody({ pageId, spaceId, sourceVisibility, query }: ListBodyP
             pageId={pageId}
             spaceId={spaceId}
             sourceVisibility={sourceVisibility}
+            spaceVisibility={spaceVisibility}
+            pageAuthorId={pageAuthorId}
           />
         ))}
       </ul>

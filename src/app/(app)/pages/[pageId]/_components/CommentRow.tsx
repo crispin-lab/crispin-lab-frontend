@@ -11,7 +11,7 @@ import { viewerExtensions } from "@/components/editor/extensions/viewer";
 import { UserHandleLabel } from "@/components/UserHandleLabel";
 import { useCommentDelete, useCommentEdit } from "@/hooks/useComment";
 import { toUserMessage } from "@/lib/api/errors";
-import { asCommentId, type CommentId, type PageId, type SpaceId } from "@/lib/api/ids";
+import { asCommentId, type CommentId, type PageId, type SpaceId, type UserId } from "@/lib/api/ids";
 import type { CommentSummary } from "@/lib/api/types";
 import {
   isEmptyEditorContent,
@@ -19,6 +19,7 @@ import {
   serializeEditorContent,
 } from "@/lib/editor/content";
 import type { Visibility } from "@/lib/page/visibility";
+import type { SpaceVisibility } from "@/lib/space/visibility";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -26,9 +27,18 @@ type Props = {
   pageId: PageId;
   spaceId: SpaceId;
   sourceVisibility: Visibility;
+  spaceVisibility: SpaceVisibility | null;
+  pageAuthorId: UserId;
 };
 
-export function CommentRow({ comment, pageId, spaceId, sourceVisibility }: Props) {
+export function CommentRow({
+  comment,
+  pageId,
+  spaceId,
+  sourceVisibility,
+  spaceVisibility,
+  pageAuthorId,
+}: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -73,6 +83,8 @@ export function CommentRow({ comment, pageId, spaceId, sourceVisibility }: Props
           commentId={commentId}
           spaceId={spaceId}
           sourceVisibility={sourceVisibility}
+          spaceVisibility={spaceVisibility}
+          pageAuthorId={pageAuthorId}
           initialContent={comment.content}
           onClose={() => setIsEditing(false)}
         />
@@ -121,6 +133,8 @@ type EditFormProps = {
   commentId: CommentId;
   spaceId: SpaceId;
   sourceVisibility: Visibility;
+  spaceVisibility: SpaceVisibility | null;
+  pageAuthorId: UserId;
   initialContent: string;
   onClose: () => void;
 };
@@ -130,6 +144,8 @@ function CommentEditForm({
   commentId,
   spaceId,
   sourceVisibility,
+  spaceVisibility,
+  pageAuthorId,
   initialContent,
   onClose,
 }: EditFormProps) {
@@ -150,6 +166,8 @@ function CommentEditForm({
       <CommentEditor
         spaceId={spaceId}
         sourceVisibility={sourceVisibility}
+        spaceVisibility={spaceVisibility}
+        pageAuthorId={pageAuthorId}
         initialContent={initialSerialized}
         autoFocus
         onChange={(next, empty) => {

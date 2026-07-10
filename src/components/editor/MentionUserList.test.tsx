@@ -3,7 +3,8 @@ import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { asUserId } from "@/lib/api/ids";
-import type { UserSummary } from "@/lib/api/types";
+import type { MentionCandidateSummary } from "@/lib/api/types";
+import { mentionContextFixture } from "@/lib/mention/context.fixture";
 
 import {
   MENTION_USER_LISTBOX_ID,
@@ -11,12 +12,12 @@ import {
   type MentionUserListHandle,
 } from "./MentionUserList";
 
-function user(userId: string, handle: string): UserSummary {
-  return { userId: asUserId(userId), handle, memberOfSpaceIds: [] };
+function candidate(userId: string, handle: string): MentionCandidateSummary {
+  return { userId: asUserId(userId), handle };
 }
 
-function makeItems(): UserSummary[] {
-  return [user("u_a", "alice"), user("u_b", "alice_kim"), user("u_c", "bob")];
+function makeItems(): MentionCandidateSummary[] {
+  return [candidate("u_a", "alice"), candidate("u_b", "alice_kim"), candidate("u_c", "bob")];
 }
 
 function keyEvent(key: string): { event: KeyboardEvent } {
@@ -26,16 +27,60 @@ function keyEvent(key: string): { event: KeyboardEvent } {
 describe("MentionUserList", () => {
   it("결과가 비어 있으면 안내 문구를 보여주고 어떤 키도 처리하지 않는다", () => {
     const ref = createRef<MentionUserListHandle>();
-    render(<MentionUserList ref={ref} items={[]} command={vi.fn()} />);
+    render(
+      <MentionUserList
+        ref={ref}
+        items={[]}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
+    );
 
-    expect(screen.getByText("사용자를 찾을 수 없습니다.")).toBeInTheDocument();
+    expect(screen.getByText(/찾을 수 없어요/)).toBeInTheDocument();
     expect(ref.current?.onKeyDown(keyEvent("Enter"))).toBe(false);
     expect(ref.current?.onKeyDown(keyEvent("ArrowDown"))).toBe(false);
   });
 
+  it("DRAFT 페이지에서 결과가 0건이면 초안 안내 문구를 보여준다", () => {
+    render(
+      <MentionUserList
+        items={[]}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture({ pageVisibility: "DRAFT" })}
+      />,
+    );
+
+    expect(screen.getByText("이 페이지는 초안이라 언급 대상이 없어요.")).toBeInTheDocument();
+  });
+
+  it("INTERNAL 페이지에서 결과가 0건이면 비공개 안내 문구를 보여준다", () => {
+    render(
+      <MentionUserList
+        items={[]}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture({ pageVisibility: "INTERNAL" })}
+      />,
+    );
+
+    expect(screen.getByText("이 페이지는 비공개라 언급 대상이 없어요.")).toBeInTheDocument();
+  });
+
+  it("컨텍스트가 아직 조립되지 않았으면 로딩 안내 문구를 보여준다 (fail-closed)", () => {
+    render(<MentionUserList items={[]} command={vi.fn()} mentionContext={null} />);
+
+    expect(screen.getByText("페이지 정보를 불러오고 있어요.")).toBeInTheDocument();
+  });
+
   it("처음에는 첫 항목이 선택되고 ArrowDown 으로 순환한다", () => {
     const ref = createRef<MentionUserListHandle>();
-    render(<MentionUserList ref={ref} items={makeItems()} command={vi.fn()} />);
+    render(
+      <MentionUserList
+        ref={ref}
+        items={makeItems()}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
+    );
 
     const options = screen.getAllByRole("option");
     expect(options[0]).toHaveAttribute("aria-selected", "true");
@@ -54,7 +99,14 @@ describe("MentionUserList", () => {
 
   it("ArrowUp 으로 역방향 순환한다", () => {
     const ref = createRef<MentionUserListHandle>();
-    render(<MentionUserList ref={ref} items={makeItems()} command={vi.fn()} />);
+    render(
+      <MentionUserList
+        ref={ref}
+        items={makeItems()}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
+    );
 
     act(() => {
       ref.current?.onKeyDown(keyEvent("ArrowUp"));
@@ -65,7 +117,14 @@ describe("MentionUserList", () => {
   it("Enter 가 현재 선택된 항목을 command 로 전달한다", () => {
     const ref = createRef<MentionUserListHandle>();
     const command = vi.fn();
-    render(<MentionUserList ref={ref} items={makeItems()} command={command} />);
+    render(
+      <MentionUserList
+        ref={ref}
+        items={makeItems()}
+        command={command}
+        mentionContext={mentionContextFixture()}
+      />,
+    );
 
     act(() => {
       ref.current?.onKeyDown(keyEvent("ArrowDown"));
@@ -79,7 +138,14 @@ describe("MentionUserList", () => {
 
   it("처리하지 않는 키는 false 를 반환해 상위 핸들러로 흘려보낸다", () => {
     const ref = createRef<MentionUserListHandle>();
-    render(<MentionUserList ref={ref} items={makeItems()} command={vi.fn()} />);
+    render(
+      <MentionUserList
+        ref={ref}
+        items={makeItems()}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
+    );
 
     expect(ref.current?.onKeyDown(keyEvent("Escape"))).toBe(false);
     expect(ref.current?.onKeyDown(keyEvent("a"))).toBe(false);
@@ -88,7 +154,12 @@ describe("MentionUserList", () => {
   it("items 가 바뀌면 remount key 로 selectedIndex 가 0 으로 초기화된다", () => {
     const ref = createRef<MentionUserListHandle>();
     const { rerender } = render(
-      <MentionUserList ref={ref} items={makeItems()} command={vi.fn()} />,
+      <MentionUserList
+        ref={ref}
+        items={makeItems()}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
     );
 
     act(() => {
@@ -98,13 +169,26 @@ describe("MentionUserList", () => {
     expect(screen.getAllByRole("option")[2]).toHaveAttribute("aria-selected", "true");
 
     // 검색어가 좁혀져 결과가 바뀌면 커서는 첫 항목으로 되돌아가야 한다 (사용자 관점 정합).
-    rerender(<MentionUserList ref={ref} items={[user("u_x", "xavier")]} command={vi.fn()} />);
+    rerender(
+      <MentionUserList
+        ref={ref}
+        items={[candidate("u_x", "xavier")]}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
+    );
 
     expect(screen.getAllByRole("option")[0]).toHaveAttribute("aria-selected", "true");
   });
 
   it("listbox 와 각 option 에 안정적인 id 를 부여한다 (aria-activedescendant 연결용)", () => {
-    render(<MentionUserList items={makeItems()} command={vi.fn()} />);
+    render(
+      <MentionUserList
+        items={makeItems()}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
+    );
 
     expect(screen.getByRole("listbox").id).toBe(MENTION_USER_LISTBOX_ID);
     const options = screen.getAllByRole("option");
@@ -119,6 +203,7 @@ describe("MentionUserList", () => {
       <MentionUserList
         items={makeItems()}
         command={vi.fn()}
+        mentionContext={mentionContextFixture()}
         onActiveOptionIdChange={onActiveOptionIdChange}
       />,
     );
@@ -134,6 +219,7 @@ describe("MentionUserList", () => {
         ref={ref}
         items={makeItems()}
         command={vi.fn()}
+        mentionContext={mentionContextFixture()}
         onActiveOptionIdChange={onActiveOptionIdChange}
       />,
     );
@@ -152,6 +238,7 @@ describe("MentionUserList", () => {
       <MentionUserList
         items={[]}
         command={vi.fn()}
+        mentionContext={mentionContextFixture()}
         onActiveOptionIdChange={onActiveOptionIdChange}
       />,
     );

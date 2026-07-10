@@ -3,6 +3,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 
 import type { SpaceId } from "@/lib/api/ids";
+import type { MentionContext } from "@/lib/mention/context";
 import type { Visibility } from "@/lib/page/visibility";
 
 import { editorCallout } from "./callout";
@@ -19,6 +20,7 @@ import { editorTaskList } from "./taskList";
 type EditorExtensionsOptions = {
   spaceId: SpaceId;
   getSourceVisibility?: () => Visibility;
+  getMentionContext: () => MentionContext | null;
   onRefreshAvailable?: (refresh: () => void) => void;
   onBlockMathClick?: (node: ProseMirrorNode, pos: number) => void;
   placeholder?: string;
@@ -29,6 +31,7 @@ type EditorExtensionsOptions = {
 export function editorExtensions({
   spaceId,
   getSourceVisibility,
+  getMentionContext,
   onRefreshAvailable,
   onBlockMathClick,
   placeholder,
@@ -37,7 +40,7 @@ export function editorExtensions({
     StarterKit.configure({ codeBlock: false }),
     editorCodeBlock(),
     editorPageLink({ spaceId, getSourceVisibility, onRefreshAvailable }),
-    editorMention(),
+    editorMention({ getMentionContext, onRefreshAvailable }),
     ...editorTable(),
     ...editorTaskList(),
     editorCallout,

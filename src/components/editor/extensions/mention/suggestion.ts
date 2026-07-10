@@ -1,8 +1,9 @@
 import { type Editor, ReactRenderer } from "@tiptap/react";
 import type { SuggestionOptions } from "@tiptap/suggestion";
 
-import type { UserSummary } from "@/lib/api/types";
-import { searchUsers } from "@/lib/api/user";
+import { searchMentionCandidates } from "@/lib/api/mention";
+import type { MentionCandidateResult, MentionCandidateSummary } from "@/lib/api/types";
+import type { MentionContext } from "@/lib/mention/context";
 
 import {
   MENTION_USER_LISTBOX_ID,
@@ -19,21 +20,25 @@ type ClientRectFn = (() => DOMRect | null) | null | undefined;
 type SuggestionProps = {
   editor: Editor;
   clientRect?: ClientRectFn;
-  items: UserSummary[];
+  items: MentionCandidateSummary[];
   command: (selection: MentionUserSelection) => void;
 };
 
 type DebouncedSearchDeps = {
   search: (
-    params: { query: string; size: number },
+    params: { query: string; size: number; context: MentionContext },
     signal: AbortSignal,
-  ) => Promise<{ items: UserSummary[] }>;
+  ) => Promise<MentionCandidateResult>;
+  getContext: () => MentionContext | null;
   delayMs?: number;
 };
 
-type DebouncedSearch = (query: string) => Promise<UserSummary[]>;
+type DebouncedSearch = (query: string) => Promise<MentionCandidateSummary[]>;
 
-type MentionSuggestion = Omit<SuggestionOptions<UserSummary, MentionUserSelection>, "editor">;
+type MentionSuggestion = Omit<
+  SuggestionOptions<MentionCandidateSummary, MentionUserSelection>,
+  "editor"
+>;
 
 // 빠른 입력 / IME confirm 시 직전 호출의 fetch 는 abort, debounce timer 는 clear, 대기 중인 Promise 는 빈 결과로 종료한다.
 // supersede 된 Promise 를 그대로 두면 TipTap suggestion plugin 의 `await items(...)` 가 hang 상태로 누적된다.
@@ -41,7 +46,7 @@ export function createDebouncedSearch(deps: DebouncedSearchDeps): DebouncedSearc
   const delayMs = deps.delayMs ?? DEBOUNCE_MS;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let lastController: AbortController | null = null;
-  let pendingResolve: ((items: UserSummary[]) => void) | null = null;
+  let pendingResolve: ((items: MentionCandidateSummary[]) => void) | null = null;
 
   function abortPending(): void {
     if (timer) clearTimeout(timer);
@@ -52,18 +57,24 @@ export function createDebouncedSearch(deps: DebouncedSearchDeps): DebouncedSearc
     pendingResolve = null;
   }
 
-  return function search(query: string): Promise<UserSummary[]> {
+  return function search(query: string): Promise<MentionCandidateSummary[]> {
     abortPending();
     if (query === "") return Promise.resolve([]);
+
+    const context = deps.getContext();
+    if (context === null) return Promise.resolve([]);
 
     const controller = new AbortController();
     lastController = controller;
 
-    return new Promise<UserSummary[]>((resolve) => {
+    return new Promise<MentionCandidateSummary[]>((resolve) => {
       pendingResolve = resolve;
       timer = setTimeout(async () => {
         try {
-          const result = await deps.search({ query, size: SUGGESTION_SIZE }, controller.signal);
+          const result = await deps.search(
+            { query, size: SUGGESTION_SIZE, context },
+            controller.signal,
+          );
           if (pendingResolve === resolve) {
             pendingResolve = null;
             resolve(result.items);
@@ -87,14 +98,26 @@ function positionPopover(popoverEl: HTMLDivElement | null, clientRect: ClientRec
   popoverEl.style.left = `${rect.left + window.scrollX}px`;
 }
 
+type SuggestionDeps = {
+  getMentionContext: () => MentionContext | null;
+  onRefreshAvailable?: (refresh: () => void) => void;
+};
+
 type MentionListRenderProps = {
-  items: UserSummary[];
+  items: MentionCandidateSummary[];
   command: SuggestionProps["command"];
+  mentionContext: MentionContext | null;
   onActiveOptionIdChange: (activeOptionId: string | null) => void;
 };
 
-export function createMentionSuggestion(): MentionSuggestion {
-  const debouncedSearch = createDebouncedSearch({ search: searchUsers });
+export function createMentionSuggestion({
+  getMentionContext,
+  onRefreshAvailable,
+}: SuggestionDeps): MentionSuggestion {
+  const debouncedSearch = createDebouncedSearch({
+    search: searchMentionCandidates,
+    getContext: getMentionContext,
+  });
 
   return {
     char: "@",
@@ -130,6 +153,7 @@ export function createMentionSuggestion(): MentionSuggestion {
       let popoverEl: HTMLDivElement | null = null;
       let currentRect: ClientRectFn = null;
       let editorDom: HTMLElement | null = null;
+      let lastProps: SuggestionProps | null = null;
 
       function reposition(): void {
         positionPopover(popoverEl, currentRect);
@@ -148,9 +172,20 @@ export function createMentionSuggestion(): MentionSuggestion {
         return {
           items: props.items,
           command: props.command,
+          mentionContext: getMentionContext(),
           onActiveOptionIdChange: syncActiveDescendant,
         };
       }
+
+      // visibility · pageAuthorId 가 바뀌면 상위에서 refresh 를 호출한다. 여기서는 열려 있는 popover 의
+      // 렌더 props (empty 힌트 문구가 새 pageVisibility 를 반영) 만 갱신하고, 결과 items 재fetch 는 다음
+      // keystroke 의 debouncedSearch 에 위임한다 — visibility toggle UI 는 popover-form 이라
+      // mention popover 가 열린 채 visibility 가 바뀌는 순간은 실무적으로 나타나지 않는다.
+      onRefreshAvailable?.(() => {
+        if (component != null && lastProps != null) {
+          component.updateProps(toMentionListProps(lastProps));
+        }
+      });
 
       function cleanup(): void {
         window.removeEventListener("scroll", reposition, true);
@@ -160,6 +195,7 @@ export function createMentionSuggestion(): MentionSuggestion {
         component?.destroy();
         component = null;
         currentRect = null;
+        lastProps = null;
         if (editorDom) {
           editorDom.removeAttribute("aria-activedescendant");
           editorDom.removeAttribute("aria-controls");
@@ -170,6 +206,7 @@ export function createMentionSuggestion(): MentionSuggestion {
 
       return {
         onStart: (props: SuggestionProps) => {
+          lastProps = props;
           editorDom = props.editor.view.dom;
           editorDom.setAttribute("aria-controls", MENTION_USER_LISTBOX_ID);
           editorDom.setAttribute("aria-expanded", "true");
@@ -194,6 +231,7 @@ export function createMentionSuggestion(): MentionSuggestion {
         },
 
         onUpdate: (props: SuggestionProps) => {
+          lastProps = props;
           component?.updateProps(toMentionListProps(props));
           currentRect = props.clientRect;
           reposition();

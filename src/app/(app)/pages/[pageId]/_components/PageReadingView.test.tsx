@@ -83,10 +83,10 @@ function renderView({
 }
 
 describe("PageReadingView", () => {
-  it("CommentThread 에 pageId / spaceId / sourceVisibility / canComment 가 정확히 전달된다", () => {
+  it("CommentThread 에 pageId / spaceId / visibility 조합과 pageAuthorId 가 정확히 전달된다", () => {
     commentThreadSpy.mockReset();
-    const page = makePage({ canComment: true, visibility: "PUBLIC" });
-    const space = makeSpace({ spaceId: "s_42" });
+    const page = makePage({ canComment: true, visibility: "PUBLIC", authorId: "u_author" });
+    const space = makeSpace({ spaceId: "s_42", visibility: "INTERNAL" });
     renderView({ page, space, isAuthenticated: true });
 
     expect(commentThreadSpy).toHaveBeenCalledTimes(1);
@@ -94,6 +94,8 @@ describe("PageReadingView", () => {
     expect(props.pageId).toBe("p_1");
     expect(props.spaceId).toBe("s_42");
     expect(props.sourceVisibility).toBe("PUBLIC");
+    expect(props.spaceVisibility).toBe("INTERNAL");
+    expect(props.pageAuthorId).toBe("u_author");
     expect(props.canComment).toBe(true);
   });
 

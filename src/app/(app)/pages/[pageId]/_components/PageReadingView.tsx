@@ -8,9 +8,10 @@ import { PageBreadcrumb } from "@/components/page/PageBreadcrumb";
 import { SpaceChip } from "@/components/page/SpaceChip";
 import { VisibilityBadge } from "@/components/page/VisibilityBadge";
 import { UserHandleLabel } from "@/components/UserHandleLabel";
-import { asSpaceId, type PageId } from "@/lib/api/ids";
+import { asSpaceId, asUserId, type PageId } from "@/lib/api/ids";
 import type { Page, Space } from "@/lib/api/types";
 import { parseEditorContent } from "@/lib/editor/content";
+import { isSpaceVisibility } from "@/lib/space/visibility";
 import { cn } from "@/lib/utils";
 
 import { CodeBlockCopyMounter } from "./CodeBlockCopyMounter";
@@ -150,6 +151,8 @@ export function PageReadingView({
             pageId={pageId}
             spaceId={asSpaceId(space.spaceId)}
             sourceVisibility={page.visibility}
+            spaceVisibility={isSpaceVisibility(space.visibility) ? space.visibility : null}
+            pageAuthorId={asUserId(page.authorId)}
             canComment={page.canComment}
             className="mt-12"
           />
