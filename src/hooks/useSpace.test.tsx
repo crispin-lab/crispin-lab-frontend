@@ -48,6 +48,7 @@ describe("useSpaceDetail", () => {
       description: "설명",
       updatedAt: "2026-06-01T00:00:00Z",
       canWrite: true,
+      canEdit: true,
     };
     server.use(http.get("*/api/v1/spaces/s_1", () => HttpResponse.json(body)));
 
@@ -138,6 +139,7 @@ describe("useSpaceDelete", () => {
       description: "설명",
       updatedAt: "2026-06-01T00:00:00Z",
       canWrite: true,
+      canEdit: true,
     };
     let spaceDetailHits = 0;
     let spaceListHits = 0;

@@ -54,6 +54,7 @@ function makeSpace(overrides: Partial<Space> = {}): Space {
     description: "공개 위키 설명",
     updatedAt: "2026-06-01T00:00:00Z",
     canWrite: true,
+    canEdit: true,
     ...overrides,
   };
 }
