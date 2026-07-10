@@ -18,7 +18,7 @@ import {
   usePageList,
   usePageMove,
   usePageReorder,
-  usePageUpdate,
+  usePageEdit,
 } from "./usePage";
 
 function pageSummary(overrides: Partial<PageSummary> = {}): PageSummary {
@@ -74,7 +74,7 @@ describe("usePageList", () => {
   });
 });
 
-describe("usePageUpdate", () => {
+describe("usePageEdit", () => {
   it("성공 시 해당 detail 과 모든 list 가 refetch 되어 새 값으로 갱신된다", async () => {
     const initialBody = pageBody({ title: "이전" });
     const updatedBody = pageBody({ title: "이후" });
@@ -109,7 +109,7 @@ describe("usePageUpdate", () => {
       () => ({
         detail: usePage(asPageId("p_1")),
         list: usePageList({ spaceId: asSpaceId("s_1") }),
-        update: usePageUpdate(),
+        edit: usePageEdit(),
       }),
       { wrapper: Wrapper },
     );
@@ -118,12 +118,12 @@ describe("usePageUpdate", () => {
     await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
     expect(result.current.detail.data?.title).toBe("이전");
 
-    result.current.update.mutate({
+    result.current.edit.mutate({
       pageId: asPageId("p_1"),
       body: { title: "이후", content: "본문" },
     });
 
-    await waitFor(() => expect(result.current.update.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.edit.isSuccess).toBe(true));
     await waitFor(() => expect(result.current.detail.data?.title).toBe("이후"));
     await waitFor(() => expect(result.current.list.data?.items[0]?.title).toBe("이후"));
     expect(detailHits).toBe(2);
@@ -147,21 +147,21 @@ describe("usePageUpdate", () => {
     const { result } = renderHook(
       () => ({
         detail: usePage(asPageId("p_1")),
-        update: usePageUpdate(),
+        edit: usePageEdit(),
       }),
       { wrapper: Wrapper },
     );
 
     await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
 
-    result.current.update.mutate({
+    result.current.edit.mutate({
       pageId: asPageId("p_1"),
       body: { title: "충돌", content: "x" },
     });
 
-    await waitFor(() => expect(result.current.update.isError).toBe(true));
-    expect(result.current.update.error).toBeInstanceOf(ApiError);
-    expect(result.current.update.error?.code).toBe("PAGE_LOCKED");
+    await waitFor(() => expect(result.current.edit.isError).toBe(true));
+    expect(result.current.edit.error).toBeInstanceOf(ApiError);
+    expect(result.current.edit.error?.code).toBe("PAGE_LOCKED");
     expect(result.current.detail.data?.title).toBe("원본");
   });
 });

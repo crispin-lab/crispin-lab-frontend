@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/v1/mention-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * mention 후보 조회
+         * @description mention 후보 조회
+         */
+        get: operations["Mention mention \uD6C4\uBCF4 \uC870\uD68C \uC815\uC0C1 \uC870\uD68C \uC2DC 200 \uACFC \uBCFC \uC218 \uC788\uB294 \uC0AC\uC6A9\uC790 \uBAA9\uB85D\uC744 \uBC18\uD658\uD55C\uB2E4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/pages": {
         parameters: {
             query?: never;
@@ -16,6 +36,26 @@ export interface paths {
          * @description 페이지 검색
          */
         get: operations["Page \uD398\uC774\uC9C0 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/spaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 스페이스 목록 조회
+         * @description 스페이스 목록 조회
+         */
+        get: operations["Space \uC2A4\uD398\uC774\uC2A4 \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uC870\uB9BD\uB41C \uBAA9\uB85D\uC744 \uBC18\uD658\uD55C\uB2E4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -100,6 +140,26 @@ export interface paths {
          * @description 페이지 인바운드 링크 목록 조회
          */
         get: operations["Page \uD398\uC774\uC9C0 \uC778\uBC14\uC6B4\uB4DC \uB9C1\uD06C \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/spaces/{spaceId}/audit-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 스페이스 감사 이력 조회
+         * @description 스페이스 감사 이력 조회
+         */
+        get: operations["SpaceAudit \uC2A4\uD398\uC774\uC2A4 \uAC10\uC0AC \uC774\uB825 \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uCD5C\uC2E0\uC21C \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -197,6 +257,165 @@ export interface components {
             /** @description 최근 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
+        /** SpaceAuditEntryListResponse */
+        SpaceAuditEntryListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 감사 이력 목록＊ */
+            items: {
+                /** @description ⎯ 발생 시각 (ISO)＊ */
+                createdAt: string;
+                /** @description ⎯ 변경 주체 사용자 식별자＊ */
+                actorUserId: string;
+                /** @description ⎯ 변경 유형 (REGISTERED / EDITED / DELETED)＊ */
+                action: string;
+                /** @description ⎯ 감사 이력 식별자＊ */
+                id: string;
+                /** @description ⎯ 변경 요약 JSON 문자열＊ */
+                changeSummary: string;
+                /** @description ⎯ 변경 주체 handle (조회 miss 시 빈 문자열)＊ */
+                actorHandle: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
+        /** PageSearchResponse */
+        PageSearchResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 검색 결과 목록＊ */
+            items: {
+                /** @description ⎯ 소속 스페이스 식별자＊ */
+                spaceId: string;
+                /**
+                 * @description ⎯ 페이지 공개 범위＊
+                 * @enum {string}
+                 */
+                visibility: "DRAFT" | "INTERNAL" | "MEMBER" | "PUBLIC";
+                /** @description ⎯ 부모 페이지 식별자 */
+                parentPageId?: string | null;
+                /** @description ⎯ 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
+                displayOrder: number;
+                /** @description ⎯ 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
+                authorHandle: string;
+                /** @description ⎯ 제목＊ */
+                title: string;
+                /** @description ⎯ 작성자 식별자＊ */
+                authorId: string;
+                /** @description ⎯ 페이지 식별자＊ */
+                pageId: string;
+                /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
+                updatedAt: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
+        /** MentionCandidateGetResponse */
+        MentionCandidateGetResponse: {
+            /** @description mention 가능한 사용자 목록＊ */
+            items: {
+                /** @description ⎯ 사용자 이름＊ */
+                handle: string;
+                /** @description ⎯ 사용자 식별자＊ */
+                userId: string;
+            }[];
+        };
+        /** SpaceMemberListResponse */
+        SpaceMemberListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 멤버 목록＊ */
+            items: {
+                /** @description ⎯ 스페이스 식별자＊ */
+                spaceId: string;
+                /** @description ⎯ 역할＊ */
+                role: string;
+                /** @description ⎯ 가입 시각 (ISO)＊ */
+                joinedAt: string;
+                /** @description ⎯ 사용자 handle (사용자 조회 miss 시 빈 문자열)＊ */
+                handle: string;
+                /** @description ⎯ 멤버 식별자＊ */
+                spaceMemberId: string;
+                /** @description ⎯ 사용자 식별자＊ */
+                userId: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
+        /** UserSearchResponse */
+        UserSearchResponse: {
+            /** @description 매칭된 사용자 목록＊ */
+            items: {
+                /** @description ⎯ 사용자가 소속된 스페이스 식별자 목록 (검색자가 볼 수 있는 스페이스만 노출, SpaceId 오름차순, 없으면 빈 배열)＊ */
+                memberOfSpaceIds: (Record<string, never> | boolean | string | number)[];
+                /** @description ⎯ 요청 spaceId 에 이미 참여 중인지 여부. spaceId 미지정 또는 검색자가 해당 스페이스를 볼 수 없으면 null. */
+                alreadyMember?: boolean | null;
+                /** @description ⎯ 사용자 이름＊ */
+                handle: string;
+                /** @description ⎯ 사용자 식별자＊ */
+                userId: string;
+            }[];
+        };
+        /** PageInboundLinkListResponse */
+        PageInboundLinkListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 인바운드 링크 source 목록＊ */
+            items: {
+                /** @description ⎯ source 페이지 소속 스페이스＊ */
+                spaceId: string;
+                /** @description ⎯ PUBLIC / INTERNAL / DRAFT＊ */
+                visibility: string;
+                /** @description ⎯ 부모 페이지 식별자 */
+                parentPageId?: string | null;
+                /** @description ⎯ 스페이스 내 정렬 순서＊ */
+                displayOrder: number;
+                /** @description ⎯ 작성자 핸들 — 알 수 없으면 빈 문자열＊ */
+                authorHandle: string;
+                /** @description ⎯ source 페이지 제목＊ */
+                title: string;
+                /** @description ⎯ 작성자 식별자＊ */
+                authorId: string;
+                /** @description ⎯ source 페이지 식별자＊ */
+                pageId: string;
+                /** @description ⎯ source 페이지 최종 수정 시각 (ISO)＊ */
+                updatedAt: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
         /** CommentEditRequest */
         CommentEditRequest: {
             /** @description 수정된 본문 (TipTap JSON)＊ */
@@ -252,8 +471,8 @@ export interface components {
             /** @description 댓글 본문 (TipTap JSON)＊ */
             content: string;
         };
-        /** PageSearchResponse */
-        PageSearchResponse: {
+        /** SpaceListResponse */
+        SpaceListResponse: {
             /** @description 페이지당 항목 수＊ */
             size: number;
             /** @description 결과 비어 있음 여부＊ */
@@ -264,76 +483,46 @@ export interface components {
             hasNext: boolean;
             /** @description 현재 페이지＊ */
             page: number;
-            /** @description 검색 결과 목록＊ */
+            /** @description 스페이스 목록＊ */
             items: {
-                /** @description ⎯ 소속 스페이스 식별자＊ */
+                /** @description ⎯ 스페이스 생성 시각 (ISO)＊ */
+                createdAt: string;
+                /** @description ⎯ 스페이스 식별자＊ */
                 spaceId: string;
+                /** @description ⎯ viewer 가 볼 수 있는 페이지 수 (lookup 실패 시 0)＊ */
+                pageCount: number;
                 /**
-                 * @description ⎯ 페이지 공개 범위＊
+                 * @description ⎯ 현재 viewer 의 role (Anonymous / 비-멤버는 null)
+                 * @enum {string|null}
+                 */
+                myRole?: "OWNER" | "MEMBER" | "VIEWER" | null;
+                /**
+                 * @description ⎯ 스페이스 공개 범위＊
                  * @enum {string}
                  */
-                visibility: "DRAFT" | "INTERNAL" | "MEMBER" | "PUBLIC";
-                /** @description ⎯ 부모 페이지 식별자 */
-                parentPageId?: string | null;
-                /** @description ⎯ 같은 부모 내 표시 순서 (0 부터 시작, 작을수록 앞)＊ */
-                displayOrder: number;
-                /** @description ⎯ 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
-                authorHandle: string;
-                /** @description ⎯ 제목＊ */
-                title: string;
-                /** @description ⎯ 작성자 식별자＊ */
-                authorId: string;
-                /** @description ⎯ 페이지 식별자＊ */
-                pageId: string;
-                /** @description ⎯ 최근 갱신 시각 (ISO)＊ */
+                visibility: "INTERNAL" | "PUBLIC";
+                /** @description ⎯ 스페이스 멤버 수 (lookup 실패 시 0)＊ */
+                memberCount: number;
+                /** @description ⎯ 스페이스 이름＊ */
+                name: string;
+                /** @description ⎯ 스페이스 설명＊ */
+                description: string;
+                /** @description ⎯ MAX(space.updatedAt, latestPage.updatedAt), 페이지 없으면 space.updatedAt (ISO)＊ */
+                lastActivityAt: string;
+                /** @description ⎯ viewer 가 볼 수 있는 최근 편집 페이지 (없거나 lookup 실패 시 null) */
+                latestPage?: {
+                    /** @description ⎯ ⎯ 페이지 제목＊ */
+                    title: string;
+                    /** @description ⎯ ⎯ 페이지 식별자＊ */
+                    pageId: string;
+                    /** @description ⎯ ⎯ 페이지 편집 시각 (ISO)＊ */
+                    updatedAt: string;
+                };
+                /** @description ⎯ 스페이스 갱신 시각 (ISO)＊ */
                 updatedAt: string;
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
-        };
-        /** SpaceMemberListResponse */
-        SpaceMemberListResponse: {
-            /** @description 페이지당 항목 수＊ */
-            size: number;
-            /** @description 결과 비어 있음 여부＊ */
-            isEmpty: boolean;
-            /** @description 총 페이지 수＊ */
-            totalPages: number;
-            /** @description 다음 페이지 존재 여부＊ */
-            hasNext: boolean;
-            /** @description 현재 페이지＊ */
-            page: number;
-            /** @description 멤버 목록＊ */
-            items: {
-                /** @description ⎯ 스페이스 식별자＊ */
-                spaceId: string;
-                /** @description ⎯ 역할＊ */
-                role: string;
-                /** @description ⎯ 가입 시각 (ISO)＊ */
-                joinedAt: string;
-                /** @description ⎯ 사용자 handle (사용자 조회 miss 시 빈 문자열)＊ */
-                handle: string;
-                /** @description ⎯ 멤버 식별자＊ */
-                spaceMemberId: string;
-                /** @description ⎯ 사용자 식별자＊ */
-                userId: string;
-            }[];
-            /** @description 총 항목 수＊ */
-            totalElements: number;
-        };
-        /** UserSearchResponse */
-        UserSearchResponse: {
-            /** @description 매칭된 사용자 목록＊ */
-            items: {
-                /** @description ⎯ 사용자가 소속된 스페이스 식별자 목록 (검색자가 볼 수 있는 스페이스만 노출, SpaceId 오름차순, 없으면 빈 배열)＊ */
-                memberOfSpaceIds: (Record<string, never> | boolean | string | number)[];
-                /** @description ⎯ 요청 spaceId 에 이미 참여 중인지 여부. spaceId 미지정 또는 검색자가 해당 스페이스를 볼 수 없으면 null. */
-                alreadyMember?: boolean | null;
-                /** @description ⎯ 사용자 이름＊ */
-                handle: string;
-                /** @description ⎯ 사용자 식별자＊ */
-                userId: string;
-            }[];
         };
         /** CommentRegisterResponse */
         CommentRegisterResponse: {
@@ -341,42 +530,6 @@ export interface components {
             commentId: string;
             /** @description 작성자 사용자 이름 (삭제된 사용자의 경우 빈 문자열)＊ */
             authorHandle: string;
-        };
-        /** PageInboundLinkListResponse */
-        PageInboundLinkListResponse: {
-            /** @description 페이지당 항목 수＊ */
-            size: number;
-            /** @description 결과 비어 있음 여부＊ */
-            isEmpty: boolean;
-            /** @description 총 페이지 수＊ */
-            totalPages: number;
-            /** @description 다음 페이지 존재 여부＊ */
-            hasNext: boolean;
-            /** @description 현재 페이지＊ */
-            page: number;
-            /** @description 인바운드 링크 source 목록＊ */
-            items: {
-                /** @description ⎯ source 페이지 소속 스페이스＊ */
-                spaceId: string;
-                /** @description ⎯ PUBLIC / INTERNAL / DRAFT＊ */
-                visibility: string;
-                /** @description ⎯ 부모 페이지 식별자 */
-                parentPageId?: string | null;
-                /** @description ⎯ 스페이스 내 정렬 순서＊ */
-                displayOrder: number;
-                /** @description ⎯ 작성자 핸들 — 알 수 없으면 빈 문자열＊ */
-                authorHandle: string;
-                /** @description ⎯ source 페이지 제목＊ */
-                title: string;
-                /** @description ⎯ 작성자 식별자＊ */
-                authorId: string;
-                /** @description ⎯ source 페이지 식별자＊ */
-                pageId: string;
-                /** @description ⎯ source 페이지 최종 수정 시각 (ISO)＊ */
-                updatedAt: string;
-            }[];
-            /** @description 총 항목 수＊ */
-            totalElements: number;
         };
         /** CommentGetResponse */
         CommentGetResponse: {
@@ -406,6 +559,45 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    "Mention mention \uD6C4\uBCF4 \uC870\uD68C \uC815\uC0C1 \uC870\uD68C \uC2DC 200 \uACFC \uBCFC \uC218 \uC788\uB294 \uC0AC\uC6A9\uC790 \uBAA9\uB85D\uC744 \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query: {
+                /** @description 검색어 (handle 부분 일치, 대소문자 무시, 1~30자) */
+                query: string;
+                /** @description 결과 수 (1 ~ 20, 기본값 10) */
+                size?: string;
+                /** @description 편집 중인 페이지가 속한 스페이스 식별자 */
+                spaceId: string;
+                /** @description 스페이스 공개 범위 (INTERNAL, PUBLIC). 편집 중 미저장 상태를 반영하기 위해 클라이언트가 명시. */
+                spaceVisibility: string;
+                /** @description 페이지 공개 범위 (DRAFT, INTERNAL, MEMBER, PUBLIC). 편집 중 미저장 상태를 반영하기 위해 클라이언트가 명시. */
+                pageVisibility: string;
+                /** @description 편집 중인 페이지 작성자 식별자 */
+                pageAuthorId: string;
+            };
+            header: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentionCandidateGetResponse"];
+                };
+            };
+        };
+    };
     "Page \uD398\uC774\uC9C0 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4": {
         parameters: {
             query?: {
@@ -447,6 +639,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageSearchResponse"];
+                };
+            };
+        };
+    };
+    "Space \uC2A4\uD398\uC774\uC2A4 \uBAA9\uB85D \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uC870\uB9BD\uB41C \uBAA9\uB85D\uC744 \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: {
+                /** @description 페이지 */
+                page?: string;
+                /** @description 페이지당 항목 수 */
+                size?: string;
+            };
+            header?: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceListResponse"];
                 };
             };
         };
@@ -606,6 +829,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageInboundLinkListResponse"];
+                };
+            };
+        };
+    };
+    "SpaceAudit \uC2A4\uD398\uC774\uC2A4 \uAC10\uC0AC \uC774\uB825 \uC870\uD68C \uC815\uC0C1 \uC751\uB2F5 \uC2DC 200 \uACFC \uCD5C\uC2E0\uC21C \uD398\uC774\uC9C0\uB97C \uBC18\uD658\uD55C\uB2E4": {
+        parameters: {
+            query?: {
+                /** @description 페이지 */
+                page?: string;
+                /** @description 페이지당 항목 수 */
+                size?: string;
+            };
+            header: {
+                /**
+                 * @description 세션 토큰 (`Bearer {token}`)
+                 * @example Bearer 100:USER
+                 */
+                Authorization: string;
+            };
+            path: {
+                spaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceAuditEntryListResponse"];
                 };
             };
         };

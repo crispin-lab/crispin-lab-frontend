@@ -3,7 +3,7 @@
 import type { JSONContent } from "@tiptap/react";
 import { useEffect, useRef, type ReactNode } from "react";
 
-import { usePageUpdate } from "@/hooks/usePage";
+import { usePageEdit } from "@/hooks/usePage";
 import type { PageId } from "@/lib/api/ids";
 import { serializeEditorContent } from "@/lib/editor/content";
 import type { Visibility } from "@/lib/page/visibility";
@@ -30,12 +30,12 @@ export function TaskItemSaveMounter({
   const ref = useRef<HTMLDivElement>(null);
   const contentRef = useRef<JSONContent>(initialContent);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const updateMutation = usePageUpdate();
+  const editMutation = usePageEdit();
   // mutation 객체는 매 render 마다 새 ref — deps 에 넣으면 listener 가 매번 떼었다 붙는다.
   // ref 갱신은 별도 effect (render 중 ref mutation 회피 — react-hooks/refs).
-  const mutateRef = useRef(updateMutation.mutate);
+  const mutateRef = useRef(editMutation.mutate);
   useEffect(() => {
-    mutateRef.current = updateMutation.mutate;
+    mutateRef.current = editMutation.mutate;
   });
 
   useEffect(() => {

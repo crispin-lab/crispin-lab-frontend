@@ -80,6 +80,7 @@ export function SpaceDetailView({ spaceId, isAuthenticated, initialSpace }: Prop
   }
 
   const canWrite = spaceQuery.data?.canWrite ?? false;
+  const canEdit = spaceQuery.data?.canEdit ?? false;
 
   const meUserId = meQuery.data?.userId;
   const viewerMember =
@@ -101,6 +102,7 @@ export function SpaceDetailView({ spaceId, isAuthenticated, initialSpace }: Prop
         isDeleting={isDeleting}
         onDeleteRequest={() => setDeleteOpen(true)}
         isAuthenticated={isAuthenticated}
+        canEdit={canEdit}
         canManageMembers={canManageMembers}
         isViewerRoleResolved={isViewerRoleResolved}
       />
@@ -128,6 +130,7 @@ function SpaceMetaSection({
   isDeleting,
   onDeleteRequest,
   isAuthenticated,
+  canEdit,
   canManageMembers,
   isViewerRoleResolved,
 }: {
@@ -136,9 +139,11 @@ function SpaceMetaSection({
   isDeleting: boolean;
   onDeleteRequest: () => void;
   isAuthenticated: boolean;
+  canEdit: boolean;
   canManageMembers: boolean;
   isViewerRoleResolved: boolean;
 }) {
+  const router = useRouter();
   if (query.isPending) {
     return <SpaceMetaSkeleton />;
   }
@@ -189,6 +194,13 @@ function SpaceMetaSection({
                 }
               />
               <DropdownMenuContent align="end">
+                {canEdit && (
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/spaces/${encodeURIComponent(spaceId)}/edit`)}
+                  >
+                    스페이스 편집
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem variant="destructive" onClick={onDeleteRequest}>
                   스페이스 삭제
                 </DropdownMenuItem>

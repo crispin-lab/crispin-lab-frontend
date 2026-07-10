@@ -18,7 +18,7 @@ import { VisibilitySelectPopover } from "@/components/page/VisibilitySelectPopov
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePage, usePageDelete, usePageUpdate } from "@/hooks/usePage";
+import { usePage, usePageDelete, usePageEdit } from "@/hooks/usePage";
 import { useSubmitShortcut } from "@/hooks/useSubmitShortcut";
 import { ApiError } from "@/lib/api/client";
 import { asPageId, type PageId, type SpaceId, asSpaceId } from "@/lib/api/ids";
@@ -134,7 +134,7 @@ function PageEditForm({
   // localStorage 에서 발견한 미저장 변경 — 사용자가 명시 선택할 때까지 폼은 원본 그대로.
   const [pendingDraft, setPendingDraft] = useState<PageEditDraft | null>(null);
 
-  const { mutate, isPending } = usePageUpdate();
+  const { mutate, isPending } = usePageEdit();
   const { mutate: deleteMutate, isPending: isDeleting } = usePageDelete();
   // 미도착·에러는 cascade 미적용 — BE 가 결국 거부하므로 silently degrade.
   const { data: space } = useQuery(spaceDetailOptions(spaceId));
