@@ -3,9 +3,10 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useRef, useState } from "react";
 
-import type { SpaceId } from "@/lib/api/ids";
+import type { SpaceId, UserId } from "@/lib/api/ids";
 import { parseEditorContent, serializeEditorContent } from "@/lib/editor/content";
 import type { Visibility } from "@/lib/page/visibility";
+import type { SpaceVisibility } from "@/lib/space/visibility";
 import { cn } from "@/lib/utils";
 
 import { EditorBubbleMenu } from "./BubbleMenu";
@@ -16,6 +17,8 @@ import { TableToolbar } from "./TableToolbar";
 type Props = {
   spaceId: SpaceId;
   sourceVisibility: Visibility;
+  spaceVisibility: SpaceVisibility | null;
+  pageAuthorId: UserId | null;
   initialContent?: string;
   onChange?: (content: string) => void;
   editable?: boolean;
@@ -26,21 +29,34 @@ type Props = {
 export function Editor({
   spaceId,
   sourceVisibility,
+  spaceVisibility,
+  pageAuthorId,
   initialContent,
   onChange,
   editable = true,
   placeholder,
   className,
 }: Props) {
-  // useEditor 의 extensions 는 mount 시 한 번만 capture 된다. parent 의 visibility 변경이 같은 editor 인스턴스에
+  // useEditor 의 extensions 는 mount 시 한 번만 capture 된다. parent 의 context 변경이 같은 editor 인스턴스에
   // 반영되도록 ref 로 우회한다 — 재마운트 시 본문 손실 회피.
   const sourceVisibilityRef = useRef<Visibility>(sourceVisibility);
-  // ref 갱신만으로는 이미 열린 popup 의 props 가 stale — suggestion 이 등록한 refresh 도 같이 호출한다.
-  const refreshSuggestionRef = useRef<(() => void) | null>(null);
+  const spaceVisibilityRef = useRef<SpaceVisibility | null>(spaceVisibility);
+  const pageAuthorIdRef = useRef<UserId | null>(pageAuthorId);
+  // pageLink · mention 두 확장이 각자 refresh 를 등록 — 마지막 호출자가 덮어쓰지 않도록 Set 으로 누적.
+  // Set 인 이유: 재초기화 흐름에서 같은 callback 이 중복 등록되어도 O(1) 로 dedup 되고, 세 번째 확장이 늘어나도 상한이 자연.
+  const refreshSubscribersRef = useRef<Set<() => void>>(new Set());
   useEffect(() => {
     sourceVisibilityRef.current = sourceVisibility;
-    refreshSuggestionRef.current?.();
-  }, [sourceVisibility]);
+    spaceVisibilityRef.current = spaceVisibility;
+    pageAuthorIdRef.current = pageAuthorId;
+    refreshSubscribersRef.current.forEach((fn) => fn());
+  }, [sourceVisibility, spaceVisibility, pageAuthorId]);
+  // Editor unmount 시 subscribers 도 명시적으로 비운다 — useRef GC 에 암묵 의존하지 않게.
+  // ref.current 는 mount 동안 안정하지만 cleanup 함수가 참조하면 lint 가 stale ref 경고를 낼 수 있어 snapshot.
+  useEffect(() => {
+    const subs = refreshSubscribersRef.current;
+    return () => subs.clear();
+  }, []);
 
   const [latexEditTarget, setLatexEditTarget] = useState<LatexEditTarget | null>(null);
 
@@ -50,8 +66,19 @@ export function Editor({
     extensions: editorExtensions({
       spaceId,
       getSourceVisibility: () => sourceVisibilityRef.current,
+      getMentionContext: () => {
+        const authorId = pageAuthorIdRef.current;
+        const spaceVis = spaceVisibilityRef.current;
+        if (authorId === null || spaceVis === null) return null;
+        return {
+          spaceId,
+          spaceVisibility: spaceVis,
+          pageVisibility: sourceVisibilityRef.current,
+          pageAuthorId: authorId,
+        };
+      },
       onRefreshAvailable: (refresh) => {
-        refreshSuggestionRef.current = refresh;
+        refreshSubscribersRef.current.add(refresh);
       },
       onBlockMathClick: (node, pos) => {
         // blockMath schema 가 latex 을 string 으로 강제 — as 안전.

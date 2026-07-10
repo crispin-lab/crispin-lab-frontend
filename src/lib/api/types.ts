@@ -75,6 +75,17 @@ export type UserSearchResult = {
   items: UserSummary[];
 };
 
+// mention 후보 응답 shape. UserSummary 와 달리 memberOfSpaceIds 를 포함하지 않는다 —
+// 백엔드가 이미 볼 수 있는 사용자만 반환하므로 소속 스페이스 필터 정보가 불필요.
+export type MentionCandidateSummary = {
+  userId: UserId;
+  handle: string;
+};
+
+export type MentionCandidateResult = {
+  items: MentionCandidateSummary[];
+};
+
 export type Role = "USER" | "ADMIN";
 
 /*

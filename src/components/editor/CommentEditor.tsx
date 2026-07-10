@@ -7,9 +7,10 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useRef } from "react";
 
-import type { SpaceId } from "@/lib/api/ids";
+import type { SpaceId, UserId } from "@/lib/api/ids";
 import { parseEditorContent, serializeEditorContent } from "@/lib/editor/content";
 import type { Visibility } from "@/lib/page/visibility";
+import type { SpaceVisibility } from "@/lib/space/visibility";
 import { cn } from "@/lib/utils";
 
 import { editorMention } from "./extensions/mention";
@@ -18,6 +19,8 @@ import { editorPageLink } from "./extensions/pageLink";
 type Props = {
   spaceId: SpaceId;
   sourceVisibility: Visibility;
+  spaceVisibility: SpaceVisibility | null;
+  pageAuthorId: UserId | null;
   initialContent?: string;
   onChange?: (content: string, isEmpty: boolean) => void;
   onSubmitShortcut?: () => void;
@@ -83,6 +86,8 @@ export function isSuggestionActive(view: EditorView): boolean {
 export function CommentEditor({
   spaceId,
   sourceVisibility,
+  spaceVisibility,
+  pageAuthorId,
   initialContent,
   onChange,
   onSubmitShortcut,
@@ -92,11 +97,23 @@ export function CommentEditor({
   className,
 }: Props) {
   const sourceVisibilityRef = useRef<Visibility>(sourceVisibility);
-  const refreshSuggestionRef = useRef<(() => void) | null>(null);
+  const spaceVisibilityRef = useRef<SpaceVisibility | null>(spaceVisibility);
+  const pageAuthorIdRef = useRef<UserId | null>(pageAuthorId);
+  // pageLink · mention 두 확장이 각자 refresh 를 등록 — 마지막 호출자가 덮어쓰지 않도록 Set 으로 누적.
+  // Set 인 이유: 재초기화 흐름에서 같은 callback 이 중복 등록되어도 O(1) 로 dedup 되고, 세 번째 확장이 늘어나도 상한이 자연.
+  const refreshSubscribersRef = useRef<Set<() => void>>(new Set());
   useEffect(() => {
     sourceVisibilityRef.current = sourceVisibility;
-    refreshSuggestionRef.current?.();
-  }, [sourceVisibility]);
+    spaceVisibilityRef.current = spaceVisibility;
+    pageAuthorIdRef.current = pageAuthorId;
+    refreshSubscribersRef.current.forEach((fn) => fn());
+  }, [sourceVisibility, spaceVisibility, pageAuthorId]);
+  // CommentEditor unmount 시 subscribers 도 명시적으로 비운다 — useRef GC 에 암묵 의존하지 않게.
+  // ref.current 는 mount 동안 안정하지만 cleanup 함수가 참조하면 lint 가 stale ref 경고를 낼 수 있어 snapshot.
+  useEffect(() => {
+    const subs = refreshSubscribersRef.current;
+    return () => subs.clear();
+  }, []);
 
   const onSubmitShortcutRef = useRef(onSubmitShortcut);
   useEffect(() => {
@@ -112,10 +129,26 @@ export function CommentEditor({
         spaceId,
         getSourceVisibility: () => sourceVisibilityRef.current,
         onRefreshAvailable: (refresh) => {
-          refreshSuggestionRef.current = refresh;
+          refreshSubscribersRef.current.add(refresh);
         },
       }),
-      editorMention(),
+      // eslint-disable-next-line react-hooks/refs
+      editorMention({
+        getMentionContext: () => {
+          const authorId = pageAuthorIdRef.current;
+          const spaceVis = spaceVisibilityRef.current;
+          if (authorId === null || spaceVis === null) return null;
+          return {
+            spaceId,
+            spaceVisibility: spaceVis,
+            pageVisibility: sourceVisibilityRef.current,
+            pageAuthorId: authorId,
+          };
+        },
+        onRefreshAvailable: (refresh) => {
+          refreshSubscribersRef.current.add(refresh);
+        },
+      }),
       ...(placeholder !== undefined ? [Placeholder.configure({ placeholder })] : []),
     ],
     content: parseEditorContent(initialContent),

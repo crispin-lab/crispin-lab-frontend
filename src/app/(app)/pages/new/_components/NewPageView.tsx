@@ -14,9 +14,10 @@ import { VisibilitySelectPopover } from "@/components/page/VisibilitySelectPopov
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useMe } from "@/hooks/useAuth";
 import { usePageCreate } from "@/hooks/usePage";
 import { useSubmitShortcut } from "@/hooks/useSubmitShortcut";
-import { type SpaceId } from "@/lib/api/ids";
+import { asUserId, type SpaceId } from "@/lib/api/ids";
 import { spaceDetailOptions } from "@/lib/api/queries/space";
 import { emptyEditorContent, serializeEditorContent } from "@/lib/editor/content";
 import { clearPageDraft, type PageDraft, readPageDraft, writePageDraft } from "@/lib/page/draft";
@@ -39,6 +40,9 @@ export function NewPageView({ spaceId }: Props) {
   const { data: space } = useQuery(spaceDetailOptions(spaceId));
   const spaceVisibility =
     space != null && isSpaceVisibility(space.visibility) ? space.visibility : null;
+  // 새 페이지의 저자는 자기 자신 — me 로드 전에는 fail-closed (mention popover 는 빈 결과).
+  const { data: me } = useMe();
+  const pageAuthorId = me != null ? asUserId(me.userId) : null;
 
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<Visibility>(DEFAULT_VISIBILITY);
@@ -257,6 +261,8 @@ export function NewPageView({ spaceId }: Props) {
         editable={!isPending}
         onChange={handleContentChange}
         sourceVisibility={visibility}
+        spaceVisibility={spaceVisibility}
+        pageAuthorId={pageAuthorId}
         placeholder="본문을 입력해 주세요. [[ 로 다른 페이지를 연결할 수 있습니다."
       />
 

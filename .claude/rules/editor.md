@@ -102,6 +102,16 @@ TipTap 의 `@tiptap/extension-mention` 을 베이스로 한 custom node. trigger
 - 같은 query 가 반복되면 TanStack Query 의 `staleTime: 30_000` 으로 캐시 (`api-client.md` 의 staleTime 가이드).
 - 결과가 0 개일 때 "새 페이지 만들기" 옵션 — 도입 시점에 결정. 본 룰 문서에 추가 절로.
 
+## suggestion 확장 · 상위 Editor 간 컨텍스트 계약
+
+pageLink · mention 두 suggestion 확장이 편집 컨텍스트 (`sourceVisibility`, `mentionContext` 등) 를 상위 Editor 로부터 받아 popover 결과에 반영한다. Editor 는 확장 factory 에 아래 세 종류의 hook 을 넘긴다.
+
+- **`getSourceVisibility?: () => Visibility`** — 편집 중 미저장 visibility 를 popover 안내 문구 · pageLink cascade 검증 등에 흘려보낸다. Editor 는 `useRef` 로 최신 값을 보관하고 함수 참조는 mount 동안 안정 (재렌더에 흔들리지 않음).
+- **`getMentionContext: () => MentionContext | null`** (mention 전용) — mention 후보 조회에 필요한 `{spaceId, spaceVisibility, pageVisibility, pageAuthorId}`. 하나라도 미로드면 `null` 을 반환하고, 확장은 fetch 자체를 건너뛴다 (fail-closed). 진입점 조립 정합은 `src/lib/mention/context.ts` 의 `MentionContext` 타입이 단일 출처.
+- **`onRefreshAvailable?: (refresh: () => void) => void`** — 확장이 popover 를 다시 그릴 수 있는 refresh callback 을 등록. Editor 는 이 callback 들을 **Set** 에 누적 (`Array.push` 는 마지막 호출자가 이전 것을 덮어써 회귀) 하고, `sourceVisibility` / `spaceVisibility` / `pageAuthorId` 중 하나라도 바뀌면 Set 전체를 순회해 호출한다. Editor unmount 시 useEffect cleanup 이 Set 을 명시적으로 비운다 — useRef GC 에 암묵 의존하지 않는다.
+
+**세 번째 suggestion 확장이 추가될 때**: 같은 세 hook 이름을 그대로 사용한다. 새 옵션명을 짓지 말 것 — Set 이 여러 확장 간 계약을 단일 진입점으로 잡는다. hook 시그니처가 필요해지면 본 절부터 갱신한다.
+
 ## 페이지 본문 저장 / 불러오기
 
 ### 저장

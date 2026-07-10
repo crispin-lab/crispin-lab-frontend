@@ -21,7 +21,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePage, usePageDelete, usePageUpdate } from "@/hooks/usePage";
 import { useSubmitShortcut } from "@/hooks/useSubmitShortcut";
 import { ApiError } from "@/lib/api/client";
-import { asPageId, type PageId, type SpaceId, asSpaceId } from "@/lib/api/ids";
+import {
+  asPageId,
+  asUserId,
+  type PageId,
+  type SpaceId,
+  asSpaceId,
+  type UserId,
+} from "@/lib/api/ids";
 import { toUserMessage } from "@/lib/api/errors";
 import { spaceDetailOptions } from "@/lib/api/queries/space";
 import type { Page } from "@/lib/api/types";
@@ -81,6 +88,7 @@ export function PageEditView({ pageId, initialPage }: Props) {
       initialContent={page.content}
       initialVisibility={initialVisibility}
       spaceId={asSpaceId(page.spaceId)}
+      pageAuthorId={asUserId(page.authorId)}
       parentPageId={page.parentPageId != null ? asPageId(page.parentPageId) : null}
       ancestors={page.ancestors}
       currentVersion={page.currentVersion}
@@ -95,6 +103,7 @@ type FormProps = {
   initialContent: string;
   initialVisibility: Visibility;
   spaceId: SpaceId;
+  pageAuthorId: UserId;
   parentPageId: PageId | null;
   ancestors: Page["ancestors"];
   currentVersion: number;
@@ -107,6 +116,7 @@ function PageEditForm({
   initialContent,
   initialVisibility,
   spaceId,
+  pageAuthorId,
   parentPageId,
   ancestors,
   currentVersion,
@@ -310,6 +320,8 @@ function PageEditForm({
         initialContent={appliedInitialContent}
         editable={!busy}
         sourceVisibility={visibility}
+        spaceVisibility={spaceVisibility}
+        pageAuthorId={pageAuthorId}
         onChange={handleContentChange}
         placeholder="본문을 입력해 주세요. [[ 로 다른 페이지를 연결할 수 있습니다."
       />

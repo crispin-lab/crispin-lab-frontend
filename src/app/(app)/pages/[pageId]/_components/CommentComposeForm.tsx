@@ -6,18 +6,28 @@ import { Button } from "@/components/ui/button";
 import { CommentEditor } from "@/components/editor/CommentEditor";
 import { useCommentRegister } from "@/hooks/useComment";
 import { toUserMessage } from "@/lib/api/errors";
-import type { PageId, SpaceId } from "@/lib/api/ids";
+import type { PageId, SpaceId, UserId } from "@/lib/api/ids";
 import type { Visibility } from "@/lib/page/visibility";
+import type { SpaceVisibility } from "@/lib/space/visibility";
 import { cn } from "@/lib/utils";
 
 type Props = {
   pageId: PageId;
   spaceId: SpaceId;
   sourceVisibility: Visibility;
+  spaceVisibility: SpaceVisibility | null;
+  pageAuthorId: UserId;
   className?: string;
 };
 
-export function CommentComposeForm({ pageId, spaceId, sourceVisibility, className }: Props) {
+export function CommentComposeForm({
+  pageId,
+  spaceId,
+  sourceVisibility,
+  spaceVisibility,
+  pageAuthorId,
+  className,
+}: Props) {
   const [content, setContent] = useState<string>("");
   const [isEmpty, setIsEmpty] = useState<boolean>(true);
   // editorKey 로 mount 를 강제 reset — 등록 성공 후 controlled state 만 비우면 ProseMirror 의 내부 doc 이 유지된다.
@@ -50,6 +60,8 @@ export function CommentComposeForm({ pageId, spaceId, sourceVisibility, classNam
         key={editorKey}
         spaceId={spaceId}
         sourceVisibility={sourceVisibility}
+        spaceVisibility={spaceVisibility}
+        pageAuthorId={pageAuthorId}
         placeholder="댓글을 남겨 보세요."
         onChange={(next, empty) => {
           setContent(next);
