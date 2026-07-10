@@ -463,6 +463,13 @@ export interface components {
             /** @description 본문 (위키링크 [[...]] 추출 대상)＊ */
             content: string;
         };
+        /** TagRegisterRequest */
+        TagRegisterRequest: {
+            /** @description 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 태그 이름＊ */
+            name: string;
+        };
         /** PageTagListResponse */
         PageTagListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -488,13 +495,6 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
-        };
-        /** TagRegisterRequest */
-        TagRegisterRequest: {
-            /** @description 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 태그 이름＊ */
-            name: string;
         };
         /** PageGetResponse */
         PageGetResponse: {
@@ -687,25 +687,6 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
-        /** SpaceGetResponse */
-        SpaceGetResponse: {
-            /** @description 생성 시각 (ISO)＊ */
-            createdAt: string;
-            /** @description 스페이스 식별자＊ */
-            spaceId: string;
-            /** @description 공개 범위＊ */
-            visibility: string;
-            /** @description viewer 의 본 스페이스 내 역할 (OWNER / MEMBER / VIEWER). 비-스페이스멤버 · 비로그인 · ADMIN → null (ADMIN 진입점은 별도 시그널로 판정) */
-            viewerRole?: string | null;
-            /** @description 이름＊ */
-            name: string;
-            /** @description 설명＊ */
-            description: string;
-            /** @description viewer 가 본 스페이스에 페이지를 작성할 수 있는지 여부 (ADMIN / OWNER / MEMBER → true, VIEWER · 비멤버 · 비로그인 → false)＊ */
-            canWrite: boolean;
-            /** @description 최근 갱신 시각 (ISO)＊ */
-            updatedAt: string;
-        };
         /** SpaceMemberJoinRequest */
         SpaceMemberJoinRequest: {
             /** @description 부여할 역할 */
@@ -729,6 +710,11 @@ export interface components {
             /** @description 댓글 본문＊ */
             body: string;
         };
+        /** SpaceMemberRoleChangeRequest */
+        SpaceMemberRoleChangeRequest: {
+            /** @description 새 역할＊ */
+            role: string;
+        };
         /** TagPopularityListResponse */
         TagPopularityListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -751,10 +737,26 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
-        /** SpaceMemberRoleChangeRequest */
-        SpaceMemberRoleChangeRequest: {
-            /** @description 새 역할＊ */
-            role: string;
+        /** SpaceGetResponse */
+        SpaceGetResponse: {
+            /** @description 생성 시각 (ISO)＊ */
+            createdAt: string;
+            /** @description 스페이스 식별자＊ */
+            spaceId: string;
+            /** @description 공개 범위＊ */
+            visibility: string;
+            /** @description viewer 의 본 스페이스 내 역할 (OWNER / MEMBER / VIEWER). 비-스페이스멤버 · 비로그인 · ADMIN → null (ADMIN 진입점은 별도 시그널로 판정) */
+            viewerRole?: string | null;
+            /** @description viewer 가 본 스페이스의 메타데이터 (이름 / 설명 / 공개범위) 를 편집할 수 있는지 여부 (ADMIN / OWNER → true, MEMBER · VIEWER · 비멤버 · 비로그인 → false)＊ */
+            canEdit: boolean;
+            /** @description 이름＊ */
+            name: string;
+            /** @description 설명＊ */
+            description: string;
+            /** @description viewer 가 본 스페이스에 페이지를 작성할 수 있는지 여부 (ADMIN / OWNER / MEMBER → true, VIEWER · 비멤버 · 비로그인 → false)＊ */
+            canWrite: boolean;
+            /** @description 최근 갱신 시각 (ISO)＊ */
+            updatedAt: string;
         };
         /** SpaceRegisterResponse */
         SpaceRegisterResponse: {

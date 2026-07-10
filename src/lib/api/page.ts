@@ -4,12 +4,12 @@ import type {
   Page,
   PageCreateRequest,
   PageCreateResult,
+  PageEditRequest,
+  PageEditResult,
   PageInboundLinkListResult,
   PageMoveRequest,
   PageReorderRequest,
   PageSearchResult,
-  PageUpdateRequest,
-  PageUpdateResult,
 } from "./types";
 
 export type PageSort = "CREATED_AT" | "UPDATED_AT" | "RELEVANCE" | "TREE";
@@ -64,8 +64,8 @@ export function searchPages(
   return apiFetch<PageSearchResult>(path, { signal });
 }
 
-export function updatePage(pageId: PageId, body: PageUpdateRequest): Promise<PageUpdateResult> {
-  return apiFetch<PageUpdateResult>(`/api/v1/pages/${encodeURIComponent(pageId)}`, {
+export function editPage(pageId: PageId, body: PageEditRequest): Promise<PageEditResult> {
+  return apiFetch<PageEditResult>(`/api/v1/pages/${encodeURIComponent(pageId)}`, {
     method: "PUT",
     body,
   });

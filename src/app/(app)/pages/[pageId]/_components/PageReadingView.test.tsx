@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { asPageId } from "@/lib/api/ids";
 import type { Page, Space } from "@/lib/api/types";
 import { pageBody } from "@/test/fixtures/page";
+import { spaceBody } from "@/test/fixtures/space";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
 vi.mock("next/navigation", () => ({
@@ -46,16 +47,12 @@ function makePage(overrides: Partial<Page> = {}): Page {
 }
 
 function makeSpace(overrides: Partial<Space> = {}): Space {
-  return {
-    createdAt: "2026-01-01T00:00:00Z",
-    spaceId: "s_1",
-    visibility: "PUBLIC",
+  return spaceBody({
     name: "공개 위키",
     description: "공개 위키 설명",
     updatedAt: "2026-06-01T00:00:00Z",
-    canWrite: true,
     ...overrides,
-  };
+  });
 }
 
 function renderView({
@@ -71,7 +68,7 @@ function renderView({
   canEdit?: boolean;
 }) {
   const value = page ?? makePage();
-  // TaskItemSaveMounter 가 usePageUpdate (mutation hook) 을 사용 — QueryClientProvider 필수.
+  // TaskItemSaveMounter 가 usePageEdit (mutation hook) 을 사용 — QueryClientProvider 필수.
   const { Wrapper } = createQueryWrapper();
   return render(
     <PageReadingView

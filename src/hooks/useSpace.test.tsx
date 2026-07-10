@@ -6,12 +6,19 @@ import { ApiError } from "@/lib/api/client";
 import { asSpaceId } from "@/lib/api/ids";
 import { spaceKeys } from "@/lib/api/queries/space";
 import { server } from "@/mocks/server";
+import { spaceBody } from "@/test/fixtures/space";
 import { createQueryWrapper } from "@/test/queryWrapper";
 
-import type { Space, SpaceListResult, SpaceSummary } from "@/lib/api/types";
+import type { SpaceListResult, SpaceSummary } from "@/lib/api/types";
 
 import { usePageList } from "./usePage";
-import { useSpaceCreate, useSpaceDelete, useSpaceDetail, useSpaceList } from "./useSpace";
+import {
+  useSpaceCreate,
+  useSpaceDelete,
+  useSpaceDetail,
+  useSpaceEdit,
+  useSpaceList,
+} from "./useSpace";
 
 function listBody(items: SpaceSummary[]): SpaceListResult {
   return {
@@ -40,15 +47,7 @@ describe("useSpaceList", () => {
 
 describe("useSpaceDetail", () => {
   it("주어진 spaceId 의 상세를 그대로 노출한다", async () => {
-    const body: Space = {
-      createdAt: "2026-01-01T00:00:00Z",
-      spaceId: "s_1",
-      visibility: "PUBLIC",
-      name: "공개 위키",
-      description: "설명",
-      updatedAt: "2026-06-01T00:00:00Z",
-      canWrite: true,
-    };
+    const body = spaceBody({ name: "공개 위키", description: "설명" });
     server.use(http.get("*/api/v1/spaces/s_1", () => HttpResponse.json(body)));
 
     const { Wrapper } = createQueryWrapper();
@@ -130,15 +129,7 @@ describe("useSpaceCreate", () => {
 
 describe("useSpaceDelete", () => {
   it("성공 시 list 들은 refetch 되고 스페이스 detail 은 stale 표시만 (active observer 의 refetch → 404 race 방지)", async () => {
-    const spaceBody: Space = {
-      createdAt: "2026-01-01T00:00:00Z",
-      spaceId: "s_1",
-      visibility: "PUBLIC",
-      name: "삭제 대상",
-      description: "설명",
-      updatedAt: "2026-06-01T00:00:00Z",
-      canWrite: true,
-    };
+    const detailBody = spaceBody({ name: "삭제 대상", description: "설명" });
     let spaceDetailHits = 0;
     let spaceListHits = 0;
     let pageListHits = 0;
@@ -146,7 +137,7 @@ describe("useSpaceDelete", () => {
     server.use(
       http.get("*/api/v1/spaces/s_1", () => {
         spaceDetailHits += 1;
-        return HttpResponse.json(spaceBody);
+        return HttpResponse.json(detailBody);
       }),
       http.get("*/api/v1/spaces", () => {
         spaceListHits += 1;
@@ -214,5 +205,85 @@ describe("useSpaceDelete", () => {
     expect(result.current.error).toBeInstanceOf(ApiError);
     expect(result.current.error?.code).toBe("FORBIDDEN");
     expect(result.current.error?.message).toBe("삭제 권한이 없습니다.");
+  });
+});
+
+describe("useSpaceEdit", () => {
+  const editedResponse = {
+    spaceId: "s_1",
+    name: "새 이름",
+    description: "새 설명",
+    visibility: "INTERNAL",
+    updatedAt: "2026-07-01T00:00:00Z",
+  };
+
+  it("성공 시 detail + lists 가 refetch 된다 (invalidate 검증)", async () => {
+    const spaceBodyResp = spaceBody({
+      name: "원래 이름",
+      description: "원래 설명",
+      canEdit: true,
+    });
+    let detailHits = 0;
+    let listHits = 0;
+    let putBody: unknown = null;
+    server.use(
+      http.get("*/api/v1/spaces/s_1", () => {
+        detailHits += 1;
+        return HttpResponse.json(spaceBodyResp);
+      }),
+      http.get("*/api/v1/spaces", () => {
+        listHits += 1;
+        return HttpResponse.json(listBody([]));
+      }),
+      http.put("*/api/v1/spaces/s_1", async ({ request }) => {
+        putBody = await request.json();
+        return HttpResponse.json(editedResponse);
+      }),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const { result } = renderHook(
+      () => ({
+        detail: useSpaceDetail(asSpaceId("s_1")),
+        list: useSpaceList(),
+        edit: useSpaceEdit(asSpaceId("s_1")),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+    expect(detailHits).toBe(1);
+    expect(listHits).toBe(1);
+
+    result.current.edit.mutate({ name: "새 이름" });
+
+    await waitFor(() => expect(result.current.edit.isSuccess).toBe(true));
+    expect(putBody).toEqual({ name: "새 이름" });
+    await waitFor(() => expect(detailHits).toBe(2));
+    await waitFor(() => expect(listHits).toBe(2));
+  });
+
+  it("실패 시 ApiError 가 error 로 전달된다", async () => {
+    server.use(
+      http.put("*/api/v1/spaces/s_1", () =>
+        HttpResponse.json(
+          {
+            code: "SPACE_EDIT_REQUEST_INVALID",
+            message: "수정할 필드를 최소 1개 이상 입력해 주세요.",
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    const { Wrapper } = createQueryWrapper();
+    const { result } = renderHook(() => useSpaceEdit(asSpaceId("s_1")), { wrapper: Wrapper });
+
+    result.current.mutate({});
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(ApiError);
+    expect(result.current.error?.code).toBe("SPACE_EDIT_REQUEST_INVALID");
   });
 });

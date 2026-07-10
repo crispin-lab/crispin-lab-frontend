@@ -11,11 +11,13 @@ import { type ApiError } from "@/lib/api/client";
 import type { SpaceId } from "@/lib/api/ids";
 import { pageKeys } from "@/lib/api/queries/page";
 import { spaceDetailOptions, spaceKeys, spaceListOptions } from "@/lib/api/queries/space";
-import { createSpace, deleteSpace, type SpaceListParams } from "@/lib/api/space";
+import { createSpace, deleteSpace, editSpace, type SpaceListParams } from "@/lib/api/space";
 import type {
   Space,
   SpaceCreateRequest,
   SpaceCreateResult,
+  SpaceEditRequest,
+  SpaceEditResult,
   SpaceListResult,
 } from "@/lib/api/types";
 
@@ -44,6 +46,19 @@ export function useSpaceCreate(): UseMutationResult<
   return useMutation({
     mutationFn: (body) => createSpace(body),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: spaceKeys.lists() });
+    },
+  });
+}
+
+export function useSpaceEdit(
+  spaceId: SpaceId,
+): UseMutationResult<SpaceEditResult, ApiError, SpaceEditRequest> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body) => editSpace(spaceId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: spaceKeys.detail(spaceId) });
       queryClient.invalidateQueries({ queryKey: spaceKeys.lists() });
     },
   });
