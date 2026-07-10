@@ -348,6 +348,54 @@ describe("SpaceDetailView", () => {
     expect(screen.queryByRole("button", { name: "첫 페이지 만들기" })).not.toBeInTheDocument();
   });
 
+  describe("LAB-172 · 편집 이력 진입 액션", () => {
+    it("canEdit 이면 ⋯ 더보기 안에 '편집 이력' 링크가 audit-log 로 노출된다 (편집 이력 → 삭제 순)", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canEdit: true })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const user = userEvent.setup();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await user.click(screen.getByRole("button", { name: "더보기" }));
+
+      const auditLink = await screen.findByRole("menuitem", { name: "편집 이력" });
+      expect(auditLink).toHaveAttribute("href", `/spaces/${SPACE_ID_RAW}/audit-log`);
+
+      // 순서 검증 — 편집 이력이 스페이스 삭제보다 위.
+      const menuItems = screen.getAllByRole("menuitem");
+      const auditIndex = menuItems.findIndex((item) => item.textContent === "편집 이력");
+      const deleteIndex = menuItems.findIndex((item) => item.textContent === "스페이스 삭제");
+      expect(auditIndex).toBeGreaterThanOrEqual(0);
+      expect(deleteIndex).toBeGreaterThan(auditIndex);
+    });
+
+    it("canEdit 이 false 이면 '편집 이력' 액션이 노출되지 않는다", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canEdit: false })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      const user = userEvent.setup();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await user.click(screen.getByRole("button", { name: "더보기" }));
+
+      // menu 는 열렸지만 편집 이력 항목은 없어야 한다.
+      expect(await screen.findByRole("menuitem", { name: "스페이스 삭제" })).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "편집 이력" })).not.toBeInTheDocument();
+    });
+  });
+
   describe("LAB-95 · 멤버 관리 진입점", () => {
     it("OWNER 시점에는 '멤버' 진입점 버튼이 노출된다", async () => {
       server.use(

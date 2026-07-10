@@ -13,7 +13,8 @@ type UserSchemas = UserComponentsType["schemas"];
 
 // PageGetting endpoint 는 BFF (lab-composition) 로 이관 — canEdit / canComment / ancestors 는 composition 응답에만 포함.
 export type Page = CompositionSchemas["PageGetResponse"];
-export type PageSearchResult = PageSchemas["PageSearchResponse"];
+// Page 검색·인바운드 링크·Space 목록 endpoint 도 lab-composition 으로 이관 (LAB-175 등). mutation 계약은 lab-space 그대로.
+export type PageSearchResult = CompositionSchemas["PageSearchResponse"];
 export type PageSummary = PageSearchResult["items"][number];
 export type PageCreateRequest = PageSchemas["PageRegisterRequest"];
 export type PageCreateResult = PageSchemas["PageRegisterResponse"];
@@ -21,11 +22,11 @@ export type PageEditRequest = PageSchemas["PageEditRequest"];
 export type PageEditResult = PageSchemas["PageEditResponse"];
 export type PageMoveRequest = PageSchemas["PageMoveRequest"];
 export type PageReorderRequest = PageSchemas["PageReorderRequest"];
-export type PageInboundLinkListResult = PageSchemas["PageInboundLinkListResponse"];
+export type PageInboundLinkListResult = CompositionSchemas["PageInboundLinkListResponse"];
 export type PageInboundLink = PageInboundLinkListResult["items"][number];
 
 export type Space = PageSchemas["SpaceGetResponse"];
-export type SpaceListResult = PageSchemas["SpaceListResponse"];
+export type SpaceListResult = CompositionSchemas["SpaceListResponse"];
 export type SpaceSummary = SpaceListResult["items"][number];
 export type SpaceCreateRequest = PageSchemas["SpaceRegisterRequest"];
 export type SpaceCreateResult = PageSchemas["SpaceRegisterResponse"];
@@ -55,6 +56,10 @@ export type TagRegisterResult = PageSchemas["TagRegisterResponse"];
 export type PageTagListResult = PageSchemas["PageTagListResponse"];
 export type PageTag = PageTagListResult["items"][number];
 export type PageTagAttachRequest = PageSchemas["PageTagAttachRequest"];
+
+export type SpaceAuditEntryListResult = CompositionSchemas["SpaceAuditEntryListResponse"];
+export type SpaceAuditEntry = SpaceAuditEntryListResult["items"][number];
+export type SpaceAuditAction = "REGISTERED" | "EDITED" | "DELETED";
 
 export type CommentListResult = CompositionSchemas["CommentListResponse"];
 export type CommentSummary = CommentListResult["items"][number];
