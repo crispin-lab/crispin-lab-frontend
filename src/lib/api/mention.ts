@@ -1,7 +1,8 @@
+import type { MentionContext } from "@/lib/mention/context";
+
 import { apiFetch } from "./client";
 import { asUserId } from "./ids";
 import type { CompositionComponents, MentionCandidateResult } from "./types";
-import type { MentionContext } from "@/lib/mention/context";
 
 export type MentionSearchParams = {
   query: string;

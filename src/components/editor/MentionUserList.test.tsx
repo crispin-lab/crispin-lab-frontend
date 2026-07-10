@@ -2,9 +2,9 @@ import { act, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { asSpaceId, asUserId } from "@/lib/api/ids";
+import { asUserId } from "@/lib/api/ids";
 import type { MentionCandidateSummary } from "@/lib/api/types";
-import type { MentionContext } from "@/lib/mention/context";
+import { mentionContextFixture } from "@/lib/mention/context.fixture";
 
 import {
   MENTION_USER_LISTBOX_ID,
@@ -20,16 +20,6 @@ function makeItems(): MentionCandidateSummary[] {
   return [candidate("u_a", "alice"), candidate("u_b", "alice_kim"), candidate("u_c", "bob")];
 }
 
-function contextFixture(overrides: Partial<MentionContext> = {}): MentionContext {
-  return {
-    spaceId: asSpaceId("s_1"),
-    spaceVisibility: "PUBLIC",
-    pageVisibility: "PUBLIC",
-    pageAuthorId: asUserId("u_author"),
-    ...overrides,
-  };
-}
-
 function keyEvent(key: string): { event: KeyboardEvent } {
   return { event: new KeyboardEvent("keydown", { key }) };
 }
@@ -38,7 +28,12 @@ describe("MentionUserList", () => {
   it("결과가 비어 있으면 안내 문구를 보여주고 어떤 키도 처리하지 않는다", () => {
     const ref = createRef<MentionUserListHandle>();
     render(
-      <MentionUserList ref={ref} items={[]} command={vi.fn()} mentionContext={contextFixture()} />,
+      <MentionUserList
+        ref={ref}
+        items={[]}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
     );
 
     expect(screen.getByText(/찾을 수 없어요/)).toBeInTheDocument();
@@ -51,7 +46,7 @@ describe("MentionUserList", () => {
       <MentionUserList
         items={[]}
         command={vi.fn()}
-        mentionContext={contextFixture({ pageVisibility: "DRAFT" })}
+        mentionContext={mentionContextFixture({ pageVisibility: "DRAFT" })}
       />,
     );
 
@@ -63,7 +58,7 @@ describe("MentionUserList", () => {
       <MentionUserList
         items={[]}
         command={vi.fn()}
-        mentionContext={contextFixture({ pageVisibility: "INTERNAL" })}
+        mentionContext={mentionContextFixture({ pageVisibility: "INTERNAL" })}
       />,
     );
 
@@ -83,7 +78,7 @@ describe("MentionUserList", () => {
         ref={ref}
         items={makeItems()}
         command={vi.fn()}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
       />,
     );
 
@@ -109,7 +104,7 @@ describe("MentionUserList", () => {
         ref={ref}
         items={makeItems()}
         command={vi.fn()}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
       />,
     );
 
@@ -127,7 +122,7 @@ describe("MentionUserList", () => {
         ref={ref}
         items={makeItems()}
         command={command}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
       />,
     );
 
@@ -148,7 +143,7 @@ describe("MentionUserList", () => {
         ref={ref}
         items={makeItems()}
         command={vi.fn()}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
       />,
     );
 
@@ -163,7 +158,7 @@ describe("MentionUserList", () => {
         ref={ref}
         items={makeItems()}
         command={vi.fn()}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
       />,
     );
 
@@ -179,7 +174,7 @@ describe("MentionUserList", () => {
         ref={ref}
         items={[candidate("u_x", "xavier")]}
         command={vi.fn()}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
       />,
     );
 
@@ -188,7 +183,11 @@ describe("MentionUserList", () => {
 
   it("listbox 와 각 option 에 안정적인 id 를 부여한다 (aria-activedescendant 연결용)", () => {
     render(
-      <MentionUserList items={makeItems()} command={vi.fn()} mentionContext={contextFixture()} />,
+      <MentionUserList
+        items={makeItems()}
+        command={vi.fn()}
+        mentionContext={mentionContextFixture()}
+      />,
     );
 
     expect(screen.getByRole("listbox").id).toBe(MENTION_USER_LISTBOX_ID);
@@ -204,7 +203,7 @@ describe("MentionUserList", () => {
       <MentionUserList
         items={makeItems()}
         command={vi.fn()}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
         onActiveOptionIdChange={onActiveOptionIdChange}
       />,
     );
@@ -220,7 +219,7 @@ describe("MentionUserList", () => {
         ref={ref}
         items={makeItems()}
         command={vi.fn()}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
         onActiveOptionIdChange={onActiveOptionIdChange}
       />,
     );
@@ -239,7 +238,7 @@ describe("MentionUserList", () => {
       <MentionUserList
         items={[]}
         command={vi.fn()}
-        mentionContext={contextFixture()}
+        mentionContext={mentionContextFixture()}
         onActiveOptionIdChange={onActiveOptionIdChange}
       />,
     );

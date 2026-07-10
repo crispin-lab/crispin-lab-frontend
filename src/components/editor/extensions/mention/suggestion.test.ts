@@ -1,23 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { asSpaceId, asUserId } from "@/lib/api/ids";
+import { asUserId } from "@/lib/api/ids";
 import type { MentionCandidateResult, MentionCandidateSummary } from "@/lib/api/types";
 import type { MentionContext } from "@/lib/mention/context";
+import { mentionContextFixture } from "@/lib/mention/context.fixture";
 
 import { createDebouncedSearch } from "./suggestion";
 
 function candidate(userId: string, handle: string): MentionCandidateSummary {
   return { userId: asUserId(userId), handle };
-}
-
-function contextFixture(overrides: Partial<MentionContext> = {}): MentionContext {
-  return {
-    spaceId: asSpaceId("s_1"),
-    spaceVisibility: "PUBLIC",
-    pageVisibility: "PUBLIC",
-    pageAuthorId: asUserId("u_author"),
-    ...overrides,
-  };
 }
 
 beforeEach(() => {
@@ -33,7 +24,7 @@ describe("createDebouncedSearch", () => {
     const search = vi.fn();
     const debounced = createDebouncedSearch({
       search,
-      getContext: () => contextFixture(),
+      getContext: () => mentionContextFixture(),
       delayMs: 50,
     });
 
@@ -58,7 +49,7 @@ describe("createDebouncedSearch", () => {
   it("정상 호출은 delay 후 결과를 resolve 한다", async () => {
     const items = [candidate("u_a", "alice"), candidate("u_b", "alice_kim")];
     const search = vi.fn().mockResolvedValue({ items });
-    const context = contextFixture();
+    const context = mentionContextFixture();
     const debounced = createDebouncedSearch({
       search,
       getContext: () => context,
@@ -82,7 +73,7 @@ describe("createDebouncedSearch", () => {
     const search = vi.fn().mockResolvedValue({ items: [candidate("u_a", "alice")] });
     const debounced = createDebouncedSearch({
       search,
-      getContext: () => contextFixture(),
+      getContext: () => mentionContextFixture(),
       delayMs: 50,
     });
 
@@ -109,7 +100,7 @@ describe("createDebouncedSearch", () => {
     );
     const debounced = createDebouncedSearch({
       search,
-      getContext: () => contextFixture(),
+      getContext: () => mentionContextFixture(),
       delayMs: 50,
     });
 
@@ -130,7 +121,7 @@ describe("createDebouncedSearch", () => {
     const search = vi.fn().mockRejectedValue(new Error("network"));
     const debounced = createDebouncedSearch({
       search,
-      getContext: () => contextFixture(),
+      getContext: () => mentionContextFixture(),
       delayMs: 50,
     });
 
@@ -143,7 +134,7 @@ describe("createDebouncedSearch", () => {
     const search = vi.fn().mockResolvedValue({ items: [] });
     const debounced = createDebouncedSearch({
       search,
-      getContext: () => contextFixture(),
+      getContext: () => mentionContextFixture(),
       delayMs: 50,
     });
 
@@ -158,14 +149,14 @@ describe("createDebouncedSearch", () => {
 
   it("context 가 재호출마다 새로 읽혀 최신 visibility 로 fetch 한다", async () => {
     const search = vi.fn().mockResolvedValue({ items: [] });
-    let ctx: MentionContext = contextFixture({ pageVisibility: "PUBLIC" });
+    let ctx: MentionContext = mentionContextFixture({ pageVisibility: "PUBLIC" });
     const debounced = createDebouncedSearch({
       search,
       getContext: () => ctx,
       delayMs: 50,
     });
 
-    ctx = contextFixture({ pageVisibility: "DRAFT" });
+    ctx = mentionContextFixture({ pageVisibility: "DRAFT" });
     const promise = debounced("al");
     await vi.advanceTimersByTimeAsync(50);
     await promise;

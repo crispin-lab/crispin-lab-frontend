@@ -1,21 +1,11 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 
+import { mentionContextFixture } from "@/lib/mention/context.fixture";
 import { server } from "@/mocks/server";
 
-import { asSpaceId, asUserId } from "./ids";
+import { asUserId } from "./ids";
 import { searchMentionCandidates } from "./mention";
-import type { MentionContext } from "@/lib/mention/context";
-
-function context(overrides: Partial<MentionContext> = {}): MentionContext {
-  return {
-    spaceId: asSpaceId("s_1"),
-    spaceVisibility: "PUBLIC",
-    pageVisibility: "PUBLIC",
-    pageAuthorId: asUserId("u_author"),
-    ...overrides,
-  };
-}
 
 describe("searchMentionCandidates", () => {
   it("GET /api/v1/mention-candidates 를 편집 컨텍스트 query 와 함께 호출한다", async () => {
@@ -35,7 +25,7 @@ describe("searchMentionCandidates", () => {
     const result = await searchMentionCandidates({
       query: "al",
       size: 8,
-      context: context({ pageVisibility: "INTERNAL" }),
+      context: mentionContextFixture({ pageVisibility: "INTERNAL" }),
     });
 
     expect(result.items).toHaveLength(2);
@@ -57,7 +47,7 @@ describe("searchMentionCandidates", () => {
       }),
     );
 
-    await searchMentionCandidates({ query: "al", context: context() });
+    await searchMentionCandidates({ query: "al", context: mentionContextFixture() });
 
     expect(capturedUrl?.searchParams.has("size")).toBe(false);
   });
@@ -69,7 +59,7 @@ describe("searchMentionCandidates", () => {
       ),
     );
 
-    const result = await searchMentionCandidates({ query: "al", context: context() });
+    const result = await searchMentionCandidates({ query: "al", context: mentionContextFixture() });
     // asUserId 가 lift 한 값이라 UserId branded 타입으로 다른 UserId 와 비교 가능.
     expect(result.items[0].userId).toBe(asUserId("u_lift"));
   });
