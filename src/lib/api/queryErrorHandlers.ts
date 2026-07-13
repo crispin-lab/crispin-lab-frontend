@@ -1,8 +1,17 @@
+import type { Mutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { ApiError } from "@/lib/api/client";
 import { toUserMessage } from "@/lib/api/errors";
 import { redirectToLogin } from "@/lib/auth/redirect";
+
+declare module "@tanstack/react-query" {
+  interface Register {
+    mutationMeta: {
+      silent?: boolean;
+    };
+  }
+}
 
 function isInvalidSession(error: unknown): boolean {
   return error instanceof ApiError && error.status === 401 && error.code === "INVALID_SESSION";
@@ -14,10 +23,17 @@ export function handleQueryError(error: unknown): void {
   void error;
 }
 
-export function handleMutationError(error: unknown): void {
+// 401 은 세션 만료 신호라 silent 여부와 무관하게 항상 redirect — silent 뮤테이션이라도 만료된 세션은 그대로 두면 이후 사용자 액션이 모두 실패.
+export function handleMutationError(
+  error: unknown,
+  _variables: unknown,
+  _context: unknown,
+  mutation: Mutation<unknown, unknown, unknown, unknown>,
+): void {
   if (isInvalidSession(error)) {
     redirectToLogin();
     return;
   }
+  if (mutation.meta?.silent === true) return;
   toast.error(toUserMessage(error));
 }

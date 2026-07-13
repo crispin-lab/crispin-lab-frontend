@@ -3,7 +3,7 @@
 import { MoreHorizontal, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type UseQueryResult } from "@tanstack/react-query";
 
 import { FormattedTime } from "@/components/common/FormattedTime";
@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/hooks/useAuth";
 import { useSpaceDelete, useSpaceDetail } from "@/hooks/useSpace";
 import { useSpaceMemberList } from "@/hooks/useSpaceMember";
+import { useSpaceVisitRecord } from "@/hooks/useSpaceVisitRecord";
 import { usePageList } from "@/hooks/usePage";
 import { ApiError } from "@/lib/api/client";
 import { toUserMessage } from "@/lib/api/errors";
@@ -60,6 +61,13 @@ export function SpaceDetailView({ spaceId, isAuthenticated, initialSpace }: Prop
   );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { mutate: deleteMutate, isPending: isDeleting } = useSpaceDelete();
+  const { mutate: recordVisit } = useSpaceVisitRecord();
+
+  // 백엔드가 anonymous 요청을 401 로 거절하므로 로그인 사용자에게만 발화.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    recordVisit(spaceId);
+  }, [isAuthenticated, recordVisit, spaceId]);
 
   if (
     spaceQuery.isError &&

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/mocks/server";
 
 import { asSpaceId } from "./ids";
-import { createSpace, fetchSpace, listSpaces } from "./space";
+import { createSpace, fetchSpace, listSpaces, recordSpaceVisit } from "./space";
 
 describe("fetchSpace", () => {
   it("GET /api/v1/spaces/{spaceId} 를 호출하고 응답을 그대로 반환한다", async () => {
@@ -133,6 +133,38 @@ describe("listSpaces", () => {
 
     expect(result.isEmpty).toBe(true);
     expect(result.items).toEqual([]);
+  });
+});
+
+describe("recordSpaceVisit", () => {
+  it("POST /api/v1/spaces/{spaceId}/visits 를 호출하고 204 를 그대로 반환한다", async () => {
+    let called = false;
+    server.use(
+      http.post("*/api/v1/spaces/s_1/visits", () => {
+        called = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    await recordSpaceVisit(asSpaceId("s_1"));
+
+    expect(called).toBe(true);
+  });
+
+  it("401 응답을 ApiError 로 lift 한다", async () => {
+    server.use(
+      http.post("*/api/v1/spaces/s_1/visits", () =>
+        HttpResponse.json(
+          { code: "INVALID_SESSION", message: "세션이 만료되었습니다." },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    await expect(recordSpaceVisit(asSpaceId("s_1"))).rejects.toMatchObject({
+      status: 401,
+      code: "INVALID_SESSION",
+    });
   });
 });
 
