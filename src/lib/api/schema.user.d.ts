@@ -44,26 +44,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 로그아웃
-         * @description 로그아웃
-         */
-        post: operations["Auth \uB85C\uADF8\uC544\uC6C3 \uC815\uC0C1 \uD1A0\uD070\uC744 \uBC1B\uC73C\uBA74 204 \uB97C \uBC18\uD658\uD55C\uB2E4"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/sessions/me": {
         parameters: {
             query?: never;
@@ -120,11 +100,6 @@ export interface components {
             /** @description 사용자 식별자＊ */
             userId: string;
             /** @description 발급된 세션 토큰＊ */
-            token: string;
-        };
-        /** AuthLogoutRequest */
-        AuthLogoutRequest: {
-            /** @description revoke 대상 세션 토큰＊ */
             token: string;
         };
         /** AuthLoginRequest */
@@ -208,28 +183,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuthLoginResponse"];
                 };
-            };
-        };
-    };
-    "Auth \uB85C\uADF8\uC544\uC6C3 \uC815\uC0C1 \uD1A0\uD070\uC744 \uBC1B\uC73C\uBA74 204 \uB97C \uBC18\uD658\uD55C\uB2E4": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json;charset=UTF-8": components["schemas"]["AuthLogoutRequest"];
-            };
-        };
-        responses: {
-            /** @description 204 */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

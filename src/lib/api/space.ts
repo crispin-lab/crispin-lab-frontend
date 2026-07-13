@@ -52,6 +52,12 @@ export function deleteSpace(spaceId: SpaceId): Promise<void> {
   });
 }
 
+export function recordSpaceVisit(spaceId: SpaceId): Promise<void> {
+  return apiFetch<void>(`/api/v1/spaces/${encodeURIComponent(spaceId)}/visits`, {
+    method: "POST",
+  });
+}
+
 export function buildListSpacesQuery(params: SpaceListParams): string {
   const search = new URLSearchParams();
   // 경계 (parseSpaceListSearchParams) 에서 이미 trim + 빈 문자열 필터가 끝나 여기서는 값을 그대로 신뢰.

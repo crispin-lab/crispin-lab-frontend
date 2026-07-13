@@ -58,9 +58,14 @@ beforeEach(() => {
   toastError.mockReset();
   // LAB-95 이후 SpaceDetailView 가 useMe + useSpaceMemberList 를 호출 — 각 케이스에서 override 하지 않는 한
   // /v1/users/me 는 401 (anonymous), 멤버 리스트 fetch 는 useMe 가 null 이라 enabled=false 로 skip 된다.
+  // authenticated 진입 시 방문 기록 POST 가 mount 에서 자동 발화 — 기본 handler 로 조용히 204.
   server.use(
     http.get("*/api/v1/users/me", () =>
       HttpResponse.json({ code: "INVALID_SESSION", message: "no session" }, { status: 401 }),
+    ),
+    http.post(
+      `*/api/v1/spaces/${SPACE_ID_RAW}/visits`,
+      () => new HttpResponse(null, { status: 204 }),
     ),
   );
 });
@@ -526,6 +531,63 @@ describe("SpaceDetailView", () => {
       // useSpaceMemberList 의 enabled 가 false 라 fetch 안 됨.
       expect(memberListHits).toBe(0);
       expect(screen.queryByRole("button", { name: /^멤버$/ })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("LAB-178 · 방문 자동 기록", () => {
+    it("authenticated 진입 시 POST /visits 가 한 번 발화된다 (fire-and-forget)", async () => {
+      let visitHits = 0;
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+        http.post(`*/api/v1/spaces/${SPACE_ID_RAW}/visits`, () => {
+          visitHits += 1;
+          return new HttpResponse(null, { status: 204 });
+        }),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      await waitFor(() => expect(visitHits).toBe(1));
+    });
+
+    it("비로그인 진입 시 POST /visits 가 발화되지 않는다 (backend 가 401 로 거절)", async () => {
+      let visitHits = 0;
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () =>
+          HttpResponse.json(spaceBody({ canWrite: false })),
+        ),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+        http.post(`*/api/v1/spaces/${SPACE_ID_RAW}/visits`, () => {
+          visitHits += 1;
+          return new HttpResponse(null, { status: 204 });
+        }),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={false} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      expect(visitHits).toBe(0);
+    });
+
+    it("방문 기록 실패는 toast 없이 흡수된다 (silent — 상세 렌더 정상 진행)", async () => {
+      server.use(
+        http.get(`*/api/v1/spaces/${SPACE_ID_RAW}`, () => HttpResponse.json(spaceBody())),
+        http.get("*/api/v1/pages", () => HttpResponse.json(pageListBody([]))),
+        http.post(`*/api/v1/spaces/${SPACE_ID_RAW}/visits`, () =>
+          HttpResponse.json({ code: "INTERNAL_ERROR", message: "방문 기록 실패" }, { status: 500 }),
+        ),
+      );
+
+      const { Wrapper } = createQueryWrapper();
+      render(<SpaceDetailView spaceId={SPACE_ID} isAuthenticated={true} />, { wrapper: Wrapper });
+
+      await screen.findByRole("heading", { name: "공개 위키" });
+      // 상세는 그대로 렌더되고 toast 는 뜨지 않는다.
+      expect(toastError).not.toHaveBeenCalled();
     });
   });
 

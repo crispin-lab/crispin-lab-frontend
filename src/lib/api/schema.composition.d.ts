@@ -75,7 +75,7 @@ export interface paths {
          * 사용자 검색
          * @description 사용자 검색
          */
-        get: operations["User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569"];
+        get: operations["User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569 + alreadyMember \uB97C \uBC18\uD658\uD55C\uB2E4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -257,6 +257,63 @@ export interface components {
             /** @description 최근 갱신 시각 (ISO)＊ */
             updatedAt: string;
         };
+        /** SpaceListResponse */
+        SpaceListResponse: {
+            /** @description 페이지당 항목 수＊ */
+            size: number;
+            /** @description 결과 비어 있음 여부＊ */
+            isEmpty: boolean;
+            /** @description 총 페이지 수＊ */
+            totalPages: number;
+            /** @description 다음 페이지 존재 여부＊ */
+            hasNext: boolean;
+            /** @description 현재 페이지＊ */
+            page: number;
+            /** @description 스페이스 목록＊ */
+            items: {
+                /** @description ⎯ viewer 가 볼 수 있는 페이지 수 (lookup 실패 시 0)＊ */
+                pageCount: number;
+                /**
+                 * @description ⎯ 스페이스 공개 범위＊
+                 * @enum {string}
+                 */
+                visibility: "INTERNAL" | "PUBLIC";
+                /** @description ⎯ 스페이스 멤버 수 (lookup 실패 시 0)＊ */
+                memberCount: number;
+                /** @description ⎯ lastVisitedAt 이후 편집된 페이지 수 (미방문 스페이스는 전체 페이지 수 · Anonymous 또는 방문 lookup 실패 시 0 · updatedCounts lookup 실패 시 0)＊ */
+                unreadCount: number;
+                /** @description ⎯ 스페이스 설명＊ */
+                description: string;
+                /** @description ⎯ 정렬 값 (COALESCE(MAX(pages.updated_at), space.updated_at) — 삭제되지 않은 모든 페이지 기준. viewer 가 볼 수 없는 페이지도 포함될 수 있어 latestPage 와 다를 수 있음) (ISO)＊ */
+                lastActivityAt: string;
+                /** @description ⎯ 스페이스 생성 시각 (ISO)＊ */
+                createdAt: string;
+                /** @description ⎯ 스페이스 식별자＊ */
+                spaceId: string;
+                /**
+                 * @description ⎯ 현재 viewer 의 role (Anonymous / 비-멤버는 null)
+                 * @enum {string|null}
+                 */
+                myRole?: "OWNER" | "MEMBER" | "VIEWER" | null;
+                /** @description ⎯ 스페이스 이름＊ */
+                name: string;
+                /** @description ⎯ viewer 가 이 스페이스를 마지막으로 방문한 시각 (미방문·Anonymous·lookup 실패 시 null) (ISO) */
+                lastVisitedAt?: string | null;
+                /** @description ⎯ viewer 가 볼 수 있는 최근 편집 페이지 (없거나 lookup 실패 시 null) */
+                latestPage?: {
+                    /** @description ⎯ ⎯ 페이지 제목＊ */
+                    title: string;
+                    /** @description ⎯ ⎯ 페이지 식별자＊ */
+                    pageId: string;
+                    /** @description ⎯ ⎯ 페이지 편집 시각 (ISO)＊ */
+                    updatedAt: string;
+                };
+                /** @description ⎯ 스페이스 갱신 시각 (ISO)＊ */
+                updatedAt: string;
+            }[];
+            /** @description 총 항목 수＊ */
+            totalElements: number;
+        };
         /** SpaceAuditEntryListResponse */
         SpaceAuditEntryListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -366,20 +423,6 @@ export interface components {
             /** @description 총 항목 수＊ */
             totalElements: number;
         };
-        /** UserSearchResponse */
-        UserSearchResponse: {
-            /** @description 매칭된 사용자 목록＊ */
-            items: {
-                /** @description ⎯ 사용자가 소속된 스페이스 식별자 목록 (검색자가 볼 수 있는 스페이스만 노출, SpaceId 오름차순, 없으면 빈 배열)＊ */
-                memberOfSpaceIds: (Record<string, never> | boolean | string | number)[];
-                /** @description ⎯ 요청 spaceId 에 이미 참여 중인지 여부. spaceId 미지정 또는 검색자가 해당 스페이스를 볼 수 없으면 null. */
-                alreadyMember?: boolean | null;
-                /** @description ⎯ 사용자 이름＊ */
-                handle: string;
-                /** @description ⎯ 사용자 식별자＊ */
-                userId: string;
-            }[];
-        };
         /** PageInboundLinkListResponse */
         PageInboundLinkListResponse: {
             /** @description 페이지당 항목 수＊ */
@@ -415,6 +458,20 @@ export interface components {
             }[];
             /** @description 총 항목 수＊ */
             totalElements: number;
+        };
+        /** UserSearchResponse */
+        UserSearchResponse: {
+            /** @description 매칭된 사용자 목록＊ */
+            items: {
+                /** @description ⎯ 사용자가 소속된 스페이스 식별자 목록 (검색자가 볼 수 있는 스페이스만 노출, SpaceId 오름차순, 없으면 빈 배열)＊ */
+                memberOfSpaceIds: (Record<string, never> | boolean | string | number)[];
+                /** @description ⎯ 요청 spaceId 에 이미 참여 중인지 여부. spaceId 미지정 또는 검색자가 해당 스페이스를 볼 수 없으면 null. */
+                alreadyMember?: boolean | null;
+                /** @description ⎯ 사용자 이름＊ */
+                handle: string;
+                /** @description ⎯ 사용자 식별자＊ */
+                userId: string;
+            }[];
         };
         /** CommentEditRequest */
         CommentEditRequest: {
@@ -470,59 +527,6 @@ export interface components {
         CommentRegisterRequest: {
             /** @description 댓글 본문 (TipTap JSON)＊ */
             content: string;
-        };
-        /** SpaceListResponse */
-        SpaceListResponse: {
-            /** @description 페이지당 항목 수＊ */
-            size: number;
-            /** @description 결과 비어 있음 여부＊ */
-            isEmpty: boolean;
-            /** @description 총 페이지 수＊ */
-            totalPages: number;
-            /** @description 다음 페이지 존재 여부＊ */
-            hasNext: boolean;
-            /** @description 현재 페이지＊ */
-            page: number;
-            /** @description 스페이스 목록＊ */
-            items: {
-                /** @description ⎯ 스페이스 생성 시각 (ISO)＊ */
-                createdAt: string;
-                /** @description ⎯ 스페이스 식별자＊ */
-                spaceId: string;
-                /** @description ⎯ viewer 가 볼 수 있는 페이지 수 (lookup 실패 시 0)＊ */
-                pageCount: number;
-                /**
-                 * @description ⎯ 현재 viewer 의 role (Anonymous / 비-멤버는 null)
-                 * @enum {string|null}
-                 */
-                myRole?: "OWNER" | "MEMBER" | "VIEWER" | null;
-                /**
-                 * @description ⎯ 스페이스 공개 범위＊
-                 * @enum {string}
-                 */
-                visibility: "INTERNAL" | "PUBLIC";
-                /** @description ⎯ 스페이스 멤버 수 (lookup 실패 시 0)＊ */
-                memberCount: number;
-                /** @description ⎯ 스페이스 이름＊ */
-                name: string;
-                /** @description ⎯ 스페이스 설명＊ */
-                description: string;
-                /** @description ⎯ 정렬 값 (COALESCE(MAX(pages.updated_at), space.updated_at) — 삭제되지 않은 모든 페이지 기준. viewer 가 볼 수 없는 페이지도 포함될 수 있어 latestPage 와 다를 수 있음) (ISO)＊ */
-                lastActivityAt: string;
-                /** @description ⎯ viewer 가 볼 수 있는 최근 편집 페이지 (없거나 lookup 실패 시 null) */
-                latestPage?: {
-                    /** @description ⎯ ⎯ 페이지 제목＊ */
-                    title: string;
-                    /** @description ⎯ ⎯ 페이지 식별자＊ */
-                    pageId: string;
-                    /** @description ⎯ ⎯ 페이지 편집 시각 (ISO)＊ */
-                    updatedAt: string;
-                };
-                /** @description ⎯ 스페이스 갱신 시각 (ISO)＊ */
-                updatedAt: string;
-            }[];
-            /** @description 총 항목 수＊ */
-            totalElements: number;
         };
         /** CommentRegisterResponse */
         CommentRegisterResponse: {
@@ -680,7 +684,7 @@ export interface operations {
             };
         };
     };
-    "User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569": {
+    "User \uC0AC\uC6A9\uC790 \uAC80\uC0C9 \uC815\uC0C1 \uAC80\uC0C9 \uC2DC 200 \uACFC \uB9E4\uCE6D \uACB0\uACFC + \uC18C\uC18D \uC2A4\uD398\uC774\uC2A4 \uC9D1\uD569 + alreadyMember \uB97C \uBC18\uD658\uD55C\uB2E4": {
         parameters: {
             query: {
                 /** @description 검색어 (handle 부분 일치, 대소문자 무시, 1~30자) */
