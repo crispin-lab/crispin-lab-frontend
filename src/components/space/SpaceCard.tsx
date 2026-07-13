@@ -87,7 +87,7 @@ function LatestPageRow({ latestPage }: { latestPage: SpaceSummary["latestPage"] 
   return (
     <p className="text-muted-foreground flex items-baseline gap-2 text-xs">
       <span className="shrink-0">최근 편집</span>
-      <span className="text-foreground truncate">{latestPage.title}</span>
+      <span className="text-foreground min-w-0 truncate">{latestPage.title}</span>
       <FormattedTime iso={latestPage.updatedAt} className="ml-auto shrink-0" />
     </p>
   );

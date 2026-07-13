@@ -63,6 +63,25 @@ describe("SpaceCard", () => {
       expect(screen.queryByText("아직 페이지 없음")).not.toBeInTheDocument();
     });
 
+    it("긴 title 도 truncate + min-w-0 로 flex shrink 가 살아 옆 FormattedTime 을 밀어내지 않는다", () => {
+      const longTitle =
+        "매우 길어서 카드 폭을 넘길 위험이 있는 최근 편집 페이지 제목의 예시 케이스 문자열입니다";
+      render(
+        <SpaceCard
+          space={spaceSummary({
+            latestPage: {
+              pageId: "p_long",
+              title: longTitle,
+              updatedAt: "2026-06-15T00:00:00Z",
+            },
+          })}
+        />,
+      );
+
+      const titleSpan = screen.getByText(longTitle);
+      expect(titleSpan).toHaveClass("truncate", "min-w-0");
+    });
+
     it("latestPage 가 undefined 이면 '아직 페이지 없음' 안내가 노출된다", () => {
       render(<SpaceCard space={spaceSummary({ latestPage: undefined })} />);
 
